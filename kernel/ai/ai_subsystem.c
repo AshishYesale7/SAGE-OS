@@ -11,6 +11,7 @@
 #include "memory.h"
 #include "uart.h"
 #include <string.h>
+#include <stdio.h>  // For sprintf
 
 // Maximum number of models that can be loaded
 #define MAX_MODELS 8

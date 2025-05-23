@@ -67,8 +67,11 @@
 // Use of this software in critical systems (e.g., medical, nuclear, safety)
 // is entirely at your own risk unless specifically licensed for such purposes.
 //
-// ─────────────────────────────────────────────────────────────────────────────#include "uart.h"
+// ─────────────────────────────────────────────────────────────────────────────
+
+#include "uart.h"
 #include <stdarg.h>
+#include <stdint.h>
 
 // Raspberry Pi 3/4 UART0 registers
 // Base address for BCM2835/BCM2836/BCM2837 (Raspberry Pi 2/3)

@@ -282,7 +282,8 @@ i2c_status_t i2c_scan(uint8_t* devices, uint32_t max_devices, uint32_t* num_devi
     // Scan all possible addresses (0x08 to 0x77)
     for (uint8_t addr = 0x08; addr <= 0x77; addr++) {
         // Skip reserved addresses
-        if (addr >= 0x00 && addr <= 0x07) continue;
+        // Note: We're already starting at 0x08, so this check is redundant
+        // if (addr >= 0x00 && addr <= 0x07) continue;
         if (addr >= 0x78 && addr <= 0x7F) continue;
         
         // Try to write to device
