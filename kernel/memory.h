@@ -67,7 +67,9 @@
 // Use of this software in critical systems (e.g., medical, nuclear, safety)
 // is entirely at your own risk unless specifically licensed for such purposes.
 //
-// ─────────────────────────────────────────────────────────────────────────────#ifndef MEMORY_H
+// ─────────────────────────────────────────────────────────────────────────────
+
+#ifndef MEMORY_H
 #define MEMORY_H
 
 #include "types.h"

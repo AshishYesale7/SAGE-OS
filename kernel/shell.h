@@ -67,7 +67,9 @@
 // Use of this software in critical systems (e.g., medical, nuclear, safety)
 // is entirely at your own risk unless specifically licensed for such purposes.
 //
-// ─────────────────────────────────────────────────────────────────────────────#ifndef SHELL_H
+// ─────────────────────────────────────────────────────────────────────────────
+
+#ifndef SHELL_H
 #define SHELL_H
 
 #include "types.h"

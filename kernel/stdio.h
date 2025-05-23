@@ -67,7 +67,9 @@
 // Use of this software in critical systems (e.g., medical, nuclear, safety)
 // is entirely at your own risk unless specifically licensed for such purposes.
 //
-// ─────────────────────────────────────────────────────────────────────────────#ifndef STDIO_H
+// ─────────────────────────────────────────────────────────────────────────────
+
+#ifndef STDIO_H
 #define STDIO_H
 
 #include "types.h"
