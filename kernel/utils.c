@@ -67,7 +67,10 @@
 // Use of this software in critical systems (e.g., medical, nuclear, safety)
 // is entirely at your own risk unless specifically licensed for such purposes.
 //
-// ─────────────────────────────────────────────────────────────────────────────#include "types.h"
+// ─────────────────────────────────────────────────────────────────────────────
+
+#include "types.h"
+#include <stddef.h>  // For size_t
 
 // Memory manipulation functions
 

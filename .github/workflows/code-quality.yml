@@ -43,10 +43,12 @@ jobs:
         run: |
           # Create include path for header files
           mkdir -p include
-          cp kernel/*.h include/
-          cp drivers/*.h include/
-          cp drivers/ai_hat/*.h include/ai_hat/
-          cp kernel/ai/*.h include/ai/
+          mkdir -p include/ai_hat
+          mkdir -p include/ai
+          cp kernel/*.h include/ || true
+          cp drivers/*.h include/ || true
+          cp drivers/ai_hat/*.h include/ai_hat/ || true
+          cp kernel/ai/*.h include/ai/ || true
           
           # Run cppcheck with include path
           cppcheck --enable=all --suppress=missingIncludeSystem --error-exitcode=0 \
