@@ -22,7 +22,9 @@ jobs:
       - name: Set up toolchain
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential gcc g++ make qemu-system
+          sudo apt-get install -y build-essential gcc g++ make
+          sudo apt-get install -y gcc-aarch64-linux-gnu gcc-x86-64-linux-gnu gcc-riscv64-linux-gnu
+          sudo apt-get install -y qemu-system-x86 qemu-system-arm qemu-system-aarch64 qemu-system-riscv64
 
       - name: Build kernel
         run: |

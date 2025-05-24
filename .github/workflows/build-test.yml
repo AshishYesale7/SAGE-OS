@@ -16,24 +16,23 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y gcc-arm-none-eabi binutils-arm-none-eabi qemu-system-arm
+          sudo apt-get install -y gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu qemu-system-arm
       
       - name: Build kernel
         run: |
           make clean
-          make
+          make ARCH=aarch64
           
           # Check if build artifacts were created
-          if [ ! -f "kernel.elf" ] || [ ! -f "kernel8.img" ]; then
+          if [ ! -f "build/aarch64/kernel.elf" ] || [ ! -f "build/aarch64/kernel.img" ]; then
             echo "Error: Build failed to produce kernel artifacts"
             exit 1
           fi
           
           echo "✅ Build successful"
       
-      - name: Test with QEMU (if possible)
+      - name: Test with QEMU
         run: |
-          # Try to run QEMU for a short time to see if it boots
-          # This is a basic test to see if the kernel can be loaded by QEMU
-          timeout 10s ./run_qemu.sh || true
+          # Run the emulation test script
+          ./scripts/test_emulated.sh aarch64 5
           echo "QEMU test completed"
