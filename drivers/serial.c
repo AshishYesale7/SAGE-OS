@@ -8,7 +8,7 @@
 
 #include "serial.h"
 
-#if defined(ARCH_X86_64) || defined(ARCH_I386)
+#if defined(__x86_64__) || defined(__i386__)
 
 // COM1 port base address
 #define COM1_PORT 0x3F8
@@ -72,4 +72,90 @@ void serial_puts(const char* str) {
     }
 }
 
-#endif // ARCH_X86_64 || ARCH_I386
+#elif defined(__aarch64__)
+// AArch64 UART functions for QEMU virt machine
+#define UART0_BASE 0x09000000
+#define UART_DR    (UART0_BASE + 0x00)
+#define UART_FR    (UART0_BASE + 0x18)
+#define UART_FR_TXFF (1 << 5)
+
+static inline void mmio_write(unsigned long addr, unsigned int value) {
+    *(volatile unsigned int*)addr = value;
+}
+
+static inline unsigned int mmio_read(unsigned long addr) {
+    return *(volatile unsigned int*)addr;
+}
+
+void serial_init(void) {
+    // UART is already initialized by QEMU
+}
+
+void serial_putc(char c) {
+    // Wait until transmit FIFO is not full
+    while (mmio_read(UART_FR) & UART_FR_TXFF);
+    mmio_write(UART_DR, c);
+}
+
+void serial_puts(const char* str) {
+    while (*str) {
+        serial_putc(*str);
+        if (*str == '\n') {
+            serial_putc('\r');
+        }
+        str++;
+    }
+}
+
+#elif defined(__riscv)
+// RISC-V UART functions for QEMU virt machine
+#define UART0_BASE 0x10000000
+#define UART_THR   (UART0_BASE + 0x00)
+#define UART_LSR   (UART0_BASE + 0x05)
+#define UART_LSR_THRE (1 << 5)
+
+static inline void mmio_write_8(unsigned long addr, unsigned char value) {
+    *(volatile unsigned char*)addr = value;
+}
+
+static inline unsigned char mmio_read_8(unsigned long addr) {
+    return *(volatile unsigned char*)addr;
+}
+
+void serial_init(void) {
+    // UART is already initialized by QEMU
+}
+
+void serial_putc(char c) {
+    // Wait until transmit holding register is empty
+    while (!(mmio_read_8(UART_LSR) & UART_LSR_THRE));
+    mmio_write_8(UART_THR, c);
+}
+
+void serial_puts(const char* str) {
+    while (*str) {
+        serial_putc(*str);
+        if (*str == '\n') {
+            serial_putc('\r');
+        }
+        str++;
+    }
+}
+
+#else
+// Generic ARM/other architectures - placeholder
+void serial_init(void) {
+    // Generic serial initialization - do nothing for now
+}
+
+void serial_putc(char c) {
+    // Generic serial output - do nothing for now
+    (void)c;
+}
+
+void serial_puts(const char* str) {
+    // Generic serial output - do nothing for now
+    (void)str;
+}
+
+#endif

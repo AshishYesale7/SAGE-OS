@@ -170,7 +170,9 @@ else
     BOOT_SOURCES = boot/boot_with_multiboot.S
 endif
 KERNEL_SOURCES_ALL = $(wildcard kernel/*.c) $(wildcard kernel/*/*.c)
-KERNEL_SOURCES = $(if $(filter ON,$(ENABLE_AI)),$(filter-out $(wildcard kernel/ai/*.c),$(KERNEL_SOURCES_ALL)),$(KERNEL_SOURCES_ALL))
+# Exclude kernel_graphics.c to avoid conflicts with kernel.c
+KERNEL_SOURCES_FILTERED = $(filter-out kernel/kernel_graphics.c,$(KERNEL_SOURCES_ALL))
+KERNEL_SOURCES = $(if $(filter ON,$(ENABLE_AI)),$(filter-out $(wildcard kernel/ai/*.c),$(KERNEL_SOURCES_FILTERED)),$(KERNEL_SOURCES_FILTERED))
 DRIVER_SOURCES = $(wildcard drivers/*.c) $(wildcard drivers/*/*.c)
 AI_SOURCES = $(if $(filter ON,$(ENABLE_AI)),$(wildcard kernel/ai/*.c),)
 
