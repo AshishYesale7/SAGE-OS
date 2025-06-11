@@ -84,16 +84,31 @@ build_graphics_kernel() {
     
     # Set up toolchain
     if [[ "$OSTYPE" == "darwin"* ]]; then
-        # macOS toolchain
-        if [[ $ARCH == "x86_64" ]]; then
-            CC="x86_64-unknown-linux-gnu-gcc"
-            LD="x86_64-unknown-linux-gnu-ld"
-            OBJCOPY="x86_64-unknown-linux-gnu-objcopy"
-        else
-            CC="i386-unknown-linux-gnu-gcc"
-            LD="i386-unknown-linux-gnu-ld"
-            OBJCOPY="i386-unknown-linux-gnu-objcopy"
+        # macOS toolchain - use x86_64 cross-compiler for both architectures
+        # Try different possible paths for the cross-compiler
+        POSSIBLE_PATHS=(
+            "/opt/homebrew/bin/x86_64-unknown-linux-gnu-gcc"
+            "/usr/local/bin/x86_64-unknown-linux-gnu-gcc"
+            "x86_64-unknown-linux-gnu-gcc"
+        )
+        
+        CC=""
+        for path in "${POSSIBLE_PATHS[@]}"; do
+            if command -v "$path" >/dev/null 2>&1; then
+                CC="$path"
+                break
+            fi
+        done
+        
+        if [[ -z "$CC" ]]; then
+            CC="x86_64-unknown-linux-gnu-gcc"  # Default fallback
         fi
+        
+        # Set corresponding LD and OBJCOPY
+        CC_DIR=$(dirname "$CC")
+        CC_BASE=$(basename "$CC" | sed 's/-gcc$//')
+        LD="${CC_DIR}/${CC_BASE}-ld"
+        OBJCOPY="${CC_DIR}/${CC_BASE}-objcopy"
     else
         # Linux toolchain
         CC="gcc"
@@ -105,18 +120,39 @@ build_graphics_kernel() {
     if ! command -v "$CC" >/dev/null 2>&1; then
         echo -e "${RED}❌ Cross-compiler not found: $CC${NC}"
         echo "Please install the cross-compilation toolchain:"
-        echo "  brew install x86_64-unknown-linux-gnu"
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+            echo "  brew install x86_64-unknown-linux-gnu"
+            echo ""
+            echo "If already installed, try:"
+            echo "  export PATH=\"/opt/homebrew/bin:\$PATH\""
+            echo "  export PATH=\"/usr/local/bin:\$PATH\""
+            echo ""
+            echo "Or check installation with:"
+            echo "  brew list | grep x86"
+            echo "  which x86_64-unknown-linux-gnu-gcc"
+        else
+            echo "  sudo apt-get install gcc-multilib"
+        fi
         exit 1
     fi
     
     echo -e "${GREEN}✅ Using toolchain: $CC${NC}"
     
     # Compiler flags
-    CFLAGS="-m32 -nostdlib -nostartfiles -ffreestanding -O2 -Wall -Wextra"
-    CFLAGS="$CFLAGS -I. -Ikernel -Idrivers -DARCH_X86_64 -DGRAPHICS_MODE"
+    if [[ $ARCH == "i386" ]]; then
+        CFLAGS="-m32 -nostdlib -nostartfiles -ffreestanding -O2 -Wall -Wextra"
+        CFLAGS="$CFLAGS -I. -Ikernel -Idrivers -D__i386__ -DGRAPHICS_MODE"
+    else
+        CFLAGS="-m64 -nostdlib -nostartfiles -ffreestanding -O2 -Wall -Wextra"
+        CFLAGS="$CFLAGS -I. -Ikernel -Idrivers -D__x86_64__ -DGRAPHICS_MODE"
+    fi
     
     # Linker flags
-    LDFLAGS="-T linker_i386.ld -nostdlib -m elf_i386"
+    if [[ $ARCH == "i386" ]]; then
+        LDFLAGS="-T linker_i386.ld -nostdlib -m elf_i386"
+    else
+        LDFLAGS="-T linker_x86_64.ld -nostdlib -m elf_x86_64"
+    fi
     
     echo "Compiler flags: $CFLAGS"
     echo "Linker flags: $LDFLAGS"
@@ -124,7 +160,7 @@ build_graphics_kernel() {
     # Compile boot loader
     echo ""
     echo -e "${YELLOW}📦 Compiling boot loader...${NC}"
-    $CC $CFLAGS -c boot/boot_i386.S -o "$BUILD_DIR/boot.o"
+    $CC $CFLAGS -c boot/boot.S -o "$BUILD_DIR/boot.o"
     echo -e "${GREEN}✅ Boot loader compiled${NC}"
     
     # Compile graphics kernel (use kernel_graphics.c instead of kernel.c)
