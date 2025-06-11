@@ -75,8 +75,8 @@ endif
 # Create build directory for architecture
 BUILD_DIR=build/$(ARCH)
 
-# Source files
-KERNEL_SOURCES = $(wildcard kernel/*.c) $(wildcard kernel/*/*.c)
+# Source files (exclude graphics kernel by default)
+KERNEL_SOURCES = $(filter-out kernel/kernel_graphics.c, $(wildcard kernel/*.c)) $(wildcard kernel/*/*.c)
 DRIVER_SOURCES = $(wildcard drivers/*.c) $(wildcard drivers/*/*.c)
 
 # Architecture-specific boot files
@@ -244,6 +244,17 @@ test-x86_64:
 test-riscv64:
 	@./scripts/test-qemu.sh riscv64 generic
 
+# Graphics mode testing (x86 only)
+test-graphics:
+	@echo "🖥️ Testing $(ARCH) build in QEMU graphics mode..."
+	@./scripts/test-qemu.sh $(ARCH) $(TARGET) graphics
+
+test-i386-graphics:
+	@./scripts/test-qemu.sh i386 generic graphics
+
+test-x86_64-graphics:
+	@./scripts/test-qemu.sh x86_64 generic graphics
+
 # Help target
 help:
 	@echo "🚀 SAGE-OS Build System"
@@ -270,15 +281,28 @@ help:
 	@echo "  make test-aarch64                 - Test aarch64 build in QEMU"
 	@echo "  make test-x86_64                  - Test x86_64 build in QEMU"
 	@echo "  make test-riscv64                 - Test riscv64 build in QEMU"
-	@echo "  ./scripts/test-qemu.sh <arch>     - Direct QEMU testing script"
+	@echo ""
+	@echo "🖥️ Graphics Mode Testing (x86 only):"
+	@echo "  make test-graphics                - Test current ARCH in graphics mode"
+	@echo "  make test-i386-graphics           - Test i386 in graphics mode"
+	@echo "  make test-x86_64-graphics         - Test x86_64 in graphics mode"
+	@echo ""
+	@echo "🔧 Direct Script Usage:"
+	@echo "  ./scripts/test-qemu.sh <arch>     - Serial console mode"
+	@echo "  ./scripts/test-qemu.sh <arch> <target> graphics - Graphics mode"
 	@echo ""
 	@echo "📝 Examples:"
 	@echo "  make ARCH=aarch64 TARGET=rpi5     - Build for Raspberry Pi 5"
 	@echo "  make ARCH=i386 TARGET=generic     - Build for generic i386"
+	@echo "  make test-i386-graphics           - Test i386 with VGA graphics and keyboard"
+	@echo ""
+	@echo "📖 Documentation:"
+	@echo "  See GRAPHICS_MODE_GUIDE.md for VGA graphics mode details"
+	@echo "  See PROJECT_STRUCTURE.md for project organization"
 	@echo "  make ARCH=x86_64 iso              - Build x86_64 and create ISO"
 
 # Alias targets
 kernel: $(BUILD_DIR)/kernel.elf
 image: $(BUILD_DIR)/kernel.img
 
-.PHONY: all clean clean-output clean-all all-arch info version list-arch help kernel image iso test test-i386 test-aarch64 test-x86_64 test-riscv64
+.PHONY: all clean clean-output clean-all all-arch info version list-arch help kernel image iso test test-i386 test-aarch64 test-x86_64 test-riscv64 test-graphics test-i386-graphics test-x86_64-graphics
