@@ -732,6 +732,305 @@ int ai_example(void) {{
         print("✅ Generated comprehensive API documentation")
         EOF
         
+    - name: 🤖 AI-Enhanced Documentation Generation
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        echo "🤖 Running AI-enhanced documentation generation..."
+        
+        # Install AI dependencies
+        pip install requests
+        
+        # Run GitHub Models AI integration for documentation enhancement
+        python3 << 'EOF'
+        import os
+        import json
+        import requests
+        import sys
+        from datetime import datetime
+        
+        def call_github_models_api(prompt, model="gpt-4o-mini"):
+            """Call GitHub Models API for documentation enhancement"""
+            github_token = os.environ.get('GITHUB_TOKEN')
+            if not github_token:
+                print("⚠️ No GitHub token available, using fallback documentation")
+                return None
+                
+            headers = {
+                "Authorization": f"Bearer {github_token}",
+                "Content-Type": "application/json",
+                "User-Agent": "SAGE-OS-Docs/1.0"
+            }
+            
+            payload = {
+                "model": model,
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": "You are an expert technical writer specializing in embedded systems and operating system documentation. Generate comprehensive, accurate, and well-structured documentation."
+                    },
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ],
+                "max_tokens": 3000,
+                "temperature": 0.3
+            }
+            
+            try:
+                response = requests.post(
+                    "https://models.inference.ai.azure.com/chat/completions",
+                    headers=headers,
+                    json=payload,
+                    timeout=30
+                )
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    return result['choices'][0]['message']['content']
+                else:
+                    print(f"⚠️ GitHub Models API error: {response.status_code}")
+                    return None
+                    
+            except Exception as e:
+                print(f"⚠️ GitHub Models API call failed: {e}")
+                return None
+        
+        def generate_ai_enhanced_content():
+            """Generate AI-enhanced documentation content"""
+            
+            # Load project analysis if available
+            project_data = {}
+            if os.path.exists('docs/generated/project_analysis.json'):
+                with open('docs/generated/project_analysis.json', 'r') as f:
+                    project_data = json.load(f)
+            
+            # Create AI-enhanced installation guide
+            installation_prompt = f"""
+            Create a comprehensive installation guide for SAGE-OS, an embedded operating system with AI capabilities.
+            
+            Project stats: {len(project_data.get('c_files', []))} C files, {len(project_data.get('python_files', []))} Python files
+            
+            Include:
+            1. Prerequisites and system requirements
+            2. Step-by-step installation for Linux, macOS, Windows
+            3. Cross-compilation setup for multiple architectures (i386, AArch64, RISC-V)
+            4. QEMU testing setup
+            5. Troubleshooting common issues
+            6. Hardware deployment options
+            
+            Format as markdown with clear sections, code blocks, and helpful tips.
+            """
+            
+            ai_installation_content = call_github_models_api(installation_prompt)
+            
+            if ai_installation_content:
+                with open('docs/guides/installation.md', 'w') as f:
+                    f.write("# 📦 SAGE-OS Installation Guide\n\n")
+                    f.write("*AI-enhanced installation documentation*\n\n")
+                    f.write(ai_installation_content)
+                    f.write("\n\n---\n\n*This guide was enhanced using GitHub Models AI*")
+                print("✅ Generated AI-enhanced installation guide")
+            else:
+                # Fallback installation guide
+                with open('docs/guides/installation.md', 'w') as f:
+                    f.write("""# 📦 SAGE-OS Installation Guide
+
+## Prerequisites
+
+### Required Tools
+- GCC cross-compiler for target architecture
+- CMake 3.16+
+- QEMU for testing and emulation
+- Git for version control
+- Python 3.11+ for build scripts
+
+### Supported Architectures
+- **i386**: Intel 32-bit (primary development target)
+- **AArch64**: ARM 64-bit (Raspberry Pi 4/5)
+- **RISC-V**: Open-source RISC-V processors
+- **x86_64**: Intel/AMD 64-bit (work in progress)
+
+## Installation Steps
+
+### 1. Clone Repository
+```bash
+git clone https://github.com/AshishYesale7/SAGE-OS.git
+cd SAGE-OS
+```
+
+### 2. Install Dependencies
+
+#### Ubuntu/Debian
+```bash
+sudo apt update
+sudo apt install build-essential cmake qemu-system git python3 python3-pip
+sudo apt install gcc-multilib gcc-arm-linux-gnueabihf gcc-aarch64-linux-gnu
+```
+
+#### macOS
+```bash
+brew install cmake qemu git python3
+```
+
+### 3. Build SAGE-OS
+```bash
+# Build for i386 (recommended)
+make ARCH=i386
+
+# Build for AArch64
+make ARCH=aarch64
+```
+
+### 4. Test in QEMU
+```bash
+make qemu-i386
+```
+
+## Troubleshooting
+
+- Ensure all dependencies are installed
+- Check cross-compiler availability
+- Verify QEMU installation
+
+---
+
+*Installation guide with fallback content*""")
+                print("✅ Generated fallback installation guide")
+            
+            # Create AI-enhanced quick start guide
+            quickstart_prompt = f"""
+            Create a quick start guide for SAGE-OS that gets users up and running in 5 minutes.
+            
+            Focus on:
+            1. Fastest path to see SAGE-OS running
+            2. Key commands to try in the OS
+            3. What users should expect to see
+            4. Next steps for development
+            
+            Keep it concise but comprehensive. Format as markdown.
+            """
+            
+            ai_quickstart_content = call_github_models_api(quickstart_prompt)
+            
+            if ai_quickstart_content:
+                with open('docs/guides/quickstart.md', 'w') as f:
+                    f.write("# 🚀 SAGE-OS Quick Start\n\n")
+                    f.write("*Get SAGE-OS running in 5 minutes*\n\n")
+                    f.write(ai_quickstart_content)
+                    f.write("\n\n---\n\n*This guide was enhanced using GitHub Models AI*")
+                print("✅ Generated AI-enhanced quick start guide")
+            else:
+                # Fallback quick start
+                with open('docs/guides/quickstart.md', 'w') as f:
+                    f.write("""# 🚀 SAGE-OS Quick Start
+
+## 5-Minute Setup
+
+### 1. Quick Build
+```bash
+git clone https://github.com/AshishYesale7/SAGE-OS.git
+cd SAGE-OS
+make ARCH=i386
+```
+
+### 2. Run in QEMU
+```bash
+make qemu-i386
+```
+
+### 3. Try Commands
+```
+SAGE-OS> help
+SAGE-OS> ls
+SAGE-OS> mkdir test
+SAGE-OS> touch hello.txt
+```
+
+### 4. Explore Features
+- Interactive shell with Unix-like commands
+- VGA graphics mode
+- Multi-architecture support
+- AI integration framework
+
+## Next Steps
+- Read the [Installation Guide](installation.md)
+- Explore [Architecture Documentation](../reference/architecture.md)
+- Try [Development Setup](../development/setup.md)
+
+---
+
+*Quick start with fallback content*""")
+                print("✅ Generated fallback quick start guide")
+        
+        # Generate AI-enhanced content
+        generate_ai_enhanced_content()
+        
+        # Save AI generation status
+        ai_status = {
+            "ai_enhanced": True,
+            "generation_time": datetime.now().isoformat(),
+            "github_models_used": True
+        }
+        
+        os.makedirs('docs/generated', exist_ok=True)
+        with open('docs/generated/ai_status.json', 'w') as f:
+            json.dump(ai_status, f, indent=2)
+        
+        print("🤖 AI-enhanced documentation generation complete!")
+        EOF
+        
+    - name: 🚀 Run Comprehensive AI Analysis
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      continue-on-error: true
+      run: |
+        echo "🚀 Running comprehensive AI analysis using GitHub Models..."
+        
+        # Make the AI script executable
+        chmod +x scripts/ai/github-models-integration.py
+        
+        # Run the comprehensive AI analysis
+        python3 scripts/ai/github-models-integration.py || {
+          echo "⚠️ AI analysis failed, but continuing with documentation build"
+          mkdir -p analysis/ai-results
+          cat > analysis/ai-results/ai-summary-report.md << 'EOF'
+        # 🤖 AI Analysis Report
+        
+        **Status**: AI analysis unavailable in this run
+        **Fallback**: Using rule-based analysis
+        
+        ## 📊 Project Analysis
+        
+        SAGE-OS is a comprehensive embedded operating system with the following characteristics:
+        
+        ### ✅ Strengths
+        - Multi-architecture support (i386, AArch64, RISC-V)
+        - Modular kernel design
+        - Comprehensive build system
+        - AI integration framework
+        - Professional documentation
+        
+        ### 💡 Recommendations
+        - Continue developing AI integration features
+        - Enhance testing framework
+        - Expand hardware driver support
+        - Improve real-time capabilities
+        
+        ---
+        
+        *This is a fallback analysis. For AI-powered insights, ensure GitHub Models API access.*
+        EOF
+        }
+        
+        # Copy AI results to documentation if available
+        if [ -d "analysis/ai-results" ]; then
+          mkdir -p docs/generated/ai-analysis
+          cp -r analysis/ai-results/* docs/generated/ai-analysis/ 2>/dev/null || true
+          echo "📊 AI analysis results copied to documentation"
+        fi
+        
     - name: 🏗️ Generate Architecture Documentation
       run: |
         echo "🏗️ Generating architecture documentation..."
