@@ -16,18 +16,20 @@ multiboot_header:
 
 .section ".text"
 .global _start
+.code32
 
 _start:
     # Disable interrupts
     cli
     
-    # Set up stack
-    mov $stack_top, %rsp
+    # Set up 32-bit stack first
+    mov $stack_top, %esp
     
     # Clear direction flag
     cld
     
-    # Call kernel main
+    # For x86_64, we need to set up long mode
+    # For now, call kernel main in 32-bit mode
     call kernel_main
     
     # If kernel_main returns, halt

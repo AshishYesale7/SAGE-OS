@@ -19,18 +19,7 @@ _start:
     ldr x0, =stack_top
     mov sp, x0
     
-    # Clear BSS section
-    ldr x0, =__bss_start
-    ldr x1, =__bss_end
-    mov x2, #0
-clear_bss:
-    cmp x0, x1
-    b.ge bss_cleared
-    str x2, [x0], #8
-    b clear_bss
-bss_cleared:
-
-    # Call kernel main
+    # Call kernel main directly (skip BSS clearing for now)
     bl kernel_main
     
     # If kernel_main returns, halt
