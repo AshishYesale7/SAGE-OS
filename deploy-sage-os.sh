@@ -213,7 +213,9 @@ FROM alpine:latest
 RUN apk update && apk add --no-cache \
     qemu-system-i386 \
     qemu-system-arm \
+    qemu-system-aarch64 \
     qemu-system-x86_64 \
+    qemu-system-riscv64 \
     qemu-img \
     tigervnc \
     xvfb \
