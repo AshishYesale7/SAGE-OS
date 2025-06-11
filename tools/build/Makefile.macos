@@ -1,0 +1,111 @@
+# SAGE-OS macOS-Compatible Makefile
+# This Makefile provides macOS-specific build configurations
+
+# Detect macOS
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Darwin)
+    MACOS := 1
+    # Use GNU tools on macOS (install via Homebrew)
+    SED := gsed
+    GREP := ggrep
+    FIND := gfind
+    TAR := gtar
+    
+    # Check if GNU tools are available
+    GNU_TOOLS_CHECK := $(shell which gsed >/dev/null 2>&1 && echo "yes" || echo "no")
+    ifeq ($(GNU_TOOLS_CHECK),no)
+        $(warning GNU tools not found. Install with: brew install gnu-sed grep findutils gnu-tar)
+        $(warning Falling back to BSD tools - some features may not work correctly)
+        SED := sed
+        GREP := grep
+        FIND := find
+        TAR := tar
+    endif
+else
+    SED := sed
+    GREP := grep
+    FIND := find
+    TAR := tar
+endif
+
+# macOS-specific compiler flags
+ifeq ($(MACOS),1)
+    # Use system clang or cross-compiler
+    CC_PREFIX := 
+    
+    # Check for cross-compilation tools
+    I386_CC := $(shell which i386-elf-gcc 2>/dev/null || which clang)
+    X86_64_CC := $(shell which x86_64-elf-gcc 2>/dev/null || which clang)
+    AARCH64_CC := $(shell which aarch64-elf-gcc 2>/dev/null || which clang)
+    
+    # macOS-specific QEMU paths
+    QEMU_I386 := $(shell which qemu-system-i386 2>/dev/null || echo "/opt/homebrew/bin/qemu-system-i386")
+    QEMU_X86_64 := $(shell which qemu-system-x86_64 2>/dev/null || echo "/opt/homebrew/bin/qemu-system-x86_64")
+    QEMU_AARCH64 := $(shell which qemu-system-aarch64 2>/dev/null || echo "/opt/homebrew/bin/qemu-system-aarch64")
+    
+    # Additional macOS flags
+    MACOS_CFLAGS := -Wno-unused-command-line-argument
+endif
+
+# Include main Makefile with macOS overrides
+include Makefile
+
+# macOS-specific targets
+.PHONY: macos-setup macos-check macos-install-deps
+
+macos-setup: macos-check
+	@echo "🍎 Setting up SAGE-OS for macOS..."
+	@echo "Checking dependencies..."
+	@$(MAKE) macos-install-deps
+
+macos-check:
+	@echo "🍎 macOS Build Environment Check"
+	@echo "================================"
+	@echo "Operating System: $(shell uname -s) $(shell uname -r)"
+	@echo "Architecture: $(shell uname -m)"
+	@echo ""
+	@echo "🔧 Build Tools:"
+	@echo "  SED: $(SED) ($(shell $(SED) --version 2>/dev/null | head -1 || echo "BSD sed"))"
+	@echo "  GREP: $(GREP) ($(shell $(GREP) --version 2>/dev/null | head -1 || echo "BSD grep"))"
+	@echo "  FIND: $(FIND) ($(shell $(FIND) --version 2>/dev/null | head -1 || echo "BSD find"))"
+	@echo ""
+	@echo "🏗️ Compilers:"
+	@echo "  i386: $(I386_CC)"
+	@echo "  x86_64: $(X86_64_CC)"
+	@echo "  aarch64: $(AARCH64_CC)"
+	@echo ""
+	@echo "🖥️ QEMU:"
+	@echo "  i386: $(QEMU_I386)"
+	@echo "  x86_64: $(QEMU_X86_64)"
+	@echo "  aarch64: $(QEMU_AARCH64)"
+
+macos-install-deps:
+	@echo "📦 Installing macOS dependencies..."
+	@if ! command -v brew >/dev/null 2>&1; then \
+		echo "❌ Homebrew not found. Please install from https://brew.sh"; \
+		exit 1; \
+	fi
+	@echo "Installing GNU tools..."
+	@brew install gnu-sed grep findutils gnu-tar || true
+	@echo "Installing cross-compilation tools..."
+	@brew install i386-elf-gcc x86_64-elf-gcc aarch64-elf-gcc || true
+	@echo "Installing QEMU..."
+	@brew install qemu || true
+	@echo "✅ Dependencies installation complete"
+
+# macOS-specific test targets
+test-macos: macos-check
+	@echo "🧪 Running macOS-specific tests..."
+	@$(MAKE) test ARCH=i386 TARGET=generic
+
+test-macos-graphics: macos-check
+	@echo "🧪 Running macOS graphics tests..."
+	@$(MAKE) test-graphics ARCH=i386 TARGET=generic
+
+# Override QEMU commands for macOS
+ifeq ($(MACOS),1)
+test-qemu-macos:
+	@echo "🍎 Testing with macOS QEMU..."
+	@$(QEMU_I386) -version || echo "❌ QEMU not found. Install with: brew install qemu"
+	@./scripts/testing/test-qemu.sh i386 generic
+endif

@@ -5,8 +5,23 @@
 # 
 # This file is part of the SAGE OS Project.
 # ─────────────────────────────────────────────────────────────────────────────
-# Default architecture is aarch64
+
+# Build Configuration
+# Default architecture is aarch64, target is generic
 ARCH ?= aarch64
+TARGET ?= generic
+
+# Version and Build Management
+# Get version from VERSION file or use default
+VERSION := $(shell cat VERSION 2>/dev/null || echo "1.0.0")
+
+# Generate simple build identifier
+BUILD_ID := sage-os-v$(VERSION)-$(ARCH)-$(TARGET)
+
+# Clean output directory structure
+OUTPUT_DIR := output
+BUILD_DIR := build/$(ARCH)
+ARCH_OUTPUT_DIR := $(OUTPUT_DIR)/$(ARCH)
 
 # Set up cross-compilation toolchain based on architecture
 ifeq ($(ARCH),x86_64)
@@ -19,6 +34,8 @@ else ifeq ($(ARCH),arm64)
     CROSS_COMPILE=aarch64-linux-gnu-
 else ifeq ($(ARCH),aarch64)
     CROSS_COMPILE=aarch64-linux-gnu-
+else ifeq ($(ARCH),arm)
+    CROSS_COMPILE=arm-linux-gnueabihf-
 else ifeq ($(ARCH),riscv64)
     CROSS_COMPILE=riscv64-linux-gnu-
 else
@@ -60,8 +77,8 @@ endif
 # Create build directory for architecture
 BUILD_DIR=build/$(ARCH)
 
-# Source files
-KERNEL_SOURCES = $(wildcard kernel/*.c) $(wildcard kernel/*/*.c)
+# Source files (exclude graphics kernel by default)
+KERNEL_SOURCES = $(filter-out kernel/kernel_graphics.c, $(wildcard kernel/*.c)) $(wildcard kernel/*/*.c)
 DRIVER_SOURCES = $(wildcard drivers/*.c) $(wildcard drivers/*/*.c)
 
 # Architecture-specific boot files
@@ -104,6 +121,8 @@ $(BUILD_DIR)/kernel.elf: $(OBJECTS)
 	$(LD) $(LDFLAGS) -o $@ $(OBJECTS)
 
 $(BUILD_DIR)/kernel.img: $(BUILD_DIR)/kernel.elf
+	@echo "Creating kernel image for $(ARCH) architecture..."
+	@mkdir -p $(ARCH_OUTPUT_DIR)
 ifeq ($(ARCH),x86_64)
 	# For x86_64, create multiboot header and concatenate with kernel binary, then wrap in ELF
 	python3 create_multiboot_header.py
@@ -119,50 +138,173 @@ else
 	$(OBJCOPY) -O binary $< $@
 	@echo "Build completed for $(ARCH) architecture"
 endif
-	@echo "Output: $@"
+	# Copy to clean output directory with versioned name
+	@cp $@ $(ARCH_OUTPUT_DIR)/$(BUILD_ID).img
+	@cp $(BUILD_DIR)/kernel.elf $(ARCH_OUTPUT_DIR)/$(BUILD_ID).elf
+	@echo "✅ Build completed successfully!"
+	@echo "📁 Architecture: $(ARCH)"
+	@echo "🎯 Target: $(TARGET)"
+	@echo "📦 Version: $(VERSION)"
+	@echo "🔧 Build ID: $(BUILD_ID)"
+	@echo "📄 Kernel Image: $(ARCH_OUTPUT_DIR)/$(BUILD_ID).img"
+	@echo "🔍 Debug ELF: $(ARCH_OUTPUT_DIR)/$(BUILD_ID).elf"
 
+# Clean build directories
 clean:
+	@echo "🧹 Cleaning build directories..."
 	rm -rf build/
-	@echo "Cleaned build directories"
+	@echo "✅ Build directories cleaned"
+
+# Clean output directories
+clean-output:
+	@echo "🧹 Cleaning output files..."
+	rm -rf $(OUTPUT_DIR)/
+	@echo "✅ Output files cleaned"
+
+# Full clean (everything)
+clean-all: clean clean-output
+	@echo "✅ Full clean completed"
 
 # Create ISO image (x86_64 only)
 iso: $(BUILD_DIR)/kernel.img
 ifeq ($(ARCH),x86_64)
+	@echo "Creating bootable ISO for x86_64..."
 	@mkdir -p $(BUILD_DIR)/iso/boot/grub
 	@cp $< $(BUILD_DIR)/iso/boot/kernel.img
 	@echo 'set timeout=5' > $(BUILD_DIR)/iso/boot/grub/grub.cfg
 	@echo 'set default=0' >> $(BUILD_DIR)/iso/boot/grub/grub.cfg
 	@echo '' >> $(BUILD_DIR)/iso/boot/grub/grub.cfg
-	@echo 'menuentry "SAGE OS x86_64" {' >> $(BUILD_DIR)/iso/boot/grub/grub.cfg
+	@echo 'menuentry "SAGE OS $(VERSION) ($(ARCH))" {' >> $(BUILD_DIR)/iso/boot/grub/grub.cfg
 	@echo '    multiboot /boot/kernel.img' >> $(BUILD_DIR)/iso/boot/grub/grub.cfg
 	@echo '    boot' >> $(BUILD_DIR)/iso/boot/grub/grub.cfg
 	@echo '}' >> $(BUILD_DIR)/iso/boot/grub/grub.cfg
 	grub-mkrescue -o $(BUILD_DIR)/sageos.iso $(BUILD_DIR)/iso
-	@echo "ISO created: $(BUILD_DIR)/sageos.iso"
+	# Copy to clean output directory with versioned name
+	@cp $(BUILD_DIR)/sageos.iso $(ARCH_OUTPUT_DIR)/$(BUILD_ID).iso
+	@echo "✅ ISO created successfully!"
+	@echo "💿 ISO File: $(ARCH_OUTPUT_DIR)/$(BUILD_ID).iso"
+	@echo "🚀 Ready to boot on x86_64 systems"
 else
-	@echo "ISO creation only supported for x86_64 architecture"
+	@echo "❌ ISO creation only supported for x86_64 architecture"
 endif
+
+# Information targets
+info:
+	@echo "📋 SAGE-OS Build Information"
+	@echo "=========================="
+	@echo "📦 Version: $(VERSION)"
+	@echo "🏗️  Architecture: $(ARCH)"
+	@echo "🎯 Target: $(TARGET)"
+	@echo "🔧 Build ID: $(BUILD_ID)"
+	@echo "📁 Build Directory: $(BUILD_DIR)"
+	@echo "📂 Output Directory: $(ARCH_OUTPUT_DIR)"
+	@echo "🛠️  Cross Compiler: $(CC)"
+	@echo ""
+	@echo "📄 Output Files:"
+	@echo "  Kernel Image: $(ARCH_OUTPUT_DIR)/$(BUILD_ID).img"
+	@echo "  Debug ELF: $(ARCH_OUTPUT_DIR)/$(BUILD_ID).elf"
+ifeq ($(ARCH),x86_64)
+	@echo "  Bootable ISO: $(ARCH_OUTPUT_DIR)/$(BUILD_ID).iso"
+endif
+
+# Show current version
+version:
+	@echo "$(VERSION)"
+
+# List available architectures
+list-arch:
+	@echo "🏗️  Supported Architectures:"
+	@echo "  • i386     - 32-bit x86 (fully working)"
+	@echo "  • x86_64   - 64-bit x86 (partial - GRUB boots)"
+	@echo "  • aarch64  - 64-bit ARM (fully working)"
+	@echo "  • arm      - 32-bit ARM (builds successfully)"
+	@echo "  • riscv64  - 64-bit RISC-V (builds, OpenSBI loads)"
 
 # Create all architecture builds
 all-arch:
-	$(MAKE) ARCH=x86_64
-	$(MAKE) ARCH=aarch64
-	$(MAKE) ARCH=riscv64
+	@echo "🏗️  Building for all architectures..."
+	$(MAKE) ARCH=i386 TARGET=generic
+	$(MAKE) ARCH=aarch64 TARGET=generic
+	$(MAKE) ARCH=x86_64 TARGET=generic
+	$(MAKE) ARCH=riscv64 TARGET=generic
+	@echo "✅ All architectures built successfully!"
 
-# Show build information
-info:
-	@echo "SAGE OS Build Information"
-	@echo "------------------------"
-	@echo "Compiler: $(CC)"
-	@echo "Linker: $(LD)"
-	@echo "Object Copy: $(OBJCOPY)"
-	@echo "CFLAGS: $(CFLAGS)"
-	@echo "LDFLAGS: $(LDFLAGS)"
-	@echo "Source files: $(words $(SOURCES))"
-	@echo "Object files: $(words $(OBJECTS))"
+# Quick test targets using unified script
+test:
+	@echo "🧪 Testing $(ARCH) build in QEMU..."
+	@./scripts/testing/test-qemu.sh $(ARCH) $(TARGET)
+
+test-i386:
+	@./scripts/testing/test-qemu.sh i386 generic
+
+test-aarch64:
+	@./scripts/testing/test-qemu.sh aarch64 generic
+
+test-x86_64:
+	@./scripts/testing/test-qemu.sh x86_64 generic
+
+test-riscv64:
+	@./scripts/testing/test-qemu.sh riscv64 generic
+
+# Graphics mode testing (x86 only)
+test-graphics:
+	@echo "🖥️ Testing $(ARCH) build in QEMU graphics mode..."
+	@./scripts/testing/test-qemu.sh $(ARCH) $(TARGET) graphics
+
+test-i386-graphics:
+	@./scripts/testing/test-qemu.sh i386 generic graphics
+
+test-x86_64-graphics:
+	@./scripts/testing/test-qemu.sh x86_64 generic graphics
+
+# Help target
+help:
+	@echo "🚀 SAGE-OS Build System"
+	@echo "======================"
+	@echo ""
+	@echo "📋 Main Targets:"
+	@echo "  make [ARCH=arch] [TARGET=target]  - Build kernel for specified architecture"
+	@echo "  make iso                          - Create bootable ISO (x86_64 only)"
+	@echo "  make all-arch                     - Build for all architectures"
+	@echo ""
+	@echo "🧹 Cleaning:"
+	@echo "  make clean                        - Clean build directories"
+	@echo "  make clean-output                 - Clean output files"
+	@echo "  make clean-all                    - Full clean (everything)"
+	@echo ""
+	@echo "ℹ️  Information:"
+	@echo "  make info                         - Show build configuration"
+	@echo "  make version                      - Show current version"
+	@echo "  make list-arch                    - List supported architectures"
+	@echo ""
+	@echo "🧪 Testing:"
+	@echo "  make test                         - Test current ARCH/TARGET in QEMU"
+	@echo "  make test-i386                    - Test i386 build in QEMU"
+	@echo "  make test-aarch64                 - Test aarch64 build in QEMU"
+	@echo "  make test-x86_64                  - Test x86_64 build in QEMU"
+	@echo "  make test-riscv64                 - Test riscv64 build in QEMU"
+	@echo ""
+	@echo "🖥️ Graphics Mode Testing (x86 only):"
+	@echo "  make test-graphics                - Test current ARCH in graphics mode"
+	@echo "  make test-i386-graphics           - Test i386 in graphics mode"
+	@echo "  make test-x86_64-graphics         - Test x86_64 in graphics mode"
+	@echo ""
+	@echo "🔧 Direct Script Usage:"
+	@echo "  ./scripts/testing/test-qemu.sh <arch>     - Serial console mode"
+	@echo "  ./scripts/testing/test-qemu.sh <arch> <target> graphics - Graphics mode"
+	@echo ""
+	@echo "📝 Examples:"
+	@echo "  make ARCH=aarch64 TARGET=rpi5     - Build for Raspberry Pi 5"
+	@echo "  make ARCH=i386 TARGET=generic     - Build for generic i386"
+	@echo "  make test-i386-graphics           - Test i386 with VGA graphics and keyboard"
+	@echo ""
+	@echo "📖 Documentation:"
+	@echo "  See GRAPHICS_MODE_GUIDE.md for VGA graphics mode details"
+	@echo "  See PROJECT_STRUCTURE.md for project organization"
+	@echo "  make ARCH=x86_64 iso              - Build x86_64 and create ISO"
 
 # Alias targets
 kernel: $(BUILD_DIR)/kernel.elf
 image: $(BUILD_DIR)/kernel.img
 
-.PHONY: all clean all-arch info kernel image
+.PHONY: all clean clean-output clean-all all-arch info version list-arch help kernel image iso test test-i386 test-aarch64 test-x86_64 test-riscv64 test-graphics test-i386-graphics test-x86_64-graphics
