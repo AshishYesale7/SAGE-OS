@@ -46,7 +46,11 @@ endif
 
 # Architecture-specific toolchain configuration
 ifeq ($(ARCH),aarch64)
-    CROSS_PREFIX = aarch64-linux-gnu-
+    ifeq ($(HOST_OS),macos)
+        CROSS_PREFIX = aarch64-unknown-linux-gnu-
+    else
+        CROSS_PREFIX = aarch64-linux-gnu-
+    endif
     QEMU_ARCH = aarch64
     ifeq ($(PLATFORM),rpi4)
         QEMU_MACHINE = raspi3
@@ -57,7 +61,11 @@ ifeq ($(ARCH),aarch64)
     endif
     KERNEL_ARCH = arm64
 else ifeq ($(ARCH),arm)
-    CROSS_PREFIX = arm-linux-gnueabihf-
+    ifeq ($(HOST_OS),macos)
+        CROSS_PREFIX = arm-unknown-linux-gnueabihf-
+    else
+        CROSS_PREFIX = arm-linux-gnueabihf-
+    endif
     QEMU_ARCH = arm
     ifeq ($(PLATFORM),rpi4)
         QEMU_MACHINE = raspi2
@@ -68,7 +76,11 @@ else ifeq ($(ARCH),arm)
     endif
     KERNEL_ARCH = arm
 else ifeq ($(ARCH),x86_64)
-    CROSS_PREFIX = x86_64-linux-gnu-
+    ifeq ($(HOST_OS),macos)
+        CROSS_PREFIX = x86_64-unknown-linux-gnu-
+    else
+        CROSS_PREFIX = x86_64-linux-gnu-
+    endif
     QEMU_ARCH = x86_64
     QEMU_MACHINE = pc
     KERNEL_ARCH = x86_64
@@ -78,7 +90,11 @@ else ifeq ($(ARCH),i386)
     QEMU_MACHINE = pc
     KERNEL_ARCH = i386
 else ifeq ($(ARCH),riscv64)
-    CROSS_PREFIX = riscv64-linux-gnu-
+    ifeq ($(HOST_OS),macos)
+        CROSS_PREFIX = riscv64-unknown-linux-gnu-
+    else
+        CROSS_PREFIX = riscv64-linux-gnu-
+    endif
     QEMU_ARCH = riscv64
     QEMU_MACHINE = virt
     KERNEL_ARCH = riscv
@@ -127,7 +143,8 @@ ifeq ($(ARCH),aarch64)
 else ifeq ($(ARCH),arm)
     CFLAGS += -mcpu=cortex-a7 -mfpu=neon-vfpv4 -mfloat-abi=hard
 else ifeq ($(ARCH),x86_64)
-    CFLAGS += -m64 -mcmodel=kernel -mno-red-zone -mno-mmx -mno-sse -mno-sse2 -fno-pic
+    CFLAGS += -m32 -fno-pic -fno-stack-protector
+    LDFLAGS += -m elf_i386
 else ifeq ($(ARCH),i386)
     CFLAGS += -m32 -fno-pic -fno-stack-protector
 else ifeq ($(ARCH),riscv64)

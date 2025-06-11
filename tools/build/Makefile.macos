@@ -47,8 +47,8 @@ ifeq ($(MACOS),1)
     MACOS_CFLAGS := -Wno-unused-command-line-argument
 endif
 
-# Include main Makefile with macOS overrides
-include Makefile
+# Note: Don't include main Makefile to avoid circular dependency
+# Use this Makefile for macOS-specific setup only
 
 # macOS-specific targets
 .PHONY: macos-setup macos-check macos-install-deps
