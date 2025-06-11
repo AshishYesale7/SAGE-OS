@@ -1,0 +1,66 @@
+# AI-specific Python dependencies for SAGE-OS
+
+# Core AI and ML libraries
+torch>=2.1.0
+transformers>=4.35.0
+numpy>=1.25.0
+scikit-learn>=1.3.0
+tensorflow>=2.14.0
+
+# GitHub Models API integration
+requests>=2.31.0
+httpx>=0.25.0
+openai>=1.3.0
+
+# Natural language processing
+nltk>=3.8.1
+spacy>=3.7.0
+textblob>=0.17.1
+
+# Data processing for AI
+pandas>=2.1.0
+matplotlib>=3.8.0
+seaborn>=0.13.0
+plotly>=5.17.0
+
+# Computer vision (for future AI HAT integration)
+opencv-python>=4.8.0
+pillow>=10.1.0
+
+# Neural network utilities
+onnx>=1.15.0
+onnxruntime>=1.16.0
+
+# Model optimization
+optimum>=1.14.0
+
+# Security for AI models
+cryptography>=41.0.0
+
+# Configuration and utilities
+pyyaml>=6.0.1
+python-dotenv>=1.0.0
+rich>=13.6.0
+click>=8.1.7
+
+# Hardware interface for AI HAT
+pyserial>=3.5
+spidev>=3.6
+smbus2>=0.4.2
+RPi.GPIO>=0.7.1; platform_machine=="armv7l" or platform_machine=="aarch64"
+
+# Async support for AI operations
+asyncio>=3.4.3
+aiohttp>=3.9.0
+
+# Model serving and inference
+fastapi>=0.104.0
+uvicorn>=0.24.0
+
+# Monitoring and logging
+wandb>=0.16.0
+tensorboard>=2.15.0
+
+# Edge AI optimization
+tflite-runtime>=2.14.0
+onnxruntime-gpu>=1.16.0; platform_machine=="x86_64"

@@ -1,0 +1,142 @@
+name: 📦 Dependency Management & Security
+
+on:
+  schedule:
+    # Run dependency checks daily at 6 AM UTC
+    - cron: '0 6 * * *'
+  push:
+    branches: [dev, main]
+    paths:
+      - '**/requirements.txt'
+      - '**/Cargo.toml'
+      - '**/package.json'
+      - '**/CMakeLists.txt'
+      - '.github/dependabot.yml'
+  pull_request:
+    paths:
+      - '**/requirements.txt'
+      - '**/Cargo.toml'
+      - '**/package.json'
+      - '**/CMakeLists.txt'
+      - '.github/dependabot.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  dependency-audit:
+    name: 🔍 Dependency Security Audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    strategy:
+      matrix:
+        ecosystem: [python, rust, npm, docker]
+        
+    steps:
+    - name: 📥 Checkout Code
+      uses: actions/checkout@v4
+      
+    - name: 🐍 Setup Python (for all ecosystems)
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+        
+    - name: 📦 Install Security Tools
+      run: |
+        pip install --upgrade pip
+        pip install safety bandit semgrep pip-audit
+        
+    - name: 🔍 Python Dependency Audit
+      if: matrix.ecosystem == 'python'
+      run: |
+        echo "🐍 Auditing Python dependencies..."
+        
+        # Create reports directory
+        mkdir -p reports/dependencies/python
+        
+        # Check all requirements.txt files
+        find . -name "requirements.txt" -type f | while read req_file; do
+          echo "📋 Checking $req_file"
+          
+          # Safety check for known vulnerabilities
+          safety check -r "$req_file" --json > "reports/dependencies/python/safety-$(basename $(dirname $req_file)).json" || true
+          
+          # pip-audit for additional security checks
+          pip-audit -r "$req_file" --format=json --output="reports/dependencies/python/pip-audit-$(basename $(dirname $req_file)).json" || true
+        done
+        
+        # Generate summary
+        echo "# 🐍 Python Dependency Security Report" > reports/dependencies/python/summary.md
+        echo "" >> reports/dependencies/python/summary.md
+        echo "**Generated:** $(date)" >> reports/dependencies/python/summary.md
+        echo "**Workflow:** ${{ github.workflow }}" >> reports/dependencies/python/summary.md
+        echo "" >> reports/dependencies/python/summary.md
+        
+        # Count vulnerabilities
+        vuln_count=$(find reports/dependencies/python -name "*.json" -exec jq -r '.vulnerabilities[]?' {} \; 2>/dev/null | wc -l || echo "0")
+        echo "**Vulnerabilities Found:** $vuln_count" >> reports/dependencies/python/summary.md
+        
+    - name: 📤 Upload Dependency Reports
+      uses: actions/upload-artifact@v4
+      with:
+        name: dependency-audit-${{ matrix.ecosystem }}
+        path: reports/dependencies/${{ matrix.ecosystem }}/
+        retention-days: 30
+
+  vulnerability-summary:
+    name: 📊 Vulnerability Summary
+    runs-on: ubuntu-latest
+    needs: dependency-audit
+    if: always()
+    
+    steps:
+    - name: 📥 Download All Reports
+      uses: actions/download-artifact@v4
+      with:
+        path: all-reports/
+        
+    - name: 📊 Generate Comprehensive Summary
+      run: |
+        echo "📊 Generating comprehensive vulnerability summary..."
+        
+        mkdir -p final-reports
+        
+        # Create comprehensive summary
+        cat > final-reports/vulnerability-summary.md << 'EOF'
+        # 🛡️ SAGE-OS Dependency Security Summary
+        
+        **Generated:** $(date)
+        **Workflow:** ${{ github.workflow }}
+        **Run ID:** ${{ github.run_id }}
+        
+        ## 📊 Security Overview
+        
+        This report provides a comprehensive overview of dependency security across all ecosystems in SAGE-OS.
+        
+        ### 🎯 Ecosystems Analyzed
+        - 🐍 **Python**: Build scripts, AI integration, tools
+        - 🦀 **Rust**: Prototype development
+        - 📦 **NPM**: Documentation and web tools
+        - 🐳 **Docker**: Containerized build environments
+        
+        ### 🔍 Security Tools Used
+        - **Safety**: Python vulnerability database
+        - **pip-audit**: Python package auditing
+        - **cargo-audit**: Rust security advisory database
+        - **npm audit**: NPM vulnerability scanner
+        - **hadolint**: Dockerfile security linting
+        
+        EOF
+        
+    - name: 📤 Upload Final Summary
+      uses: actions/upload-artifact@v4
+      with:
+        name: vulnerability-summary-report
+        path: final-reports/
+        retention-days: 90

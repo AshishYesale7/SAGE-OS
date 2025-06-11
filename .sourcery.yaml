@@ -1,0 +1,133 @@
+# Sourcery AI Configuration for SAGE-OS
+# Automated code review and quality improvements
+
+# Project settings
+project_name: "SAGE-OS"
+description: "Self-Aware General Environment Operating System"
+
+# Code quality rules
+rules:
+  # Enable all default rules
+  default: true
+  
+  # Custom rules for embedded systems
+  embedded_systems:
+    - no-dynamic-allocation
+    - prefer-static-arrays
+    - check-buffer-bounds
+    - validate-pointer-arithmetic
+    - memory-leak-detection
+    
+  # Security rules
+  security:
+    - buffer-overflow-check
+    - integer-overflow-check
+    - format-string-validation
+    - input-sanitization
+    - privilege-escalation-check
+    
+  # Performance rules
+  performance:
+    - loop-optimization
+    - memory-access-patterns
+    - cache-efficiency
+    - branch-prediction
+    - inline-function-suggestions
+
+# File patterns to analyze
+include:
+  - "**/*.c"
+  - "**/*.h"
+  - "**/*.cpp"
+  - "**/*.hpp"
+  - "**/*.py"
+  - "**/*.rs"
+  - "**/*.S"
+  - "**/*.s"
+  - "**/*.asm"
+
+# File patterns to exclude
+exclude:
+  - "build/**"
+  - "output/**"
+  - "test-output/**"
+  - "*.img"
+  - "*.elf"
+  - "*.bin"
+  - "*.o"
+  - "*.a"
+  - "docs/build/**"
+  - "node_modules/**"
+  - ".git/**"
+
+# Language-specific settings
+languages:
+  c:
+    # C-specific rules for kernel development
+    rules:
+      - kernel-coding-style
+      - no-floating-point
+      - stack-usage-check
+      - interrupt-safety
+      - atomic-operations
+    standards:
+      - "C99"
+      - "MISRA-C:2012"
+    
+  python:
+    # Python rules for build scripts and tools
+    rules:
+      - pep8-compliance
+      - type-hints
+      - docstring-coverage
+      - security-best-practices
+    version: "3.11+"
+    
+  rust:
+    # Rust rules for prototype development
+    rules:
+      - memory-safety
+      - thread-safety
+      - error-handling
+      - performance-optimization
+    edition: "2021"
+
+# Review settings
+review:
+  # Auto-approve simple fixes
+  auto_approve:
+    - style-fixes
+    - documentation-improvements
+    - simple-refactoring
+    
+  # Require manual review for
+  manual_review:
+    - security-changes
+    - memory-management
+    - interrupt-handlers
+    - boot-code
+    - kernel-core
+    
+  # Comment settings
+  comments:
+    # Add explanatory comments for complex suggestions
+    explain_complex: true
+    # Include performance impact estimates
+    performance_impact: true
+    # Include security implications
+    security_notes: true
+
+# Integration settings
+integrations:
+  github:
+    # Enable GitHub integration
+    enabled: true
+    # Create pull request reviews
+    pull_request_reviews: true
+    # Add status checks
+    status_checks: true
+    # Label pull requests
+    labels:
+      - "code-quality"
+      - "automated-review"
+      - "sourcery"

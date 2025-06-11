@@ -1,0 +1,148 @@
+# Dependabot configuration for SAGE-OS
+# Automatically keeps dependencies up to date
+
+version: 2
+updates:
+  # GitHub Actions dependencies
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "Asadzero"
+    assignees:
+      - "Asadzero"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "github-actions"
+      - "automated"
+
+  # Docker dependencies
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+      time: "09:00"
+    open-pull-requests-limit: 3
+    reviewers:
+      - "Asadzero"
+    assignees:
+      - "Asadzero"
+    commit-message:
+      prefix: "docker"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "docker"
+      - "automated"
+
+  # Python dependencies (for scripts and tools)
+  - package-ecosystem: "pip"
+    directory: "/scripts"
+    schedule:
+      interval: "weekly"
+      day: "wednesday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "Asadzero"
+    assignees:
+      - "Asadzero"
+    commit-message:
+      prefix: "deps"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "python"
+      - "automated"
+
+  # Python dependencies for AI scripts
+  - package-ecosystem: "pip"
+    directory: "/scripts/ai"
+    schedule:
+      interval: "weekly"
+      day: "wednesday"
+      time: "10:00"
+    open-pull-requests-limit: 3
+    reviewers:
+      - "Asadzero"
+    assignees:
+      - "Asadzero"
+    commit-message:
+      prefix: "ai-deps"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "python"
+      - "ai-integration"
+      - "automated"
+
+  # Rust dependencies (for prototype)
+  - package-ecosystem: "cargo"
+    directory: "/prototype"
+    schedule:
+      interval: "weekly"
+      day: "thursday"
+      time: "09:00"
+    open-pull-requests-limit: 3
+    reviewers:
+      - "Asadzero"
+    assignees:
+      - "Asadzero"
+    commit-message:
+      prefix: "rust-deps"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "rust"
+      - "prototype"
+      - "automated"
+
+  # CMake dependencies (for SDK)
+  - package-ecosystem: "cmake"
+    directory: "/sage-sdk"
+    schedule:
+      interval: "monthly"
+      day: "first-monday"
+      time: "09:00"
+    open-pull-requests-limit: 2
+    reviewers:
+      - "Asadzero"
+    assignees:
+      - "Asadzero"
+    commit-message:
+      prefix: "cmake-deps"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "cmake"
+      - "sdk"
+      - "automated"
+
+  # NPM dependencies (for documentation)
+  - package-ecosystem: "npm"
+    directory: "/docs"
+    schedule:
+      interval: "weekly"
+      day: "friday"
+      time: "09:00"
+    open-pull-requests-limit: 3
+    reviewers:
+      - "Asadzero"
+    assignees:
+      - "Asadzero"
+    commit-message:
+      prefix: "docs-deps"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "npm"
+      - "documentation"
+      - "automated"
