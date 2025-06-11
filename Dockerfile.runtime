@@ -1,0 +1,61 @@
+FROM ubuntu:22.04
+
+# Set environment variables to avoid interactive prompts
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=UTC
+
+# Install dependencies for QEMU with graphics support
+RUN apt-get update --fix-missing && \
+    apt-get install -y --no-install-recommends \
+    qemu-system-x86 \
+    qemu-system-arm \
+    qemu-system-misc \
+    qemu-utils \
+    tigervnc-standalone-server \
+    tigervnc-common \
+    xvfb \
+    x11vnc \
+    fluxbox \
+    xterm \
+    curl \
+    wget \
+    socat \
+    netcat-openbsd \
+    build-essential \
+    gcc \
+    make \
+    nasm \
+    ca-certificates \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# Create sage user
+RUN useradd -m -s /bin/bash sage && \
+    mkdir -p /home/sage/.vnc /home/sage/sage-os
+
+# Set VNC password (default: sageos)
+RUN mkdir -p /home/sage/.vnc && \
+    echo "sageos" > /home/sage/.vnc/passwd && \
+    chmod 600 /home/sage/.vnc/passwd && \
+    chown -R sage:sage /home/sage/.vnc
+
+# Copy SAGE OS files
+COPY . /home/sage/sage-os/
+RUN chown -R sage:sage /home/sage/sage-os
+
+# Copy startup script template
+COPY start-sage-os-template.sh /home/sage/start-sage-os.sh
+
+
+RUN chmod +x /home/sage/start-sage-os.sh && \
+    chown sage:sage /home/sage/start-sage-os.sh
+
+# Switch to sage user
+USER sage
+WORKDIR /home/sage/sage-os
+
+# Expose VNC and monitor ports
+EXPOSE 5901 5700 1234
+
+# Default command
+CMD ["/home/sage/start-sage-os.sh", "vnc", "i386", "128M", "1234"]

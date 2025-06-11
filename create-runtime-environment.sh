@@ -159,12 +159,10 @@ RUN echo "sageos" | vncpasswd -f > /home/openhands/.vnc/passwd && \
     chown openhands:openhands /home/openhands/.vnc/passwd
 
 # Create VNC startup script
-RUN cat > /home/openhands/.vnc/xstartup << 'XSTART'
-#!/bin/bash
-unset SESSION_MANAGER
-unset DBUS_SESSION_BUS_ADDRESS
-exec fluxbox
-XSTART
+RUN echo '#!/bin/bash' > /home/openhands/.vnc/xstartup && \
+    echo 'unset SESSION_MANAGER' >> /home/openhands/.vnc/xstartup && \
+    echo 'unset DBUS_SESSION_BUS_ADDRESS' >> /home/openhands/.vnc/xstartup && \
+    echo 'exec fluxbox' >> /home/openhands/.vnc/xstartup
 
 RUN chmod +x /home/openhands/.vnc/xstartup && \
     chown openhands:openhands /home/openhands/.vnc/xstartup
@@ -220,136 +218,9 @@ SYSINFO
 
 RUN chmod +x /usr/local/bin/show-runtime-info
 
-# Create SAGE OS runner script
-RUN cat > /usr/local/bin/run-sage-os << 'RUNNER'
-#!/bin/bash
+# Copy SAGE OS runner script template
+COPY runtime-startup-template.sh /usr/local/bin/run-sage-os
 
-set -e
-
-# Configuration
-SAGE_OS_DIR="/workspace/SAGE-OS"
-VNC_DISPLAY=":1"
-VNC_PORT="5901"
-
-# Colors
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m'
-
-log_info() { echo -e "${BLUE}[INFO]${NC} $1"; }
-log_success() { echo -e "${GREEN}[SUCCESS]${NC} $1"; }
-log_warning() { echo -e "${YELLOW}[WARNING]${NC} $1"; }
-log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
-
-# Show environment
-show_environment() {
-    log_info "OpenHands Runtime Environment Replica"
-    log_info "====================================="
-    /usr/local/bin/show-runtime-info
-}
-
-# Start VNC server
-start_vnc() {
-    log_info "Starting VNC server..."
-    
-    # Kill existing VNC sessions
-    vncserver -kill $VNC_DISPLAY >/dev/null 2>&1 || true
-    
-    # Start VNC server
-    vncserver $VNC_DISPLAY \
-        -geometry 1024x768 \
-        -depth 24 \
-        -passwd /home/openhands/.vnc/passwd \
-        -localhost no
-    
-    log_success "VNC server started on port $VNC_PORT"
-    log_info "Connect via: vnc://localhost:$VNC_PORT"
-    log_info "Password: sageos"
-}
-
-# Find and run SAGE OS
-run_sage_os() {
-    local arch="${1:-i386}"
-    local memory="${2:-128M}"
-    local mode="${3:-vnc}"
-    
-    cd "$SAGE_OS_DIR" 2>/dev/null || {
-        log_error "SAGE-OS directory not found at $SAGE_OS_DIR"
-        log_info "Please mount SAGE-OS source code to /workspace/SAGE-OS"
-        return 1
-    }
-    
-    # Look for deployment scripts
-    if [[ -x "./deploy-sage-os-local.sh" ]]; then
-        log_info "Using local deployment script..."
-        ./deploy-sage-os-local.sh run -a "$arch" -m "$mode" -M "$memory"
-    elif [[ -x "./quick-start.sh" ]]; then
-        log_info "Using quick-start script..."
-        ./quick-start.sh
-    else
-        log_warning "No deployment scripts found. Attempting direct QEMU..."
-        
-        # Find kernel file
-        local kernel_file=""
-        if ls output/$arch/sage-os-v*.elf >/dev/null 2>&1; then
-            kernel_file=$(ls output/$arch/sage-os-v*.elf | head -1)
-        elif [[ -f "build/$arch/kernel.elf" ]]; then
-            kernel_file="build/$arch/kernel.elf"
-        else
-            log_error "No kernel file found. Please build SAGE OS first."
-            return 1
-        fi
-        
-        log_info "Found kernel: $kernel_file"
-        log_info "Starting QEMU..."
-        
-        case "$mode" in
-            "vnc")
-                qemu-system-i386 -kernel "$kernel_file" -m "$memory" -vga std -vnc $VNC_DISPLAY
-                ;;
-            "graphics")
-                qemu-system-i386 -kernel "$kernel_file" -m "$memory" -vga std
-                ;;
-            "text")
-                qemu-system-i386 -kernel "$kernel_file" -m "$memory" -nographic
-                ;;
-        esac
-    fi
-}
-
-# Main function
-main() {
-    local arch="${1:-i386}"
-    local memory="${2:-128M}"
-    local mode="${3:-vnc}"
-    
-    show_environment
-    echo
-    
-    case "$mode" in
-        "vnc")
-            start_vnc
-            sleep 2
-            run_sage_os "$arch" "$memory" "vnc"
-            ;;
-        "graphics"|"text")
-            run_sage_os "$arch" "$memory" "$mode"
-            ;;
-        *)
-            log_error "Unknown mode: $mode"
-            log_info "Usage: $0 [arch] [memory] [mode]"
-            log_info "  arch: i386, x86_64, aarch64, arm, riscv64"
-            log_info "  memory: 128M, 256M, 512M, etc."
-            log_info "  mode: vnc, graphics, text"
-            exit 1
-            ;;
-    esac
-}
-
-main "$@"
-RUNNER
 
 RUN chmod +x /usr/local/bin/run-sage-os
 
