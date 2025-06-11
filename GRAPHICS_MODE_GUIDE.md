@@ -1,230 +1,240 @@
-# SAGE-OS Graphics Mode Guide
+# 🖥️ SAGE-OS Graphics Mode Guide
 
-## Overview
+**Experience SAGE-OS with full graphics and keyboard interaction!**
 
-SAGE-OS now supports both **Serial Console Mode** and **VGA Graphics Mode** for x86 architectures (i386 and x86_64). The graphics mode provides a colorful VGA text interface with full keyboard input support.
+## 🎯 **What is Graphics Mode?**
 
-## Features
+SAGE-OS Graphics Mode provides:
+- ✅ **VGA text mode graphics** with colors and formatting
+- ✅ **Interactive keyboard input** for real-time shell interaction
+- ✅ **Beautiful ASCII art boot screen**
+- ✅ **Full command shell** with 7+ interactive commands
+- ✅ **Color-coded output** for better visual experience
+- ✅ **Real keyboard interaction** (not just simulated)
 
-### Serial Console Mode (Default)
-- Text-based interface via serial console
-- Works on all architectures (i386, aarch64, x86_64, riscv64)
-- Ideal for headless systems and debugging
-- Full shell with file system simulation
+## 🚀 **Quick Start**
 
-### VGA Graphics Mode (x86 only)
-- Colorful VGA text mode (80x25 characters)
-- Real keyboard input support
-- Interactive shell with color-coded output
-- Visual feedback and enhanced user experience
-- Supports both local display and VNC
-
-## Building and Testing
-
-### Quick Start
-
+### **Option 1: Using build.sh (Recommended)**
 ```bash
-# Test serial mode (default)
-make test-i386
+# Test graphics mode (15-second demo)
+./build.sh test-graphics
 
-# Test graphics mode
-make test-i386-graphics
-
-# Or use the script directly
-./scripts/test-qemu.sh i386 generic graphics
+# Run full graphics mode with VNC
+./build.sh graphics
 ```
 
-### Manual Building
-
+### **Option 2: Using dedicated script**
 ```bash
-# Build regular kernel (serial mode)
-make ARCH=i386 TARGET=generic
+# Run demo
+./run-graphics-mode.sh demo
 
-# Build graphics kernel
-./scripts/build-graphics.sh i386 generic
+# Run with VNC (remote access)
+./run-graphics-mode.sh vnc
+
+# Run with local graphics (macOS/Linux)
+./run-graphics-mode.sh local
 ```
 
-## Available Commands
-
-Both modes support the same command set, but graphics mode provides enhanced visual feedback:
-
-### Basic Commands
-- `help` - Show available commands (color-coded in graphics mode)
-- `version` - Display system information
-- `clear` - Clear screen (VGA clear in graphics mode)
-- `colors` - Test color display (graphics mode only)
-
-### System Commands
-- `reboot` - Restart the system
-- `exit` - Shutdown the system
-- `demo` - Run demonstration sequence (enhanced in graphics mode)
-
-### Interactive Features
-
-#### Graphics Mode Enhancements
-- **Color-coded prompts**: Green prompt, white input text
-- **Syntax highlighting**: Different colors for commands, output, errors
-- **Visual feedback**: Color changes for different types of information
-- **Backspace support**: Visual character deletion
-- **Real keyboard input**: Direct PS/2 keyboard support
-
-## Technical Details
-
-### Architecture Support
-
-| Architecture | Serial Mode | Graphics Mode |
-|--------------|-------------|---------------|
-| i386         | ✅ Full     | ✅ Full       |
-| x86_64       | ✅ Full     | ✅ Full       |
-| aarch64      | ✅ Full     | ❌ N/A        |
-| riscv64      | ✅ Partial  | ❌ N/A        |
-
-### Graphics Mode Implementation
-
-#### VGA Text Mode
-- **Resolution**: 80x25 characters
-- **Colors**: 16 foreground, 8 background colors
-- **Memory**: Direct VGA buffer access at 0xB8000
-- **Scrolling**: Automatic scroll when screen is full
-
-#### Keyboard Input
-- **Interface**: PS/2 keyboard controller
-- **Ports**: Data (0x60), Status (0x64)
-- **Mapping**: US QWERTY scancode to ASCII
-- **Features**: Key press/release detection, special key handling
-
-#### Color Scheme
-- **Prompt**: Light Green
-- **Input**: White
-- **Headers**: Light Cyan
-- **Warnings**: Light Brown/Yellow
-- **Errors**: Light Red
-- **Success**: Light Green
-
-## QEMU Testing Options
-
-### Serial Mode (Headless)
+### **Option 3: Manual QEMU**
 ```bash
-# Standard serial console
-./scripts/test-qemu.sh i386
+# Build graphics kernel first
+./scripts/graphics/build-graphics.sh i386
 
-# Direct QEMU command
-qemu-system-i386 -kernel output/i386/sage-os-v1.0.1-i386-generic.img -nographic
-```
+# Run with VNC
+qemu-system-i386 -kernel output/i386/sage-os-v1.0.1-i386-generic-graphics.img -vnc :0
 
-### Graphics Mode
-
-#### Option 1: VNC (Recommended for remote)
-```bash
-# Start with VNC server
-./scripts/test-qemu.sh i386 generic graphics
-
-# Connect with VNC viewer
-vncviewer localhost:5901
-```
-
-#### Option 2: Direct Display (Local only)
-```bash
-# Direct graphics output
+# Run with local graphics
 qemu-system-i386 -kernel output/i386/sage-os-v1.0.1-i386-generic-graphics.img
 ```
 
-#### Option 3: Serial + Graphics (Debug)
+## 🖥️ **Graphics Modes Explained**
+
+### **1. VNC Mode (Remote Access)**
+- **Best for**: Remote development, headless servers, cloud environments
+- **Access**: Connect VNC client to `localhost:5900`
+- **Advantages**: Works anywhere, no local display needed
+- **Command**: `./build.sh graphics` or `./run-graphics-mode.sh vnc`
+
+### **2. Local Graphics Mode**
+- **Best for**: Local development on macOS/Linux with display
+- **Access**: Direct graphics window opens
+- **Advantages**: Native performance, direct interaction
+- **Command**: `./run-graphics-mode.sh local`
+
+### **3. Demo Mode**
+- **Best for**: Quick testing, CI/CD, verification
+- **Access**: Text output in terminal
+- **Advantages**: Fast, no graphics setup needed
+- **Command**: `./build.sh test-graphics` or `./run-graphics-mode.sh demo`
+
+## 🎮 **Interactive Commands**
+
+Once SAGE-OS boots in graphics mode, you can use these commands:
+
+| Command | Description | Example Output |
+|---------|-------------|----------------|
+| `help` | Show all available commands | Lists all commands with descriptions |
+| `version` | Show system information | SAGE OS Version 1.0.1, Architecture: i386 |
+| `clear` | Clear the screen | Clears VGA display |
+| `colors` | Test color display | Shows all 16 VGA colors |
+| `demo` | Run system demo | File system, memory, AI subsystem demo |
+| `reboot` | Restart the system | Reboots via keyboard controller |
+| `exit` | Shutdown system | Clean shutdown with halt |
+
+## 🎨 **Graphics Features**
+
+### **Boot Screen**
+```
+  ███████╗ █████╗  ██████╗ ███████╗      ██████╗ ███████╗
+  ██╔════╝██╔══██╗██╔════╝ ██╔════╝     ██╔═══██╗██╔════╝
+  ███████╗███████║██║  ███╗█████╗       ██║   ██║███████╗
+  ╚════██║██╔══██║██║   ██║██╔══╝       ██║   ██║╚════██║
+  ███████║██║  ██║╚██████╔╝███████╗     ╚██████╔╝███████║
+  ╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝      ╚═════╝ ╚══════╝
+
+        Self-Aware General Environment Operating System
+                    Version 1.0.1
+                 Designed by Ashish Yesale
+```
+
+### **Interactive Shell**
+```
+sage@localhost:~$ help
+Available commands:
+  help     - Show this help message
+  version  - Show system version
+  clear    - Clear screen
+  colors   - Test color display
+  reboot   - Restart system
+  demo     - Run demo sequence
+  exit     - Shutdown system
+
+sage@localhost:~$ colors
+Color test:
+Color 00 Color 01 Color 02 Color 03 Color 04 Color 05 Color 06 Color 07 
+Color 08 Color 09 Color 10 Color 11 Color 12 Color 13 Color 14 Color 15 
+
+sage@localhost:~$ demo
+Running SAGE OS Demo Sequence...
+
+1. File System Operations:
+   Creating directory: /home/sage/documents
+   Creating file: welcome.txt
+   Writing content to file...
+   File operations completed successfully!
+
+2. Memory Management:
+   Total Memory: 128 MB
+   Used Memory: 4 MB
+   Free Memory: 124 MB
+   Memory allocation test: PASSED
+
+3. AI Subsystem:
+   Initializing neural networks...
+   Loading AI models...
+   AI subsystem ready for self-learning!
+
+Demo completed successfully!
+```
+
+## 🍎 **macOS M1 Usage**
+
+### **Quick Start on M1 Mac**
 ```bash
-# Both serial and graphics output
-qemu-system-i386 \
-  -kernel output/i386/sage-os-v1.0.1-i386-generic-graphics.img \
-  -serial stdio \
-  -vnc :1
+# Clone and setup
+git clone https://github.com/AshishYesale7/SAGE-OS.git
+cd SAGE-OS
+./build.sh setup-macos
+
+# Run graphics mode
+./build.sh graphics
 ```
 
-## File Structure
-
-```
-SAGE-OS/
-├── kernel/
-│   ├── kernel.c              # Serial mode kernel
-│   └── kernel_graphics.c     # Graphics mode kernel
-├── drivers/
-│   └── vga.c                 # VGA text mode driver
-├── scripts/
-│   ├── test-qemu.sh          # Unified testing script
-│   └── build-graphics.sh     # Graphics kernel builder
-└── output/
-    └── i386/
-        ├── sage-os-v1.0.1-i386-generic.img          # Serial mode
-        └── sage-os-v1.0.1-i386-generic-graphics.img # Graphics mode
-```
-
-## Troubleshooting
-
-### Graphics Mode Issues
-
-#### No Display Output
-- Ensure VNC viewer is connected to correct port (5901)
-- Check that graphics kernel was built correctly
-- Verify x86 architecture (graphics not supported on ARM/RISC-V)
-
-#### Keyboard Not Working
-- Make sure you're using the graphics kernel build
-- Check that QEMU has focus (click in QEMU window)
-- Verify PS/2 keyboard emulation is enabled
-
-#### Colors Not Showing
-- Confirm VGA driver is compiled and linked
-- Check terminal/VNC client color support
-- Verify VGA text mode initialization
-
-### Build Issues
-
-#### Graphics Kernel Build Fails
+### **VNC Connection on macOS**
 ```bash
-# Clean and rebuild
-make clean
-./scripts/build-graphics.sh i386 generic
+# Option 1: Built-in Screen Sharing
+open vnc://localhost:5900
+
+# Option 2: VNC Viewer app
+brew install --cask vnc-viewer
+# Then connect to localhost:5900
+
+# Option 3: Command line
+open -a "Screen Sharing" vnc://localhost:5900
 ```
 
-#### Missing Dependencies
+### **Local Graphics on macOS**
 ```bash
-# Install QEMU
-sudo apt-get install qemu-system-x86
+# Run with native macOS graphics window
+./run-graphics-mode.sh local
 
-# Install VNC viewer
-sudo apt-get install vncviewer
+# Graphics window opens directly
+# Use keyboard to interact with SAGE-OS
 ```
 
-## Development Notes
+## 🔧 **Technical Details**
 
-### Adding New Graphics Features
+### **Graphics Kernel Architecture**
+- **Kernel**: `kernel/kernel_graphics.c` - Standalone graphics-enabled kernel
+- **VGA Driver**: `drivers/vga.c` - VGA text mode with color support
+- **Keyboard Driver**: Built-in PS/2 keyboard support with scancode mapping
+- **Serial Output**: Dual output to both VGA and serial for debugging
 
-1. **Extend VGA driver** (`drivers/vga.c`)
-2. **Modify graphics kernel** (`kernel/kernel_graphics.c`)
-3. **Update build script** (`scripts/build-graphics.sh`)
-4. **Test both modes** to ensure compatibility
+### **Build Process**
+1. **Compile graphics kernel**: `kernel_graphics.c` with VGA and keyboard support
+2. **Link with VGA driver**: `drivers/vga.c` for display output
+3. **Create bootable image**: Multiboot-compliant kernel image
+4. **Output**: `output/i386/sage-os-v1.0.1-i386-generic-graphics.img`
 
-### Color Customization
+## 🐛 **Troubleshooting**
 
-Colors can be modified in `kernel/kernel_graphics.c`:
-```c
-vga_set_color(VGA_COLOR_LIGHT_GREEN | (VGA_COLOR_BLACK << 4));
+### **Common Issues**
+
+#### **"Graphics kernel not found"**
+```bash
+# Solution: Build graphics kernel
+./scripts/graphics/build-graphics.sh i386
 ```
 
-Available colors defined in `drivers/vga.h`:
-- VGA_COLOR_BLACK, VGA_COLOR_BLUE, VGA_COLOR_GREEN
-- VGA_COLOR_CYAN, VGA_COLOR_RED, VGA_COLOR_MAGENTA
-- VGA_COLOR_BROWN, VGA_COLOR_LIGHT_GREY, etc.
+#### **"VNC connection refused"**
+```bash
+# Check if QEMU is running
+ps aux | grep qemu
 
-## Future Enhancements
+# Restart with VNC
+./build.sh graphics
+```
 
-- [ ] Mouse support
-- [ ] Higher resolution graphics modes
-- [ ] Window management
-- [ ] Graphics primitives (lines, rectangles)
-- [ ] Bitmap font rendering
-- [ ] Multiple virtual terminals
+#### **"No keyboard input"**
+- **VNC**: Make sure VNC viewer has focus
+- **Local**: Click on QEMU window to focus
+- **Commands**: Type commands and press Enter
 
-## Conclusion
+## 📞 **Quick Reference**
 
-SAGE-OS graphics mode provides an enhanced user experience while maintaining compatibility with the serial console mode. The dual-mode approach ensures the OS works in both embedded/headless environments and desktop/development scenarios.
+### **Essential Commands**
+```bash
+# Build and test graphics
+./build.sh test-graphics
 
-For questions or issues, refer to the main project documentation or create an issue in the repository.
+# Run interactive graphics
+./build.sh graphics
+
+# Connect VNC (macOS)
+open vnc://localhost:5900
+
+# Manual run
+qemu-system-i386 -kernel output/i386/sage-os-v1.0.1-i386-generic-graphics.img -vnc :0
+```
+
+### **SAGE-OS Shell Commands**
+```
+help      # Show commands
+version   # System info
+colors    # Color test
+demo      # Run demo
+clear     # Clear screen
+exit      # Shutdown
+```
+
+**Your SAGE-OS graphics experience starts now! 🖥️✨**
