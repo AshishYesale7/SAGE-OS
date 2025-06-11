@@ -34,6 +34,8 @@ else ifeq ($(ARCH),arm64)
     CROSS_COMPILE=aarch64-linux-gnu-
 else ifeq ($(ARCH),aarch64)
     CROSS_COMPILE=aarch64-linux-gnu-
+else ifeq ($(ARCH),arm)
+    CROSS_COMPILE=arm-linux-gnueabihf-
 else ifeq ($(ARCH),riscv64)
     CROSS_COMPILE=riscv64-linux-gnu-
 else
