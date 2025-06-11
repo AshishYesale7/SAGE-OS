@@ -40,7 +40,7 @@ show_help() {
     echo "Usage: $0 [COMMAND] [ARCH]"
     echo ""
     echo "Commands:"
-    echo "  build [arch]     Build specific architecture (default: x86_64)"
+    echo "  build [arch]     Build specific architecture (default: i386)"
     echo "  test [arch]      Build and test in QEMU"
     echo "  all              Build all architectures"
     echo "  clean            Clean all build files"
@@ -48,25 +48,26 @@ show_help() {
     echo "  help             Show this help"
     echo ""
     echo "Architectures:"
-    echo "  x86_64           Intel/AMD 64-bit (fully working)"
+    echo "  i386             Intel/AMD 32-bit (fully working, default)"
+    echo "  x86_64           Intel/AMD 64-bit (build issues)"
     echo "  aarch64          ARM 64-bit (builds, hangs in QEMU)"
     echo "  arm              ARM 32-bit (builds, hangs in QEMU)"
     echo "  riscv64          RISC-V 64-bit (needs toolchain)"
     echo ""
     echo "Examples:"
-    echo "  $0 build                # Build x86_64"
+    echo "  $0 build                # Build i386"
     echo "  $0 build aarch64        # Build ARM64"
-    echo "  $0 test                 # Build and test x86_64"
+    echo "  $0 test                 # Build and test i386"
     echo "  $0 all                  # Build all architectures"
     echo ""
 }
 
 # Build single architecture
 build_arch() {
-    local arch=${1:-x86_64}
+    local arch=${1:-i386}
     print_info "Building $arch..."
     
-    if make -f Makefile.simple ARCH=$arch; then
+    if make ARCH=$arch; then
         print_success "$arch built successfully!"
         
         # Show kernel info
@@ -84,7 +85,7 @@ build_arch() {
 
 # Test in QEMU
 test_arch() {
-    local arch=${1:-x86_64}
+    local arch=${1:-i386}
     print_info "Testing $arch in QEMU..."
     
     if ! build_arch $arch; then
@@ -92,7 +93,7 @@ test_arch() {
     fi
     
     print_info "Starting QEMU test (10 second timeout)..."
-    make -f Makefile.simple test ARCH=$arch
+    make test ARCH=$arch
 }
 
 # Build all architectures
@@ -132,7 +133,7 @@ build_all() {
 # Clean builds
 clean_all() {
     print_info "Cleaning all build files..."
-    make -f Makefile.simple clean
+    make clean
     print_success "Build files cleaned!"
 }
 
