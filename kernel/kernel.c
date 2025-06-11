@@ -1,6 +1,7 @@
 /* SAGE OS Kernel - Standalone Version */
 
 #include "../drivers/vga.h"
+#include "../drivers/serial.h"
 
 #if defined(__x86_64__) || defined(__i386__)
 // I/O port functions for x86
@@ -46,27 +47,10 @@ char keyboard_getchar() {
     return scancode_to_ascii[scancode];
 }
 
-// Serial port functions for x86
-void serial_init() {
-    outb(0x3F8 + 1, 0x00);    // Disable interrupts
-    outb(0x3F8 + 3, 0x80);    // Enable DLAB
-    outb(0x3F8 + 0, 0x03);    // Set divisor to 3 (38400 baud)
-    outb(0x3F8 + 1, 0x00);    // High byte
-    outb(0x3F8 + 3, 0x03);    // 8 bits, no parity, one stop bit
-    outb(0x3F8 + 2, 0xC7);    // Enable FIFO
-    outb(0x3F8 + 4, 0x0B);    // IRQs enabled, RTS/DSR set
-}
-
-void serial_putc(char c) {
-    while ((inb(0x3F8 + 5) & 0x20) == 0);
-    outb(0x3F8, c);
-}
-
-void serial_puts(const char* str) {
-    while (*str) {
-        serial_putc(*str++);
-    }
-}
+// Serial port functions for x86 - forward declarations
+void serial_init(void);
+void serial_putc(char c);
+void serial_puts(const char* str);
 
 #elif defined(__aarch64__)
 // AArch64 UART functions for QEMU virt machine
@@ -83,21 +67,10 @@ static inline unsigned int mmio_read(unsigned long addr) {
     return *(volatile unsigned int*)addr;
 }
 
-void serial_init() {
-    // UART is already initialized by QEMU
-}
-
-void serial_putc(char c) {
-    // Wait until transmit FIFO is not full
-    while (mmio_read(UART_FR) & UART_FR_TXFF);
-    mmio_write(UART_DR, c);
-}
-
-void serial_puts(const char* str) {
-    while (*str) {
-        serial_putc(*str++);
-    }
-}
+// AArch64 UART functions - forward declarations
+void serial_init(void);
+void serial_putc(char c);
+void serial_puts(const char* str);
 
 #elif defined(__riscv)
 // RISC-V UART functions for QEMU virt machine
@@ -114,37 +87,16 @@ static inline unsigned char mmio_read_8(unsigned long addr) {
     return *(volatile unsigned char*)addr;
 }
 
-void serial_init() {
-    // UART is already initialized by QEMU
-}
-
-void serial_putc(char c) {
-    // Wait until transmit holding register is empty
-    while (!(mmio_read_8(UART_LSR) & UART_LSR_THRE));
-    mmio_write_8(UART_THR, c);
-}
-
-void serial_puts(const char* str) {
-    while (*str) {
-        serial_putc(*str++);
-    }
-}
+// RISC-V UART functions - forward declarations
+void serial_init(void);
+void serial_putc(char c);
+void serial_puts(const char* str);
 
 #else
-// Generic ARM/other architectures - placeholder
-void serial_init() {
-    // Generic serial initialization
-}
-
-void serial_putc(char c) {
-    // Generic serial output - do nothing for now
-    (void)c;
-}
-
-void serial_puts(const char* str) {
-    // Generic serial output - do nothing for now
-    (void)str;
-}
+// Generic ARM/other architectures - forward declarations
+void serial_init(void);
+void serial_putc(char c);
+void serial_puts(const char* str);
 #endif
 
 // Unified output functions that write to both VGA and serial
