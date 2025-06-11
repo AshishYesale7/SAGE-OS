@@ -42,6 +42,8 @@ show_help() {
     echo "Commands:"
     echo "  build [arch]     Build specific architecture (default: i386)"
     echo "  test [arch]      Build and test in QEMU"
+    echo "  graphics         Build and run graphics mode with VNC"
+    echo "  test-graphics    Test graphics mode (10 second demo)"
     echo "  all              Build all architectures"
     echo "  clean            Clean all build files"
     echo "  setup-macos      Install macOS dependencies"
@@ -58,6 +60,8 @@ show_help() {
     echo "  $0 build                # Build i386"
     echo "  $0 build aarch64        # Build ARM64"
     echo "  $0 test                 # Build and test i386"
+    echo "  $0 graphics             # Run graphics mode with VNC"
+    echo "  $0 test-graphics        # Test graphics mode"
     echo "  $0 all                  # Build all architectures"
     echo ""
 }
@@ -160,6 +164,58 @@ setup_macos() {
     print_success "macOS setup completed!"
 }
 
+# Build graphics kernel and run interactively
+build_graphics_interactive() {
+    print_info "Building and starting graphics mode for i386..."
+    
+    # Build graphics kernel
+    print_info "Building graphics kernel..."
+    if ! ./scripts/graphics/build-graphics.sh i386; then
+        print_error "Graphics build failed"
+        return 1
+    fi
+    
+    print_success "Graphics kernel built successfully!"
+    echo ""
+    print_info "🖥️  Starting SAGE-OS in graphics mode..."
+    print_info "🔗  VNC server will be available on localhost:5900"
+    print_info "📱  Connect with VNC viewer to see the graphics interface"
+    print_info "⌨️  Use keyboard in VNC to interact with SAGE-OS shell"
+    print_info "🛑  Press Ctrl+C to stop the server"
+    echo ""
+    
+    # Start QEMU with VNC
+    qemu-system-i386 -kernel output/i386/sage-os-v1.0.1-i386-generic-graphics.img -vnc :0 -no-reboot
+}
+
+# Test graphics kernel
+test_graphics() {
+    print_info "Testing graphics mode for i386 (10 second demo)..."
+    
+    # Build graphics kernel
+    print_info "Building graphics kernel..."
+    if ! ./scripts/graphics/build-graphics.sh i386; then
+        print_error "Graphics build failed"
+        return 1
+    fi
+    
+    print_success "Graphics kernel built successfully!"
+    print_info "Running 10-second graphics test..."
+    print_info "This will show text output of the graphics kernel"
+    echo ""
+    
+    # Test with timeout
+    timeout 10s qemu-system-i386 -kernel output/i386/sage-os-v1.0.1-i386-generic-graphics.img -nographic -no-reboot || true
+    
+    echo ""
+    print_success "Graphics test completed!"
+    echo ""
+    print_info "💡 To run full graphics mode with VNC:"
+    print_info "   ./build.sh graphics"
+    print_info "💡 To run graphics mode manually:"
+    print_info "   qemu-system-i386 -kernel output/i386/sage-os-v1.0.1-i386-generic-graphics.img -vnc :0"
+}
+
 # Main script
 main() {
     case "${1:-help}" in
@@ -182,6 +238,14 @@ main() {
         "setup-macos")
             print_header
             setup_macos
+            ;;
+        "graphics")
+            print_header
+            build_graphics_interactive
+            ;;
+        "test-graphics")
+            print_header
+            test_graphics
             ;;
         "help"|"-h"|"--help")
             show_help
