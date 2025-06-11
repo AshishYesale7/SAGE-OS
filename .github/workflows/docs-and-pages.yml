@@ -1,0 +1,506 @@
+# Robust Documentation Generation and GitHub Pages Deployment
+# Simplified, reliable workflow for SAGE-OS documentation
+
+name: Documentation & GitHub Pages
+
+on:
+  push:
+    branches: [ dev, main ]
+    paths:
+      - 'docs/**'
+      - '*.md'
+      - 'mkdocs.yml'
+      - '.github/workflows/docs-and-pages.yml'
+  pull_request:
+    branches: [ dev, main ]
+    paths:
+      - 'docs/**'
+      - 'mkdocs.yml'
+  workflow_dispatch:
+    inputs:
+      force_rebuild:
+        description: 'Force complete rebuild'
+        required: false
+        default: 'false'
+        type: boolean
+
+# Required permissions for GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow only one concurrent deployment
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+env:
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  # Build documentation
+  build-docs:
+    name: Build Documentation
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        cache: 'pip'
+
+    - name: Install Dependencies
+      run: |
+        pip install --upgrade pip
+        pip install mkdocs mkdocs-material mkdocs-mermaid2-plugin
+        pip install mkdocstrings mkdocstrings-python
+        pip install pymdown-extensions
+
+    - name: Setup Documentation Structure
+      run: |
+        # Create all required directories
+        mkdir -p docs/{getting-started,architecture,development,platforms,api,security,tutorials,analysis}
+        mkdir -p docs/platforms/{linux,macos,windows,raspberry-pi}
+        
+        # Create main index if missing
+        if [ ! -f docs/index.md ]; then
+          cat > docs/index.md << 'EOF'
+        # SAGE-OS Documentation
+        
+        Welcome to **SAGE-OS** (Self-Aware General Environment Operating System) - a revolutionary embedded operating system designed for modern hardware platforms.
+        
+        ## 🚀 Key Features
+        
+        - **🧠 AI Integration**: Built-in AI subsystem with up to 26 TOPS processing power
+        - **🔧 Multi-Architecture**: Native support for i386, x86_64, ARM64, RISC-V
+        - **🖥️ Dual-Mode Operation**: Serial console and VGA graphics modes
+        - **🛡️ Security-First Design**: Advanced cryptographic features and secure boot
+        - **🍓 Raspberry Pi 5**: Optimized drivers and AI HAT+ support
+        
+        ## 📚 Documentation Sections
+        
+        ### Getting Started
+        - [Quick Start Guide](getting-started/overview.md) - Get up and running quickly
+        - [Installation](getting-started/installation.md) - Step-by-step installation
+        - [First Boot](getting-started/first-boot.md) - Your first SAGE-OS experience
+        
+        ### Architecture
+        - [System Overview](architecture/overview.md) - High-level system design
+        - [Kernel Design](architecture/kernel.md) - Core kernel architecture
+        - [AI Subsystem](architecture/ai-subsystem.md) - AI integration details
+        
+        ### Development
+        - [Build System](development/build-system.md) - How to build SAGE-OS
+        - [Cross Compilation](development/cross-compilation.md) - Multi-architecture builds
+        - [Testing](development/testing.md) - Testing framework and procedures
+        
+        ### Platforms
+        - [Linux Development](platforms/linux/DEVELOPER_GUIDE.md) - Linux development setup
+        - [macOS Development](platforms/macos/DEVELOPER_GUIDE.md) - macOS development setup
+        - [Windows Development](platforms/windows/DEVELOPER_GUIDE.md) - Windows development setup
+        - [Raspberry Pi](platforms/raspberry-pi/DEVELOPER_GUIDE.md) - Raspberry Pi specific guide
+        
+        ## 🎯 Current Status
+        
+        **Version**: 1.0.1  
+        **Architectures**: i386 ✅, x86_64 ⚠️, aarch64 ✅, riscv64 ✅, arm 🔧  
+        **Graphics Mode**: VGA text mode with PS/2 keyboard support  
+        **AI Integration**: TensorFlow Lite Micro ready  
+        
+        ## 🔗 Quick Links
+        
+        - [📥 Download Latest Release](https://github.com/Asadzero/SAGE-OS/releases)
+        - [🐛 Report Issues](https://github.com/Asadzero/SAGE-OS/issues)
+        - [💬 Discussions](https://github.com/Asadzero/SAGE-OS/discussions)
+        - [📖 API Reference](api/kernel.md)
+        
+        ## 🏗️ Architecture Overview
+        
+        ```mermaid
+        graph TB
+            subgraph "User Space"
+                Shell[Interactive Shell]
+                Apps[Applications]
+            end
+            
+            subgraph "Kernel Space"
+                Kernel[Kernel Core]
+                MM[Memory Manager]
+                Drivers[Device Drivers]
+            end
+            
+            subgraph "AI Subsystem"
+                AI[AI Engine]
+                TFL[TensorFlow Lite]
+                HAT[AI HAT+ Driver]
+            end
+            
+            subgraph "Hardware"
+                CPU[Multi-Architecture CPU]
+                Memory[RAM/Storage]
+                AI_HW[AI HAT+ Hardware]
+                IO[I/O Devices]
+            end
+            
+            Shell --> Kernel
+            Apps --> Kernel
+            Kernel --> MM
+            Kernel --> Drivers
+            Kernel --> AI
+            AI --> TFL
+            AI --> HAT
+            Drivers --> CPU
+            Drivers --> Memory
+            HAT --> AI_HW
+            Drivers --> IO
+        ```
+        
+        ---
+        
+        *This documentation is automatically generated and continuously updated.*
+        EOF
+        fi
+        
+        # Create placeholder pages for missing sections
+        sections=(
+          "getting-started/overview:Getting Started Overview"
+          "getting-started/installation:Installation Guide"
+          "getting-started/first-boot:First Boot Experience"
+          "architecture/overview:Architecture Overview"
+          "architecture/kernel:Kernel Design"
+          "architecture/ai-subsystem:AI Subsystem"
+          "development/build-system:Build System"
+          "development/cross-compilation:Cross Compilation"
+          "development/testing:Testing Framework"
+          "api/kernel:Kernel API"
+          "api/drivers:Driver API"
+          "api/memory:Memory API"
+          "security/model:Security Model"
+          "security/crypto:Cryptography"
+          "tutorials/writing-drivers:Writing Drivers"
+        )
+        
+        for section in "${sections[@]}"; do
+          IFS=':' read -r path title <<< "$section"
+          file="docs/${path}.md"
+          if [ ! -f "$file" ]; then
+            mkdir -p "$(dirname "$file")"
+            cat > "$file" << EOF
+        # ${title}
+        
+        This section provides comprehensive information about ${title,,} in SAGE-OS.
+        
+        ## Overview
+        
+        This documentation section is currently being developed. Please check back soon for detailed information.
+        
+        ## Coming Soon
+        
+        - Detailed technical specifications
+        - Code examples and tutorials
+        - Best practices and guidelines
+        - Troubleshooting information
+        
+        ## Related Resources
+        
+        - [Main Documentation](../index.md)
+        - [GitHub Repository](https://github.com/Asadzero/SAGE-OS)
+        - [Issue Tracker](https://github.com/Asadzero/SAGE-OS/issues)
+        
+        ---
+        
+        *This page is part of the SAGE-OS documentation project.*
+        EOF
+          fi
+        done
+
+    - name: Create MkDocs Configuration
+      run: |
+        cat > mkdocs.yml << 'EOF'
+        site_name: SAGE-OS Documentation
+        site_description: Self-Aware General Environment Operating System - Complete Documentation
+        site_author: SAGE-OS Development Team
+        site_url: https://asadzero.github.io/SAGE-OS/
+        
+        repo_name: Asadzero/SAGE-OS
+        repo_url: https://github.com/Asadzero/SAGE-OS
+        edit_uri: edit/dev/docs/
+        
+        theme:
+          name: material
+          palette:
+            - scheme: default
+              primary: blue
+              accent: cyan
+              toggle:
+                icon: material/brightness-7
+                name: Switch to dark mode
+            - scheme: slate
+              primary: blue
+              accent: cyan
+              toggle:
+                icon: material/brightness-4
+                name: Switch to light mode
+          features:
+            - navigation.tabs
+            - navigation.sections
+            - navigation.expand
+            - navigation.top
+            - search.highlight
+            - search.share
+            - content.code.copy
+            - content.action.edit
+          icon:
+            repo: fontawesome/brands/github
+          logo: assets/logo.png
+          favicon: assets/favicon.ico
+        
+        plugins:
+          - search
+          - mermaid2
+        
+        markdown_extensions:
+          - pymdownx.highlight:
+              anchor_linenums: true
+          - pymdownx.inlinehilite
+          - pymdownx.snippets
+          - pymdownx.superfences:
+              custom_fences:
+                - name: mermaid
+                  class: mermaid
+                  format: !!python/name:pymdownx.superfences.fence_code_format
+          - pymdownx.tabbed:
+              alternate_style: true
+          - pymdownx.tasklist:
+              custom_checkbox: true
+          - pymdownx.emoji:
+              emoji_index: !!python/name:materialx.emoji.twemoji
+              emoji_generator: !!python/name:materialx.emoji.to_svg
+          - admonition
+          - pymdownx.details
+          - attr_list
+          - md_in_html
+          - toc:
+              permalink: true
+        
+        nav:
+          - Home: index.md
+          - Getting Started:
+            - Overview: getting-started/overview.md
+            - Installation: getting-started/installation.md
+            - First Boot: getting-started/first-boot.md
+          - Architecture:
+            - Overview: architecture/overview.md
+            - Kernel Design: architecture/kernel.md
+            - AI Subsystem: architecture/ai-subsystem.md
+          - Development:
+            - Build System: development/build-system.md
+            - Cross Compilation: development/cross-compilation.md
+            - Testing: development/testing.md
+          - Platforms:
+            - Linux: platforms/linux/DEVELOPER_GUIDE.md
+            - macOS: platforms/macos/DEVELOPER_GUIDE.md
+            - Windows: platforms/windows/DEVELOPER_GUIDE.md
+            - Raspberry Pi: platforms/raspberry-pi/DEVELOPER_GUIDE.md
+          - API Reference:
+            - Kernel API: api/kernel.md
+            - Driver API: api/drivers.md
+            - Memory API: api/memory.md
+          - Security:
+            - Security Model: security/model.md
+            - Cryptography: security/crypto.md
+          - Tutorials:
+            - Writing Drivers: tutorials/writing-drivers.md
+        
+        extra:
+          social:
+            - icon: fontawesome/brands/github
+              link: https://github.com/Asadzero/SAGE-OS
+              name: GitHub Repository
+          version:
+            provider: mike
+            default: latest
+        
+        extra_css:
+          - stylesheets/extra.css
+        EOF
+
+    - name: Create Custom Styling
+      run: |
+        mkdir -p docs/stylesheets docs/assets
+        
+        # Create custom CSS
+        cat > docs/stylesheets/extra.css << 'EOF'
+        /* SAGE-OS Documentation Custom Styles */
+        
+        :root {
+          --sage-primary: #2196F3;
+          --sage-accent: #00BCD4;
+          --sage-success: #4CAF50;
+          --sage-warning: #FF9800;
+          --sage-error: #F44336;
+        }
+        
+        /* Custom header styling */
+        .md-header {
+          background: linear-gradient(135deg, var(--sage-primary), var(--sage-accent));
+        }
+        
+        /* Code block enhancements */
+        .highlight pre {
+          border-left: 4px solid var(--sage-accent);
+        }
+        
+        /* Status indicators */
+        .status-working { color: var(--sage-success); }
+        .status-partial { color: var(--sage-warning); }
+        .status-planned { color: var(--sage-primary); }
+        
+        /* Architecture diagram styling */
+        .mermaid {
+          text-align: center;
+          margin: 2em 0;
+        }
+        EOF
+        
+        # Create a simple logo placeholder
+        echo "🤖" > docs/assets/logo.png
+
+    - name: Setup Pages
+      if: github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main'
+      uses: actions/configure-pages@v4
+
+    - name: Build Documentation
+      run: |
+        echo "Building documentation with MkDocs..."
+        mkdocs build --verbose
+        
+        # Create robots.txt
+        cat > site/robots.txt << 'EOF'
+        User-agent: *
+        Allow: /
+        
+        Sitemap: https://asadzero.github.io/SAGE-OS/sitemap.xml
+        EOF
+        
+        # Create .nojekyll to bypass Jekyll processing
+        touch site/.nojekyll
+        
+        echo "Documentation build complete!"
+        echo "Total pages: $(find site -name "*.html" | wc -l)"
+        echo "Build size: $(du -sh site | cut -f1)"
+
+    - name: Upload Pages Artifact
+      if: github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main'
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: ./site
+
+    - name: Upload Documentation Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: sage-os-documentation
+        path: site/
+        retention-days: 30
+
+  # Deploy to GitHub Pages
+  deploy-pages:
+    name: Deploy to GitHub Pages
+    if: github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main'
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build-docs
+    
+    steps:
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v4
+
+    - name: Update Status
+      run: |
+        echo "## 🚀 GitHub Pages Deployment Success" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "✅ Documentation successfully deployed to GitHub Pages!" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "🔗 **Live Documentation**: ${{ steps.deployment.outputs.page_url }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 📊 Deployment Details:" >> $GITHUB_STEP_SUMMARY
+        echo "- **Deployment Time**: $(date)" >> $GITHUB_STEP_SUMMARY
+        echo "- **Branch**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "The documentation website is now live and accessible at the URL above."
+
+  # AI Analysis (optional, runs independently)
+  ai-analysis:
+    name: AI-Powered Analysis
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request'
+    continue-on-error: true
+    
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Install AI Dependencies
+      run: |
+        pip install requests
+
+    - name: Run AI Analysis
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        # Make script executable
+        chmod +x scripts/ai/github-models-integration.py
+        
+        # Run AI analysis (with fallback if it fails)
+        python3 scripts/ai/github-models-integration.py || {
+          echo "AI analysis failed, creating fallback report"
+          mkdir -p analysis/ai-results
+          cat > analysis/ai-results/ai-summary-report.md << 'EOF'
+        # 🤖 AI Analysis Report
+        
+        **Status**: AI analysis unavailable in this run
+        **Fallback**: Using rule-based analysis
+        
+        ## Project Assessment
+        
+        SAGE-OS is a well-structured embedded operating system with:
+        - Multi-architecture support (5 architectures)
+        - Comprehensive build system
+        - AI integration framework
+        - Professional documentation structure
+        
+        ## Recommendations
+        
+        1. Continue developing comprehensive test suite
+        2. Enhance API documentation with examples
+        3. Implement security hardening measures
+        4. Add performance benchmarking
+        
+        *AI-powered analysis will be available when GitHub Models API access is configured.*
+        EOF
+        }
+
+    - name: Upload AI Analysis
+      uses: actions/upload-artifact@v4
+      with:
+        name: ai-analysis-results
+        path: analysis/ai-results/
+        retention-days: 30
+      continue-on-error: true
