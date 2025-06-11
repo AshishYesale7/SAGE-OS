@@ -123,7 +123,7 @@ void display_welcome_message() {
     serial_puts("  ╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝      ╚═════╝ ╚══════╝\n");
     serial_puts("\n");
     serial_puts("        Self-Aware General Environment Operating System\n");
-    serial_puts("                    Version 1.0.0\n");
+    serial_puts("                    Version 1.0.1\n");
     serial_puts("                 Designed by Ashish Yesale\n");
     serial_puts("\n");
     serial_puts("================================================================\n");
@@ -160,10 +160,22 @@ void simple_shell() {
     serial_puts("  exit     - Shutdown system\n\n");
     
     serial_puts("sage@localhost:~$ version\n");
-    serial_puts("SAGE OS Version 1.0.0\n");
-    serial_puts("Built on: 2025-05-28\n");
-    serial_puts("Kernel: SAGE Kernel v1.0.0\n");
-    serial_puts("Architecture: i386\n\n");
+    serial_puts("SAGE OS Version 1.0.1\n");
+    serial_puts("Built on: 2025-06-11\n");
+    serial_puts("Kernel: SAGE Kernel v1.0.1\n");
+    serial_puts("Architecture: ");
+#if defined(__x86_64__)
+    serial_puts("x86_64");
+#elif defined(__i386__)
+    serial_puts("i386");
+#elif defined(__aarch64__)
+    serial_puts("aarch64");
+#elif defined(__riscv) && (__riscv_xlen == 64)
+    serial_puts("riscv64");
+#else
+    serial_puts("unknown");
+#endif
+    serial_puts("\n\n");
     
     serial_puts("sage@localhost:~$ ls\n");
     serial_puts("total 8\n");

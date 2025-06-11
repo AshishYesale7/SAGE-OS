@@ -15,8 +15,8 @@ TARGET ?= generic
 # Get version from VERSION file or use default
 VERSION := $(shell cat VERSION 2>/dev/null || echo "1.0.0")
 
-# Generate clean build identifier using version manager
-BUILD_ID := $(shell ./scripts/version-manager.sh build-id $(ARCH) $(TARGET) 2>/dev/null || echo "sage-os-v$(VERSION)-$(ARCH)-$(TARGET)")
+# Generate simple build identifier
+BUILD_ID := sage-os-v$(VERSION)-$(ARCH)-$(TARGET)
 
 # Clean output directory structure
 OUTPUT_DIR := output
@@ -153,17 +153,14 @@ clean:
 	rm -rf build/
 	@echo "✅ Build directories cleaned"
 
-# Clean output directories (keeps last 5 builds per architecture)
+# Clean output directories
 clean-output:
-	@echo "🧹 Cleaning old output files..."
-	@./scripts/version-manager.sh clean $(ARCH) || true
-	@echo "✅ Old output files cleaned (kept last 5 builds)"
+	@echo "🧹 Cleaning output files..."
+	rm -rf $(OUTPUT_DIR)/
+	@echo "✅ Output files cleaned"
 
 # Full clean (everything)
-clean-all: clean
-	@echo "🧹 Performing full clean..."
-	rm -rf $(OUTPUT_DIR)/
-	rm -f .build_number
+clean-all: clean clean-output
 	@echo "✅ Full clean completed"
 
 # Create ISO image (x86_64 only)
@@ -230,14 +227,22 @@ all-arch:
 	$(MAKE) ARCH=riscv64 TARGET=generic
 	@echo "✅ All architectures built successfully!"
 
-# Quick test targets
+# Quick test targets using unified script
+test:
+	@echo "🧪 Testing $(ARCH) build in QEMU..."
+	@./scripts/test-qemu.sh $(ARCH) $(TARGET)
+
 test-i386:
-	@echo "🧪 Testing i386 build in QEMU..."
-	qemu-system-i386 -kernel $(ARCH_OUTPUT_DIR)/$(shell ./scripts/version-manager.sh build-id i386 generic).img -nographic
+	@./scripts/test-qemu.sh i386 generic
 
 test-aarch64:
-	@echo "🧪 Testing aarch64 build in QEMU..."
-	qemu-system-aarch64 -M virt -cpu cortex-a72 -kernel $(ARCH_OUTPUT_DIR)/$(shell ./scripts/version-manager.sh build-id aarch64 generic).img -nographic
+	@./scripts/test-qemu.sh aarch64 generic
+
+test-x86_64:
+	@./scripts/test-qemu.sh x86_64 generic
+
+test-riscv64:
+	@./scripts/test-qemu.sh riscv64 generic
 
 # Help target
 help:
@@ -251,7 +256,7 @@ help:
 	@echo ""
 	@echo "🧹 Cleaning:"
 	@echo "  make clean                        - Clean build directories"
-	@echo "  make clean-output                 - Clean old output files (keep last 5)"
+	@echo "  make clean-output                 - Clean output files"
 	@echo "  make clean-all                    - Full clean (everything)"
 	@echo ""
 	@echo "ℹ️  Information:"
@@ -260,8 +265,12 @@ help:
 	@echo "  make list-arch                    - List supported architectures"
 	@echo ""
 	@echo "🧪 Testing:"
+	@echo "  make test                         - Test current ARCH/TARGET in QEMU"
 	@echo "  make test-i386                    - Test i386 build in QEMU"
 	@echo "  make test-aarch64                 - Test aarch64 build in QEMU"
+	@echo "  make test-x86_64                  - Test x86_64 build in QEMU"
+	@echo "  make test-riscv64                 - Test riscv64 build in QEMU"
+	@echo "  ./scripts/test-qemu.sh <arch>     - Direct QEMU testing script"
 	@echo ""
 	@echo "📝 Examples:"
 	@echo "  make ARCH=aarch64 TARGET=rpi5     - Build for Raspberry Pi 5"
@@ -272,4 +281,4 @@ help:
 kernel: $(BUILD_DIR)/kernel.elf
 image: $(BUILD_DIR)/kernel.img
 
-.PHONY: all clean clean-output clean-all all-arch info version list-arch help kernel image iso test-i386 test-aarch64
+.PHONY: all clean clean-output clean-all all-arch info version list-arch help kernel image iso test test-i386 test-aarch64 test-x86_64 test-riscv64

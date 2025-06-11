@@ -96,30 +96,15 @@ increment_version() {
     echo "$new_version"
 }
 
-# Function to generate build identifier
+# Function to generate simple build identifier
 generate_build_id() {
     local arch="$1"
     local target="${2:-generic}"
     local version
     version=$(get_version)
     
-    # Short git hash (if available)
-    local git_hash=""
-    if git rev-parse --git-dir > /dev/null 2>&1; then
-        git_hash="-$(git rev-parse --short HEAD)"
-    fi
-    
-    # Build number (incremental)
-    local build_file="$PROJECT_ROOT/.build_number"
-    local build_num=1
-    if [[ -f "$build_file" ]]; then
-        build_num=$(cat "$build_file")
-        build_num=$((build_num + 1))
-    fi
-    echo "$build_num" > "$build_file"
-    
-    # Format: sage-os-v1.0.1-b123-aarch64-rpi5-a1b2c3d
-    echo "sage-os-v${version}-b${build_num}-${arch}-${target}${git_hash}"
+    # Simple format: sage-os-v1.0.1-aarch64-generic
+    echo "sage-os-v${version}-${arch}-${target}"
 }
 
 # Function to get clean output paths
