@@ -68,6 +68,10 @@ CC="${CROSS_COMPILE}gcc"
 LD="${CROSS_COMPILE}ld"
 OBJCOPY="${CROSS_COMPILE}objcopy"
 
+print_info "Using compiler: $CC"
+print_info "Compiler version: $($CC --version | head -1)"
+print_info "CFLAGS: $CFLAGS"
+
 print_info "Compiling graphics kernel..."
 
 # Compile boot loader
@@ -80,6 +84,7 @@ else
 fi
 
 mkdir -p "$(dirname "$BOOT_OBJ")"
+print_info "Compiling boot loader: $CC $CFLAGS -c $BOOT_SRC -o $BOOT_OBJ"
 $CC $CFLAGS -c "$BOOT_SRC" -o "$BOOT_OBJ"
 
 # Compile graphics kernel (standalone)

@@ -185,7 +185,7 @@ build_graphics_interactive() {
     echo ""
     
     # Start QEMU with VNC
-    qemu-system-i386 -kernel output/i386/sage-os-v1.0.1-i386-generic-graphics.img -vnc :0 -no-reboot
+    qemu-system-i386 -kernel build/i386-graphics/kernel.elf -m 128M -vnc :0 -no-reboot
 }
 
 # Test graphics kernel
@@ -194,7 +194,7 @@ test_graphics() {
     
     # Build graphics kernel
     print_info "Building graphics kernel..."
-    if ! ./scripts/graphics/build-graphics.sh i386; then
+    if ! ./build-graphics.sh i386 build; then
         print_error "Graphics build failed"
         return 1
     fi
@@ -204,16 +204,16 @@ test_graphics() {
     print_info "This will show text output of the graphics kernel"
     echo ""
     
-    # Test with timeout
-    timeout 10s qemu-system-i386 -kernel output/i386/sage-os-v1.0.1-i386-generic-graphics.img -nographic -no-reboot || true
+    # Test with timeout (use -nographic for text output)
+    timeout 10s qemu-system-i386 -kernel build/i386-graphics/kernel.elf -nographic -no-reboot || true
     
     echo ""
     print_success "Graphics test completed!"
     echo ""
-    print_info "💡 To run full graphics mode with VNC:"
-    print_info "   ./build.sh graphics"
-    print_info "💡 To run graphics mode manually:"
-    print_info "   qemu-system-i386 -kernel output/i386/sage-os-v1.0.1-i386-generic-graphics.img -vnc :0"
+    print_info "💡 To run full graphics mode with GUI:"
+    print_info "   qemu-system-i386 -kernel build/i386-graphics/kernel.elf -m 128M"
+    print_info "💡 To run graphics mode with VNC:"
+    print_info "   qemu-system-i386 -kernel build/i386-graphics/kernel.elf -m 128M -vnc :0"
 }
 
 # Main script
