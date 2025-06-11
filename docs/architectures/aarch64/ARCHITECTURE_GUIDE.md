@@ -27,7 +27,7 @@ The AArch64 (ARM64) architecture is a primary target for SAGE-OS, offering excel
 
 ```bash
 # Clone repository
-git clone https://github.com/Asadzero/SAGE-OS.git
+git clone https://github.com/AshishYesale7/SAGE-OS.git
 cd SAGE-OS
 
 # Install cross-compiler (Ubuntu/Debian)

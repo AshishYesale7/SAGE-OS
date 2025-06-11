@@ -191,7 +191,7 @@ Automated Recommendations: Embedded systems specific
 
 ### Support
 - **GitHub Models Support**: https://support.github.com
-- **SAGE-OS Issues**: https://github.com/Asadzero/SAGE-OS/issues
+- **SAGE-OS Issues**: https://github.com/AshishYesale7/SAGE-OS/issues
 - **AI Integration Issues**: Tag with `ai-integration` label
 
 ## ✅ Summary

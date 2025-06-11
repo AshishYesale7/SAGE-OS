@@ -446,13 +446,13 @@ SAGE-OS is an open-source project that welcomes contributions from developers wo
     
     Found a bug? Report it on our GitHub issue tracker
     
-    [:octicons-arrow-right-24: Report Issue](https://github.com/Asadzero/SAGE-OS/issues/new)
+    [:octicons-arrow-right-24: Report Issue](https://github.com/AshishYesale7/SAGE-OS/issues/new)
 
 -   **💡 Suggest Features**
     
     Have an idea? Share it with the community
     
-    [:octicons-arrow-right-24: Feature Request](https://github.com/Asadzero/SAGE-OS/discussions)
+    [:octicons-arrow-right-24: Feature Request](https://github.com/AshishYesale7/SAGE-OS/discussions)
 
 -   **🔧 Submit Code**
     
@@ -464,16 +464,16 @@ SAGE-OS is an open-source project that welcomes contributions from developers wo
     
     Help make our documentation even better
     
-    [:octicons-arrow-right-24: Edit Documentation](https://github.com/Asadzero/SAGE-OS/edit/main/docs/)
+    [:octicons-arrow-right-24: Edit Documentation](https://github.com/AshishYesale7/SAGE-OS/edit/main/docs/)
 
 </div>
 
 ## 🌐 Community & Support
 
-- **GitHub Repository**: [Asadzero/SAGE-OS](https://github.com/Asadzero/SAGE-OS)
-- **Issue Tracker**: [Report Bugs & Issues](https://github.com/Asadzero/SAGE-OS/issues)
-- **Discussions**: [Community Forum](https://github.com/Asadzero/SAGE-OS/discussions)
-- **Documentation**: [This Site](https://asadzero.github.io/SAGE-OS/)
+- **GitHub Repository**: [ashishyesale7/SAGE-OS](https://github.com/AshishYesale7/SAGE-OS)
+- **Issue Tracker**: [Report Bugs & Issues](https://github.com/AshishYesale7/SAGE-OS/issues)
+- **Discussions**: [Community Forum](https://github.com/AshishYesale7/SAGE-OS/discussions)
+- **Documentation**: [This Site](https://ashishyesale7.github.io/SAGE-OS/)
 
 ---
 
@@ -1389,11 +1389,11 @@ EOF
         cat > mkdocs.yml << 'EOF'
 site_name: SAGE-OS Documentation
 site_description: Self-Aware General Environment Operating System - Comprehensive Auto-Generated Documentation
-site_url: https://asadzero.github.io/SAGE-OS/
+site_url: https://ashishyesale7.github.io/SAGE-OS/
 site_author: SAGE-OS Development Team
 
-repo_name: Asadzero/SAGE-OS
-repo_url: https://github.com/Asadzero/SAGE-OS
+repo_name: ashishyesale7/SAGE-OS
+repo_url: https://github.com/AshishYesale7/SAGE-OS
 edit_uri: edit/main/docs/
 
 theme:

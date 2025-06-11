@@ -12,9 +12,9 @@ updates:
       time: "09:00"
     open-pull-requests-limit: 5
     reviewers:
-      - "Asadzero"
+      - "ashishyesale7"
     assignees:
-      - "Asadzero"
+      - "ashishyesale7"
     commit-message:
       prefix: "ci"
       include: "scope"
@@ -32,9 +32,9 @@ updates:
       time: "09:00"
     open-pull-requests-limit: 3
     reviewers:
-      - "Asadzero"
+      - "ashishyesale7"
     assignees:
-      - "Asadzero"
+      - "ashishyesale7"
     commit-message:
       prefix: "docker"
       include: "scope"
@@ -52,9 +52,9 @@ updates:
       time: "09:00"
     open-pull-requests-limit: 5
     reviewers:
-      - "Asadzero"
+      - "ashishyesale7"
     assignees:
-      - "Asadzero"
+      - "ashishyesale7"
     commit-message:
       prefix: "deps"
       include: "scope"
@@ -72,9 +72,9 @@ updates:
       time: "10:00"
     open-pull-requests-limit: 3
     reviewers:
-      - "Asadzero"
+      - "ashishyesale7"
     assignees:
-      - "Asadzero"
+      - "ashishyesale7"
     commit-message:
       prefix: "ai-deps"
       include: "scope"
@@ -93,9 +93,9 @@ updates:
       time: "09:00"
     open-pull-requests-limit: 3
     reviewers:
-      - "Asadzero"
+      - "ashishyesale7"
     assignees:
-      - "Asadzero"
+      - "ashishyesale7"
     commit-message:
       prefix: "rust-deps"
       include: "scope"
@@ -114,9 +114,9 @@ updates:
       time: "09:00"
     open-pull-requests-limit: 2
     reviewers:
-      - "Asadzero"
+      - "ashishyesale7"
     assignees:
-      - "Asadzero"
+      - "ashishyesale7"
     commit-message:
       prefix: "cmake-deps"
       include: "scope"
@@ -135,9 +135,9 @@ updates:
       time: "09:00"
     open-pull-requests-limit: 3
     reviewers:
-      - "Asadzero"
+      - "ashishyesale7"
     assignees:
-      - "Asadzero"
+      - "ashishyesale7"
     commit-message:
       prefix: "docs-deps"
       include: "scope"

@@ -8,7 +8,7 @@ This guide provides comprehensive instructions for setting up SAGE-OS developmen
 
 ```bash
 # Clone and setup
-git clone https://github.com/Asadzero/SAGE-OS.git
+git clone https://github.com/AshishYesale7/SAGE-OS.git
 cd SAGE-OS
 
 # Install dependencies (auto-detects distribution)

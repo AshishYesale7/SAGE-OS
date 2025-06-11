@@ -94,10 +94,10 @@ jobs:
         
         ## 🔗 Links
         
-        - [GitHub Repository](https://github.com/Asadzero/SAGE-OS)
-        - [Latest Release](https://github.com/Asadzero/SAGE-OS/releases)
-        - [Issue Tracker](https://github.com/Asadzero/SAGE-OS/issues)
-        - [Discussions](https://github.com/Asadzero/SAGE-OS/discussions)
+        - [GitHub Repository](https://github.com/AshishYesale7/SAGE-OS)
+        - [Latest Release](https://github.com/AshishYesale7/SAGE-OS/releases)
+        - [Issue Tracker](https://github.com/AshishYesale7/SAGE-OS/issues)
+        - [Discussions](https://github.com/AshishYesale7/SAGE-OS/discussions)
         
         ---
         
@@ -121,7 +121,7 @@ jobs:
         ## Related Resources
         
         - [Main Documentation](../index.md)
-        - [GitHub Repository](https://github.com/Asadzero/SAGE-OS)
+        - [GitHub Repository](https://github.com/AshishYesale7/SAGE-OS)
         
         EOF
           fi
@@ -133,10 +133,10 @@ jobs:
         site_name: SAGE-OS Documentation
         site_description: Self-Aware General Environment Operating System - Comprehensive Documentation
         site_author: SAGE-OS Development Team
-        site_url: https://asadzero.github.io/SAGE-OS/
+        site_url: https://ashishyesale7.github.io/SAGE-OS/
         
-        repo_name: Asadzero/SAGE-OS
-        repo_url: https://github.com/Asadzero/SAGE-OS
+        repo_name: ashishyesale7/SAGE-OS
+        repo_url: https://github.com/AshishYesale7/SAGE-OS
         edit_uri: edit/main/docs/
         
         theme:
@@ -268,13 +268,13 @@ jobs:
         extra:
           social:
             - icon: fontawesome/brands/github
-              link: https://github.com/Asadzero/SAGE-OS
+              link: https://github.com/AshishYesale7/SAGE-OS
               name: GitHub Repository
             - icon: fontawesome/solid/bug
-              link: https://github.com/Asadzero/SAGE-OS/issues
+              link: https://github.com/AshishYesale7/SAGE-OS/issues
               name: Report Issues
             - icon: fontawesome/solid/comments
-              link: https://github.com/Asadzero/SAGE-OS/discussions
+              link: https://github.com/AshishYesale7/SAGE-OS/discussions
               name: Discussions
           version:
             provider: mike
@@ -436,7 +436,7 @@ jobs:
         User-agent: *
         Allow: /
         
-        Sitemap: https://asadzero.github.io/SAGE-OS/sitemap.xml
+        Sitemap: https://ashishyesale7.github.io/SAGE-OS/sitemap.xml
         EOF
 
     - name: Upload Pages Artifact

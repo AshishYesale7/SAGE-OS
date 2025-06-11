@@ -42,11 +42,11 @@ After:  1 workflow, 95% success rate, 3-5 minutes
 
 ### Live Website URL
 ```
-https://asadzero.github.io/SAGE-OS/
+https://ashishyesale7.github.io/SAGE-OS/
 ```
 
 **To Enable:**
-1. Go to https://github.com/Asadzero/SAGE-OS/settings/pages
+1. Go to https://github.com/AshishYesale7/SAGE-OS/settings/pages
 2. Under "Source", select "GitHub Actions"
 3. Save settings
 4. Push any change to trigger deployment
@@ -179,14 +179,14 @@ git push origin dev
 ## 🔗 Quick Links
 
 ### Documentation
-- **Live Site**: https://asadzero.github.io/SAGE-OS/ (after enabling Pages)
+- **Live Site**: https://ashishyesale7.github.io/SAGE-OS/ (after enabling Pages)
 - **Setup Guide**: `./scripts/setup-github-pages.sh`
 - **AI Integration**: `./scripts/ai/README.md`
 
 ### GitHub
-- **Repository**: https://github.com/Asadzero/SAGE-OS
-- **Actions**: https://github.com/Asadzero/SAGE-OS/actions
-- **Settings**: https://github.com/Asadzero/SAGE-OS/settings/pages
+- **Repository**: https://github.com/AshishYesale7/SAGE-OS
+- **Actions**: https://github.com/AshishYesale7/SAGE-OS/actions
+- **Settings**: https://github.com/AshishYesale7/SAGE-OS/settings/pages
 - **Models**: https://github.com/marketplace/models/
 
 ## 🎉 What's Working Now

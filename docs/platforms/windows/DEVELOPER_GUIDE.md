@@ -66,7 +66,7 @@ sudo apt install -y git curl wget build-essential
 
 ```bash
 # Clone repository
-git clone https://github.com/Asadzero/SAGE-OS.git
+git clone https://github.com/AshishYesale7/SAGE-OS.git
 cd SAGE-OS
 
 # Make scripts executable
@@ -88,7 +88,7 @@ chmod +x build.sh
 
 ```powershell
 # Clone repository (in PowerShell or Command Prompt)
-git clone https://github.com/Asadzero/SAGE-OS.git
+git clone https://github.com/AshishYesale7/SAGE-OS.git
 cd SAGE-OS
 
 # Build using Docker

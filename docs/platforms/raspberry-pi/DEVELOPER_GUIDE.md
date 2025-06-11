@@ -32,7 +32,7 @@ This guide provides comprehensive instructions for developing, building, and dep
 #### On Linux/WSL2:
 ```bash
 # Clone SAGE-OS
-git clone https://github.com/Asadzero/SAGE-OS.git
+git clone https://github.com/AshishYesale7/SAGE-OS.git
 cd SAGE-OS
 
 # Install cross-compilation tools
@@ -60,7 +60,7 @@ brew install arm-unknown-linux-gnueabihf
 brew install qemu
 
 # Clone and setup
-git clone https://github.com/Asadzero/SAGE-OS.git
+git clone https://github.com/AshishYesale7/SAGE-OS.git
 cd SAGE-OS
 chmod +x build.sh
 ./build.sh install-deps
@@ -118,7 +118,7 @@ sudo apt install -y \
     qemu-system-arm
 
 # Clone SAGE-OS
-git clone https://github.com/Asadzero/SAGE-OS.git
+git clone https://github.com/AshishYesale7/SAGE-OS.git
 cd SAGE-OS
 ```
 

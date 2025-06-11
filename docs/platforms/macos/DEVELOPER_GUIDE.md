@@ -7,7 +7,7 @@ This guide provides comprehensive instructions for developing SAGE-OS on macOS s
 ### Automated Setup
 ```bash
 # Clone the repository
-git clone https://github.com/Asadzero/SAGE-OS.git
+git clone https://github.com/AshishYesale7/SAGE-OS.git
 cd SAGE-OS
 
 # Run automated macOS setup
@@ -359,8 +359,8 @@ git push origin feature/macos-improvement
    - Steps to reproduce
 
 ### Community Resources
-- [GitHub Issues](https://github.com/Asadzero/SAGE-OS/issues)
-- [Discussions](https://github.com/Asadzero/SAGE-OS/discussions)
+- [GitHub Issues](https://github.com/AshishYesale7/SAGE-OS/issues)
+- [Discussions](https://github.com/AshishYesale7/SAGE-OS/discussions)
 - [Contributing Guidelines](../../../CONTRIBUTING.md)
 
 ---
@@ -373,4 +373,4 @@ git push origin feature/macos-improvement
 - ✅ Restored prototype directory
 - ✅ Updated documentation and guides
 
-For the most current information, visit the [GitHub repository](https://github.com/Asadzero/SAGE-OS).
+For the most current information, visit the [GitHub repository](https://github.com/AshishYesale7/SAGE-OS).

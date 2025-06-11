@@ -26,7 +26,7 @@ The i386 (32-bit x86) architecture is currently the most stable and fully functi
 
 ```bash
 # Clone repository
-git clone https://github.com/Asadzero/SAGE-OS.git
+git clone https://github.com/AshishYesale7/SAGE-OS.git
 cd SAGE-OS
 
 # Build i386 kernel
