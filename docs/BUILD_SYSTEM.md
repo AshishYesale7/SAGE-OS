@@ -40,6 +40,9 @@ sudo apt-get update
 sudo apt-get install -y gcc-aarch64-linux-gnu gcc-arm-linux-gnueabihf gcc-riscv64-linux-gnu \
                         qemu-system-arm qemu-system-x86 qemu-system-misc \
                         genisoimage dosfstools make
+
+# Note: The build script can also install dependencies automatically
+./tools/build/build.sh install-deps
 ```
 
 ### Basic Usage
@@ -439,6 +442,75 @@ When contributing to the build system:
 2. **Update documentation**: Keep this document updated with any changes
 3. **Maintain compatibility**: Ensure changes work on both macOS and Linux
 4. **Add tests**: Include appropriate tests for new features
+
+## Troubleshooting
+
+### Recent Fixes (June 2025)
+
+The following issues have been resolved in the latest version:
+
+#### Serial Function Redefinition Conflicts
+**Problem**: Multiple definitions of `serial_putc` and `serial_puts` functions causing linker errors.
+
+**Solution**: 
+- Moved serial function implementations from `kernel/kernel.c` to `drivers/serial.c`
+- Added architecture-specific implementations for x86_64, aarch64, RISC-V, and ARM
+- Updated `kernel/kernel.c` to use forward declarations only
+
+#### Kernel Main Function Conflicts
+**Problem**: Both `kernel.c` and `kernel_graphics.c` defined `kernel_main` function.
+
+**Solution**: 
+- Modified `tools/build/Makefile.multi-arch` to exclude `kernel_graphics.c` from normal builds
+- Added `KERNEL_SOURCES_FILTERED` variable to filter out conflicting files
+
+#### Missing Cross-Compiler Dependencies
+**Problem**: Build failing due to missing cross-compilation toolchains.
+
+**Solution**: 
+- Added automatic installation of required cross-compilers:
+  - `gcc-aarch64-linux-gnu` for ARM64
+  - `gcc-arm-linux-gnueabihf` for ARM32
+  - `gcc-riscv64-linux-gnu` for RISC-V 64-bit
+- Updated dependency check scripts
+
+### Build Status Verification
+
+All architectures now build successfully:
+
+```bash
+# Verify all builds work
+./tools/build/build.sh build-all generic
+
+# Expected output: 8/8 successful builds
+# - aarch64 (ARM64): RPi 3/4/5 and generic
+# - arm (ARM32): RPi 3/4/5 and generic  
+# - x86_64: generic
+# - riscv64: generic
+```
+
+### Common Issues
+
+#### Missing Dependencies
+```bash
+# Error: "No such file or directory: aarch64-linux-gnu-gcc"
+# Solution: Install cross-compilers
+sudo apt-get install gcc-aarch64-linux-gnu gcc-arm-linux-gnueabihf gcc-riscv64-linux-gnu
+```
+
+#### Permission Errors
+```bash
+# Error: Permission denied when writing to build-output/
+# Solution: Check directory permissions
+chmod 755 build-output/
+```
+
+#### QEMU Not Found Warnings
+```bash
+# Warning: "QEMU for aarch64 not found"
+# Solution: Install QEMU (optional for building, required for testing)
+sudo apt-get install qemu-system-arm qemu-system-x86 qemu-system-misc
+```
 
 ## Future Enhancements
 
