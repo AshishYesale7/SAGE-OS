@@ -47,6 +47,7 @@ show_help() {
     echo "  all              Build all architectures"
     echo "  clean            Clean all build files"
     echo "  setup-macos      Install macOS dependencies"
+    echo "  setup-graphics   Setup graphics mode for macOS"
     echo "  help             Show this help"
     echo ""
     echo "Architectures:"
@@ -188,6 +189,25 @@ build_graphics_interactive() {
     qemu-system-i386 -kernel build/i386-graphics/kernel.elf -m 128M -vnc :0 -no-reboot
 }
 
+# Setup graphics mode for macOS
+setup_graphics_macos() {
+    print_info "Setting up graphics mode for macOS..."
+    
+    if [[ "$OSTYPE" != "darwin"* ]]; then
+        print_error "This command is for macOS only"
+        return 1
+    fi
+    
+    if [[ -f "./setup-macos-graphics.sh" ]]; then
+        print_info "Running macOS graphics setup script..."
+        ./setup-macos-graphics.sh
+    else
+        print_error "Setup script not found: ./setup-macos-graphics.sh"
+        print_info "Please ensure you're in the SAGE-OS directory"
+        return 1
+    fi
+}
+
 # Test graphics kernel
 test_graphics() {
     print_info "Testing graphics mode for i386 (10 second demo)..."
@@ -238,6 +258,10 @@ main() {
         "setup-macos")
             print_header
             setup_macos
+            ;;
+        "setup-graphics")
+            print_header
+            setup_graphics_macos
             ;;
         "graphics")
             print_header
