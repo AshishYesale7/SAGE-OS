@@ -3,4 +3,4 @@ aarch64: FAILED
 aarch64-rpi: FAILED
 arm: FAILED
 arm-rpi: FAILED
-riscv64: FAILED
+riscv64: KERNEL_NOT_FOUND
