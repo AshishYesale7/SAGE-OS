@@ -1,0 +1,472 @@
+# GitHub Pages Deployment for SAGE-OS Documentation
+# Deploys documentation to GitHub Pages with custom domain support
+
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [ main, dev ]  # Deploy from both main and dev branches
+    paths:
+      - 'docs/**'
+      - 'mkdocs.yml'
+      - '.github/workflows/github-pages-deploy.yml'
+  workflow_dispatch:
+    inputs:
+      force_deploy:
+        description: 'Force deployment even if no changes'
+        required: false
+        default: 'false'
+        type: boolean
+
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+env:
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  # Build documentation
+  build-docs:
+    name: Build Documentation
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        cache: 'pip'
+
+    - name: Install Dependencies
+      run: |
+        pip install --upgrade pip
+        pip install mkdocs mkdocs-material mkdocs-mermaid2-plugin
+        pip install mkdocstrings mkdocstrings-python
+        pip install mkdocs-git-revision-date-localized-plugin
+        pip install mkdocs-minify-plugin mkdocs-macros-plugin
+        pip install pymdown-extensions mkdocs-awesome-pages-plugin
+
+    - name: Setup Pages
+      uses: actions/configure-pages@v4
+
+    - name: Create Documentation Structure
+      run: |
+        # Ensure all required directories exist
+        mkdir -p docs/{getting-started,architecture,development,platforms,api,security,tutorials}
+        mkdir -p docs/platforms/{linux,macos,windows,raspberry-pi}
+        
+        # Create index page if it doesn't exist
+        if [ ! -f docs/index.md ]; then
+          cat > docs/index.md << 'EOF'
+        # SAGE-OS Documentation
+        
+        Welcome to **SAGE-OS** (Self-Aware General Environment Operating System) - a revolutionary embedded operating system designed for modern hardware platforms.
+        
+        ## 🚀 Features
+        
+        - **🧠 AI Integration**: Built-in AI subsystem with up to 26 TOPS processing
+        - **🔧 Multi-Architecture**: Support for i386, x86_64, ARM64, RISC-V
+        - **🖥️ Dual-Mode**: Serial console and VGA graphics modes
+        - **🛡️ Security-First**: Advanced cryptographic features
+        - **🍓 Raspberry Pi 5**: Optimized for latest hardware
+        
+        ## 📚 Quick Navigation
+        
+        - [Getting Started](getting-started/overview.md) - Begin your SAGE-OS journey
+        - [Architecture](architecture/overview.md) - System design and components
+        - [Development](development/build-system.md) - Build and development guides
+        - [Platforms](platforms/linux/DEVELOPER_GUIDE.md) - Platform-specific information
+        - [API Reference](api/kernel.md) - Complete API documentation
+        - [Security](security/model.md) - Security model and guidelines
+        
+        ## 🔗 Links
+        
+        - [GitHub Repository](https://github.com/Asadzero/SAGE-OS)
+        - [Latest Release](https://github.com/Asadzero/SAGE-OS/releases)
+        - [Issue Tracker](https://github.com/Asadzero/SAGE-OS/issues)
+        - [Discussions](https://github.com/Asadzero/SAGE-OS/discussions)
+        
+        ---
+        
+        *Documentation automatically generated from the SAGE-OS repository.*
+        EOF
+        fi
+        
+        # Create placeholder pages for missing sections
+        for section in getting-started architecture development security; do
+          if [ ! -f "docs/$section/overview.md" ]; then
+            mkdir -p "docs/$section"
+            cat > "docs/$section/overview.md" << EOF
+        # ${section^} Overview
+        
+        This section provides comprehensive information about ${section//-/ } in SAGE-OS.
+        
+        ## Coming Soon
+        
+        This documentation section is currently being developed. Please check back soon for updates.
+        
+        ## Related Resources
+        
+        - [Main Documentation](../index.md)
+        - [GitHub Repository](https://github.com/Asadzero/SAGE-OS)
+        
+        EOF
+          fi
+        done
+
+    - name: Create MkDocs Configuration
+      run: |
+        cat > mkdocs.yml << 'EOF'
+        site_name: SAGE-OS Documentation
+        site_description: Self-Aware General Environment Operating System - Comprehensive Documentation
+        site_author: SAGE-OS Development Team
+        site_url: https://asadzero.github.io/SAGE-OS/
+        
+        repo_name: Asadzero/SAGE-OS
+        repo_url: https://github.com/Asadzero/SAGE-OS
+        edit_uri: edit/main/docs/
+        
+        theme:
+          name: material
+          custom_dir: docs/overrides
+          palette:
+            - scheme: default
+              primary: blue
+              accent: cyan
+              toggle:
+                icon: material/brightness-7
+                name: Switch to dark mode
+            - scheme: slate
+              primary: blue
+              accent: cyan
+              toggle:
+                icon: material/brightness-4
+                name: Switch to light mode
+          features:
+            - navigation.tabs
+            - navigation.sections
+            - navigation.expand
+            - navigation.top
+            - navigation.tracking
+            - search.highlight
+            - search.share
+            - search.suggest
+            - content.code.copy
+            - content.code.annotate
+            - content.action.edit
+            - content.action.view
+            - content.tabs.link
+          icon:
+            repo: fontawesome/brands/github
+            edit: material/pencil
+            view: material/eye
+          logo: assets/logo.png
+          favicon: assets/favicon.ico
+        
+        plugins:
+          - search:
+              lang: en
+          - mermaid2
+          - git-revision-date-localized:
+              type: date
+              enable_creation_date: true
+          - minify:
+              minify_html: true
+              minify_js: true
+              minify_css: true
+              htmlmin_opts:
+                remove_comments: true
+          - macros:
+              module_name: docs/macros
+        
+        markdown_extensions:
+          - pymdownx.highlight:
+              anchor_linenums: true
+              line_spans: __span
+              pygments_lang_class: true
+          - pymdownx.inlinehilite
+          - pymdownx.snippets:
+              base_path: docs
+          - pymdownx.superfences:
+              custom_fences:
+                - name: mermaid
+                  class: mermaid
+                  format: !!python/name:pymdownx.superfences.fence_code_format
+          - pymdownx.tabbed:
+              alternate_style: true
+          - pymdownx.tasklist:
+              custom_checkbox: true
+          - pymdownx.emoji:
+              emoji_index: !!python/name:materialx.emoji.twemoji
+              emoji_generator: !!python/name:materialx.emoji.to_svg
+          - admonition
+          - pymdownx.details
+          - attr_list
+          - md_in_html
+          - def_list
+          - footnotes
+          - meta
+          - toc:
+              permalink: true
+              title: On this page
+        
+        nav:
+          - Home: index.md
+          - Getting Started:
+            - Overview: getting-started/overview.md
+            - Quick Start: getting-started/quick-start.md
+            - Installation: getting-started/installation.md
+            - First Boot: getting-started/first-boot.md
+          - Architecture:
+            - System Overview: architecture/overview.md
+            - Kernel Design: architecture/kernel.md
+            - Memory Management: architecture/memory.md
+            - Device Drivers: architecture/drivers.md
+            - AI Subsystem: architecture/ai-subsystem.md
+            - Graphics System: architecture/graphics.md
+          - Development:
+            - Build System: development/build-system.md
+            - Cross Compilation: development/cross-compilation.md
+            - Debugging: development/debugging.md
+            - Testing: development/testing.md
+            - Contributing: development/contributing.md
+          - Platforms:
+            - Linux: platforms/linux/DEVELOPER_GUIDE.md
+            - macOS: platforms/macos/DEVELOPER_GUIDE.md
+            - Windows: platforms/windows/DEVELOPER_GUIDE.md
+            - Raspberry Pi: platforms/raspberry-pi/DEVELOPER_GUIDE.md
+          - API Reference:
+            - Kernel API: api/kernel.md
+            - Driver API: api/drivers.md
+            - Memory API: api/memory.md
+            - AI API: api/ai.md
+            - Graphics API: api/graphics.md
+          - Security:
+            - Security Model: security/model.md
+            - Cryptography: security/crypto.md
+            - Secure Boot: security/secure-boot.md
+            - Vulnerability Reports: security/vulnerabilities.md
+          - Tutorials:
+            - Writing Drivers: tutorials/writing-drivers.md
+            - Adding Architectures: tutorials/adding-architectures.md
+            - AI Integration: tutorials/ai-integration.md
+            - Graphics Programming: tutorials/graphics-programming.md
+        
+        extra:
+          social:
+            - icon: fontawesome/brands/github
+              link: https://github.com/Asadzero/SAGE-OS
+              name: GitHub Repository
+            - icon: fontawesome/solid/bug
+              link: https://github.com/Asadzero/SAGE-OS/issues
+              name: Report Issues
+            - icon: fontawesome/solid/comments
+              link: https://github.com/Asadzero/SAGE-OS/discussions
+              name: Discussions
+          version:
+            provider: mike
+            default: latest
+          analytics:
+            provider: google
+            property: !ENV GOOGLE_ANALYTICS_KEY
+          generator: false
+        
+        extra_css:
+          - stylesheets/extra.css
+        
+        extra_javascript:
+          - javascripts/extra.js
+        EOF
+
+    - name: Create Custom Styling
+      run: |
+        mkdir -p docs/stylesheets docs/javascripts docs/assets
+        
+        # Create custom CSS
+        cat > docs/stylesheets/extra.css << 'EOF'
+        /* SAGE-OS Documentation Custom Styles */
+        
+        :root {
+          --sage-primary: #2196F3;
+          --sage-accent: #00BCD4;
+          --sage-success: #4CAF50;
+          --sage-warning: #FF9800;
+          --sage-error: #F44336;
+        }
+        
+        /* Custom header styling */
+        .md-header {
+          background: linear-gradient(135deg, var(--sage-primary), var(--sage-accent));
+        }
+        
+        /* Code block enhancements */
+        .highlight pre {
+          border-left: 4px solid var(--sage-accent);
+        }
+        
+        /* Admonition styling */
+        .md-typeset .admonition.note {
+          border-color: var(--sage-primary);
+        }
+        
+        .md-typeset .admonition.tip {
+          border-color: var(--sage-success);
+        }
+        
+        .md-typeset .admonition.warning {
+          border-color: var(--sage-warning);
+        }
+        
+        .md-typeset .admonition.danger {
+          border-color: var(--sage-error);
+        }
+        
+        /* Architecture diagram styling */
+        .mermaid {
+          text-align: center;
+          margin: 2em 0;
+        }
+        
+        /* API reference styling */
+        .api-function {
+          background: var(--md-code-bg-color);
+          border-radius: 4px;
+          padding: 1em;
+          margin: 1em 0;
+          border-left: 4px solid var(--sage-accent);
+        }
+        
+        /* Platform badges */
+        .platform-badge {
+          display: inline-block;
+          padding: 0.2em 0.6em;
+          margin: 0.2em;
+          border-radius: 12px;
+          font-size: 0.8em;
+          font-weight: bold;
+          color: white;
+        }
+        
+        .platform-badge.linux { background-color: #FCC624; color: black; }
+        .platform-badge.macos { background-color: #000000; }
+        .platform-badge.windows { background-color: #0078D4; }
+        .platform-badge.raspberry-pi { background-color: #C51A4A; }
+        
+        /* Status indicators */
+        .status-working { color: var(--sage-success); }
+        .status-partial { color: var(--sage-warning); }
+        .status-planned { color: var(--sage-primary); }
+        .status-experimental { color: var(--sage-accent); }
+        EOF
+        
+        # Create custom JavaScript
+        cat > docs/javascripts/extra.js << 'EOF'
+        // SAGE-OS Documentation Custom JavaScript
+        
+        document.addEventListener('DOMContentLoaded', function() {
+          // Add copy buttons to code blocks
+          const codeBlocks = document.querySelectorAll('pre code');
+          codeBlocks.forEach(function(block) {
+            const button = document.createElement('button');
+            button.className = 'copy-button';
+            button.textContent = 'Copy';
+            button.addEventListener('click', function() {
+              navigator.clipboard.writeText(block.textContent);
+              button.textContent = 'Copied!';
+              setTimeout(() => button.textContent = 'Copy', 2000);
+            });
+            block.parentNode.appendChild(button);
+          });
+          
+          // Add platform badges
+          const platformElements = document.querySelectorAll('[data-platform]');
+          platformElements.forEach(function(element) {
+            const platform = element.getAttribute('data-platform');
+            const badge = document.createElement('span');
+            badge.className = `platform-badge ${platform}`;
+            badge.textContent = platform.charAt(0).toUpperCase() + platform.slice(1);
+            element.appendChild(badge);
+          });
+        });
+        EOF
+
+    - name: Build Documentation
+      run: |
+        # Build the documentation
+        mkdocs build --strict --verbose
+        
+        # Create a custom 404 page
+        cat > site/404.html << 'EOF'
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Page Not Found - SAGE-OS Documentation</title>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1">
+          <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; text-align: center; padding: 2em; }
+            h1 { color: #2196F3; }
+            .logo { font-size: 4em; margin-bottom: 0.5em; }
+          </style>
+        </head>
+        <body>
+          <div class="logo">🤖</div>
+          <h1>Page Not Found</h1>
+          <p>The page you're looking for doesn't exist in the SAGE-OS documentation.</p>
+          <p><a href="/">Return to Documentation Home</a></p>
+        </body>
+        </html>
+        EOF
+        
+        # Add robots.txt
+        cat > site/robots.txt << 'EOF'
+        User-agent: *
+        Allow: /
+        
+        Sitemap: https://asadzero.github.io/SAGE-OS/sitemap.xml
+        EOF
+
+    - name: Upload Pages Artifact
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: ./site
+
+  # Deploy to GitHub Pages
+  deploy-pages:
+    name: Deploy to GitHub Pages
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build-docs
+    
+    steps:
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v4
+
+    - name: Update Deployment Status
+      run: |
+        echo "## 🚀 GitHub Pages Deployment" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "✅ Documentation successfully deployed to GitHub Pages" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "🔗 **Live URL:** ${{ steps.deployment.outputs.page_url }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 📊 Deployment Details:" >> $GITHUB_STEP_SUMMARY
+        echo "- **Deployment Time:** $(date)" >> $GITHUB_STEP_SUMMARY
+        echo "- **Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY

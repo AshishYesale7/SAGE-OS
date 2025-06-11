@@ -11,15 +11,10 @@
 
 #include <stdint.h>
 
-#if defined(ARCH_X86_64) || defined(ARCH_I386)
+// Serial communication functions
+// Implementations are architecture-specific and defined in kernel.c
 void serial_init(void);
 void serial_putc(char c);
 void serial_puts(const char* str);
-#else
-// Stub functions for non-x86 architectures
-static inline void serial_init(void) {}
-static inline void serial_putc(char c) {}
-static inline void serial_puts(const char* str) {}
-#endif
 
 #endif // SERIAL_H

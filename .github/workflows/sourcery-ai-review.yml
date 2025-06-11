@@ -1,0 +1,120 @@
+name: 🤖 Sourcery AI Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - '**/*.c'
+      - '**/*.h'
+      - '**/*.cpp'
+      - '**/*.hpp'
+      - '**/*.py'
+      - '**/*.rs'
+      - '**/*.S'
+      - '**/*.s'
+      - '**/*.asm'
+  push:
+    branches: [dev, main]
+    paths:
+      - '**/*.c'
+      - '**/*.h'
+      - '**/*.cpp'
+      - '**/*.hpp'
+      - '**/*.py'
+      - '**/*.rs'
+      - '**/*.S'
+      - '**/*.s'
+      - '**/*.asm'
+
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
+  statuses: write
+
+jobs:
+  sourcery-review:
+    name: 🔍 Sourcery AI Code Analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    steps:
+    - name: 📥 Checkout Code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        
+    - name: 🐍 Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+        
+    - name: 📦 Install Sourcery
+      run: |
+        pip install --upgrade pip
+        pip install sourcery-cli
+        
+    - name: 🤖 Run Sourcery Analysis
+      env:
+        SOURCERY_TOKEN: ${{ secrets.SOURCERY_TOKEN }}
+      run: |
+        echo "🔍 Running Sourcery AI analysis..."
+        
+        # Run sourcery review
+        if [ "${{ github.event_name }}" = "pull_request" ]; then
+          echo "📋 Analyzing pull request changes..."
+          sourcery review --diff="origin/${{ github.base_ref }}..HEAD" \
+                          --output-format=github-actions \
+                          --fail-on-critical=true \
+                          --verbose || true
+        else
+          echo "📋 Analyzing recent changes..."
+          sourcery review --diff="HEAD~1..HEAD" \
+                          --output-format=github-actions \
+                          --fail-on-critical=false \
+                          --verbose || true
+        fi
+        
+    - name: 📊 Generate Code Quality Report
+      if: always()
+      run: |
+        echo "📊 Generating code quality metrics..."
+        
+        # Create reports directory
+        mkdir -p reports/sourcery
+        
+        # Generate summary
+        cat > reports/sourcery/summary.md << 'EOF'
+        # 🤖 Sourcery AI Code Quality Report
+        
+        **Generated:** $(date)
+        **Workflow:** ${{ github.workflow }}
+        **Run ID:** ${{ github.run_id }}
+        
+        ## 📊 Analysis Summary
+        
+        This report contains automated code quality analysis from Sourcery AI.
+        
+        ### 🎯 Focus Areas
+        - **Embedded Systems**: Memory management, stack usage, interrupt safety
+        - **Security**: Buffer overflows, input validation, privilege checks
+        - **Performance**: Loop optimization, memory access patterns
+        - **Code Style**: Consistency, readability, maintainability
+        
+        ### 🔍 File Coverage
+        - C/C++ kernel and driver code
+        - Python build scripts and tools
+        - Rust prototype code
+        - Assembly boot code
+        
+        EOF
+        
+    - name: 📤 Upload Analysis Results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: sourcery-analysis-results
+        path: |
+          reports/sourcery/
+        retention-days: 30

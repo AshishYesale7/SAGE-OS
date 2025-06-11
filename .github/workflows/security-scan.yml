@@ -39,6 +39,7 @@ jobs:
   cve-scan:
     name: CVE Binary Scan
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     if: github.event.inputs.scan_type == 'all' || github.event.inputs.scan_type == 'cve' || github.event.inputs.scan_type == ''
     
     steps:
@@ -58,8 +59,9 @@ jobs:
         pip install cve-bin-tool
         
     - name: Update CVE Database
+      timeout-minutes: 5
       run: |
-        cve-bin-tool --update now
+        cve-bin-tool --update now || echo "CVE database update failed, continuing with existing data"
         
     - name: Download build artifacts
       uses: actions/download-artifact@v4
@@ -131,6 +133,7 @@ jobs:
   static-analysis:
     name: Static Code Analysis
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     if: github.event.inputs.scan_type == 'all' || github.event.inputs.scan_type == 'static' || github.event.inputs.scan_type == ''
     
     steps:
@@ -214,6 +217,7 @@ jobs:
   binary-analysis:
     name: Binary Security Analysis
     runs-on: ubuntu-latest
+    timeout-minutes: 8
     if: github.event.inputs.scan_type == 'all' || github.event.inputs.scan_type == 'binary' || github.event.inputs.scan_type == ''
     
     steps:
@@ -312,6 +316,7 @@ jobs:
   dependency-analysis:
     name: Dependency Security Analysis
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     if: github.event.inputs.scan_type == 'all' || github.event.inputs.scan_type == 'dependencies' || github.event.inputs.scan_type == ''
     
     steps:

@@ -1,0 +1,61 @@
+#!/bin/bash
+# Script to help setup GitHub Pages for SAGE-OS documentation
+
+echo "🚀 SAGE-OS GitHub Pages Setup Guide"
+echo "=================================="
+echo ""
+
+echo "To enable GitHub Pages for your SAGE-OS documentation:"
+echo ""
+echo "1. Go to your GitHub repository: https://github.com/Asadzero/SAGE-OS"
+echo "2. Click on 'Settings' tab"
+echo "3. Scroll down to 'Pages' section in the left sidebar"
+echo "4. Under 'Source', select 'GitHub Actions'"
+echo "5. Save the settings"
+echo ""
+
+echo "📋 Current Repository Status:"
+echo "- Repository: Asadzero/SAGE-OS"
+echo "- Default Branch: dev"
+echo "- Documentation Workflow: ✅ Ready"
+echo "- GitHub Pages: ⚠️ Needs manual activation"
+echo ""
+
+echo "🔗 After enabling GitHub Pages, your documentation will be available at:"
+echo "   https://asadzero.github.io/SAGE-OS/"
+echo ""
+
+echo "🤖 GitHub Models API Setup:"
+echo "To enable AI-powered analysis, you need to:"
+echo "1. Get access to GitHub Models: https://github.com/marketplace/models/"
+echo "2. Your GITHUB_TOKEN should automatically work with GitHub Models"
+echo "3. No additional API key needed - uses your existing GitHub token"
+echo ""
+
+echo "✅ Next Steps:"
+echo "1. Enable GitHub Pages in repository settings"
+echo "2. Push any change to trigger the documentation workflow"
+echo "3. Check the Actions tab to see the deployment progress"
+echo "4. Visit your live documentation site!"
+echo ""
+
+echo "📚 Documentation Features:"
+echo "- ✅ Material Design theme"
+echo "- ✅ Responsive mobile-friendly layout"
+echo "- ✅ Dark/light mode toggle"
+echo "- ✅ Search functionality"
+echo "- ✅ Mermaid diagrams support"
+echo "- ✅ Code syntax highlighting"
+echo "- ✅ Auto-generated navigation"
+echo "- 🤖 AI-powered insights (when configured)"
+echo ""
+
+echo "🔧 Troubleshooting:"
+echo "If the workflow fails:"
+echo "1. Check the Actions tab for error details"
+echo "2. Ensure GitHub Pages is enabled in Settings"
+echo "3. Verify the workflow has proper permissions"
+echo "4. Check that the 'dev' branch is the default branch"
+echo ""
+
+echo "For support, visit: https://github.com/Asadzero/SAGE-OS/issues"
