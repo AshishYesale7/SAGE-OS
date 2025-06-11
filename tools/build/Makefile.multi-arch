@@ -104,6 +104,7 @@ endif
 
 # Toolchain binaries
 CC = $(TOOLCHAIN_PATH)/$(CROSS_PREFIX)gcc
+AS = $(TOOLCHAIN_PATH)/$(CROSS_PREFIX)as
 LD = $(TOOLCHAIN_PATH)/$(CROSS_PREFIX)ld
 OBJCOPY = $(TOOLCHAIN_PATH)/$(CROSS_PREFIX)objcopy
 OBJDUMP = $(TOOLCHAIN_PATH)/$(CROSS_PREFIX)objdump
@@ -174,7 +175,7 @@ endif
 # Source files
 # Select appropriate boot file based on architecture and platform
 ifeq ($(ARCH),x86_64)
-    BOOT_SOURCES = boot/boot_with_multiboot.S
+    BOOT_SOURCES = boot/boot_i386.S
 else ifeq ($(ARCH),i386)
     BOOT_SOURCES = boot/boot_i386.S
 else ifeq ($(ARCH),aarch64)
