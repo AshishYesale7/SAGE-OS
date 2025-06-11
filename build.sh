@@ -8,15 +8,43 @@
 # ─────────────────────────────────────────────────────────────────────────────
 
 # SAGE OS Multi-Architecture Build Script
-# Comprehensive build automation for macOS and Linux
+# ========================================
+# 
+# This script provides comprehensive build automation for SAGE-OS across multiple
+# architectures and platforms. It handles dependency installation, cross-compilation,
+# testing, and deployment workflows.
+#
+# Supported Architectures:
+#   - i386     (32-bit x86) - Fully working
+#   - x86_64   (64-bit x86) - Partial support (GRUB boots)
+#   - aarch64  (64-bit ARM) - Fully working (Raspberry Pi 4/5)
+#   - arm      (32-bit ARM) - Builds successfully
+#   - riscv64  (64-bit RISC-V) - Builds, OpenSBI loads
+#
+# Supported Platforms:
+#   - Linux (Ubuntu, Debian, Fedora, Arch)
+#   - macOS (Intel and Apple Silicon)
+#   - Windows (via WSL2)
+#
+# Author: Ashish Vasant Yesale
+# Email: ashishyesale007@gmail.com
 
-set -e  # Exit on any error
+set -e  # Exit immediately if any command fails
+set -u  # Exit if undefined variable is used
+set -o pipefail  # Exit if any command in pipeline fails
 
-# Script configuration
+# Script configuration and paths
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$SCRIPT_DIR"
 PROJECT_NAME="SAGE-OS"
-VERSION="0.1.0"
-BUILD_DATE=$(date +%Y%m%d-%H%M%S)
+
+# Get version from VERSION file or use default
+if [[ -f "$PROJECT_ROOT/VERSION" ]]; then
+    VERSION=$(cat "$PROJECT_ROOT/VERSION")
+else
+    VERSION="1.0.0"
+    echo "$VERSION" > "$PROJECT_ROOT/VERSION"
+fi
 
 # Colors for output
 RED='\033[0;31m'
