@@ -35,7 +35,7 @@ set -o pipefail  # Exit if any command in pipeline fails
 
 # Script configuration and paths
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$SCRIPT_DIR"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 PROJECT_NAME="SAGE-OS"
 
 # Get version from VERSION file or use default
@@ -330,8 +330,14 @@ build_arch() {
         return 1
     fi
     
+    # Change to project root directory
+    cd "$PROJECT_ROOT" || {
+        log_error "Failed to change to project root: $PROJECT_ROOT"
+        return 1
+    }
+
     # Use the multi-arch Makefile
-    local makefile="Makefile.multi-arch"
+    local makefile="tools/build/Makefile.multi-arch"
     if [ ! -f "$makefile" ]; then
         log_error "Multi-arch Makefile not found: $makefile"
         exit 1
