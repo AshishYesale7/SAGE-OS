@@ -72,7 +72,8 @@ jobs:
         
         # Create main index if missing
         if [ ! -f docs/index.md ]; then
-          cat > docs/index.md << 'EOF'
+          echo "Creating main documentation index..."
+          cat > docs/index.md << 'DOCEOF'
         # SAGE-OS Documentation
         
         Welcome to **SAGE-OS** (Self-Aware General Environment Operating System) - a revolutionary embedded operating system designed for modern hardware platforms.
@@ -166,7 +167,7 @@ jobs:
         ---
         
         *This documentation is automatically generated and continuously updated.*
-        EOF
+        DOCEOF
         fi
         
         # Create placeholder pages for missing sections
