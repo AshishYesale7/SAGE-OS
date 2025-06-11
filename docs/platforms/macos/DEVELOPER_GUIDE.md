@@ -1,340 +1,376 @@
-# SAGE-OS Developer Guide for macOS
+# SAGE-OS macOS Developer Guide (Updated 2025-06-11)
 
-## Overview
+This guide provides comprehensive instructions for developing SAGE-OS on macOS systems with the latest updates including VGA Graphics Mode support and organized project structure.
 
-This guide provides comprehensive instructions for setting up SAGE-OS development environment on macOS, building the OS for all supported architectures, and testing in QEMU.
+## 🚀 Quick Start
 
-## Prerequisites
+### Automated Setup
+```bash
+# Clone the repository
+git clone https://github.com/Asadzero/SAGE-OS.git
+cd SAGE-OS
 
+# Run automated macOS setup
+make -f tools/build/Makefile.macos macos-setup
+
+# Test both modes
+make test-i386                # Serial console mode
+make test-i386-graphics       # VGA graphics mode (NEW!)
+```
+
+## 📋 Prerequisites
+
+### System Requirements
 - macOS 10.15 (Catalina) or later
 - Xcode Command Line Tools
 - Homebrew package manager
 - At least 4GB of free disk space
 
-## Quick Setup
-
-### 1. Install Homebrew (if not already installed)
-
+### Installing Homebrew
 ```bash
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ```
 
-### 2. Install Xcode Command Line Tools
+## 🛠️ Installation
 
+### 1. Development Tools
 ```bash
+# Install Xcode Command Line Tools
 xcode-select --install
-```
 
-### 3. Clone SAGE-OS Repository
+# Install GNU tools (required for compatibility)
+brew install gnu-sed grep findutils gnu-tar
 
-```bash
-git clone https://github.com/Asadzero/SAGE-OS.git
-cd SAGE-OS
-```
-
-### 4. Automated Setup
-
-```bash
-# Make the build script executable
-chmod +x build.sh
-
-# Install all dependencies automatically
-./build.sh install-deps
-```
-
-## Manual Setup (Alternative)
-
-If you prefer manual installation:
-
-### Install Base Tools
-
-```bash
-# Install essential tools
-brew install make cmake git
+# Install cross-compilation toolchain
+brew install i386-elf-gcc x86_64-elf-gcc aarch64-elf-gcc
 
 # Install QEMU for testing
 brew install qemu
-
-# Install ISO creation tools
-brew install cdrtools
 ```
 
-### Install Cross-Compilation Toolchains
-
+### 2. Additional Dependencies
 ```bash
-# Add cross-compilation toolchain tap
-brew tap messense/macos-cross-toolchains
+# Install build tools
+brew install make cmake ninja
 
-# Install all architecture toolchains
-brew install aarch64-unknown-linux-gnu    # ARM64
-brew install x86_64-unknown-linux-gnu     # x86_64
-brew install riscv64-unknown-linux-gnu    # RISC-V 64-bit
-brew install arm-unknown-linux-gnueabihf  # ARM 32-bit
+# Install documentation tools
+brew install mkdocs
+
+# Install development utilities
+brew install git-lfs tree htop
+
+# Install VNC viewer for graphics mode
+brew install --cask vnc-viewer
 ```
 
-## Building SAGE-OS
+## 🏗️ Building SAGE-OS
 
-### Build All Architectures
-
+### Environment Check
 ```bash
-# Build for all supported architectures
-./build.sh build-all
-
-# Or use the comprehensive build script
-./build-all-architectures-macos.sh
+make -f tools/build/Makefile.macos macos-check
 ```
 
-### Build Specific Architecture
+### Build Commands
 
+#### Serial Console Mode (Default)
 ```bash
-# Build for specific architecture
-./build.sh build aarch64 rpi5    # ARM64 for Raspberry Pi 5
-./build.sh build x86_64 generic  # x86_64 for generic PC
-./build.sh build i386 generic    # i386 for older PCs
-./build.sh build riscv64 generic # RISC-V 64-bit
+# Build for i386 (recommended)
+make ARCH=i386 TARGET=generic
+
+# Build for x86_64
+make ARCH=x86_64 TARGET=generic
+
+# Build for ARM64 (experimental)
+make ARCH=aarch64 TARGET=generic
 ```
 
-### Build with Make
-
+#### VGA Graphics Mode (New!)
 ```bash
-# Traditional make approach
-make ARCH=aarch64  # ARM64
-make ARCH=x86_64   # x86_64
-make ARCH=i386     # i386
-make ARCH=riscv64  # RISC-V
+# Build graphics kernel
+./scripts/build/build-graphics.sh i386 generic
+
+# Or use Makefile target
+make build-graphics ARCH=i386 TARGET=generic
 ```
 
-## Testing in QEMU
+### Organized Project Structure
+The project is now properly organized:
+```
+SAGE-OS/
+├── tools/
+│   ├── build/           # Build tools and Makefiles
+│   ├── testing/         # Testing utilities
+│   └── development/     # Development tools
+├── scripts/
+│   ├── build/           # Build scripts (build-graphics.sh)
+│   ├── testing/         # Test scripts (test-qemu.sh)
+│   └── deployment/      # Deployment scripts
+├── config/
+│   ├── platforms/       # Platform configs (config.txt, config_rpi5.txt)
+│   └── grub.cfg         # Boot configuration
+├── prototype/           # Restored prototype code
+├── examples/            # Example code and demos
+├── kernel/
+│   ├── kernel.c         # Serial mode kernel
+│   └── kernel_graphics.c # Graphics mode kernel (NEW!)
+└── drivers/
+    └── vga.c            # VGA text mode driver (ENHANCED!)
+```
 
-### Quick Testing
+## 🧪 Testing
 
+### Serial Console Mode
 ```bash
-# Test specific architecture
-./build.sh test aarch64 rpi5
-./build.sh test x86_64 generic
-./build.sh test i386 generic
+# Test i386 build
+make test-i386
+
+# Test with custom parameters
+./scripts/testing/test-qemu.sh i386 generic nographic
 ```
 
-### Manual QEMU Testing
-
-#### i386 (32-bit x86)
+### VGA Graphics Mode (New!)
 ```bash
-qemu-system-i386 -kernel build/i386/kernel.img -nographic
+# Test graphics mode with VNC
+make test-i386-graphics
+
+# Manual QEMU launch with VNC
+qemu-system-i386 \
+  -kernel output/i386/sage-os-v1.0.1-i386-generic-graphics.img \
+  -vnc :1
+
+# Connect with VNC viewer
+open vnc://localhost:5901
 ```
 
-#### x86_64 (64-bit x86) - ISO
+### Auto-Detection Features
+The testing system now automatically detects kernel images in multiple locations:
+- `output/` directory (default)
+- `build-output/` directory
+- `build/` directory
+- Various naming conventions
+
+## 🖥️ Graphics Mode Features
+
+### VGA Text Mode
+- **Resolution**: 80x25 characters
+- **Colors**: 16 foreground, 8 background colors
+- **Real-time keyboard input** via PS/2 controller
+- **Color-coded interface** with visual feedback
+
+### Interactive Shell
+- **Color-coded prompts**: Green prompt, white input
+- **Command highlighting**: Different colors for different types
+- **Backspace support**: Visual character deletion
+- **Enhanced commands**: help, version, clear, colors, demo, reboot
+
+### Testing Options
 ```bash
-qemu-system-x86_64 -cdrom build-output/sageos-x86_64.iso -nographic
+# VNC mode (recommended for headless)
+./scripts/testing/test-qemu.sh i386 generic graphics
+
+# Direct display (local only)
+qemu-system-i386 -kernel output/i386/sage-os-v1.0.1-i386-generic-graphics.img
+
+# Debug mode (serial + graphics)
+qemu-system-i386 \
+  -kernel output/i386/sage-os-v1.0.1-i386-generic-graphics.img \
+  -serial stdio \
+  -vnc :1
 ```
 
-#### AArch64 (ARM64)
+## 🍎 macOS-Specific Considerations
+
+### Apple Silicon vs Intel
 ```bash
-qemu-system-aarch64 -M virt -cpu cortex-a72 -kernel build/aarch64/kernel.img -nographic
+# Check your architecture
+uname -m  # arm64 for Apple Silicon, x86_64 for Intel
+
+# Cross-compile for x86 on Apple Silicon
+make ARCH=i386 TARGET=generic CC=i386-elf-gcc
 ```
 
-#### RISC-V 64-bit
+### GNU vs BSD Tools
+macOS ships with BSD tools, but SAGE-OS requires GNU versions:
 ```bash
-qemu-system-riscv64 -M virt -kernel build/riscv64/kernel.img -nographic
+# Verify GNU tools installation
+which gsed   # Should be /opt/homebrew/bin/gsed
+which ggrep  # Should be /opt/homebrew/bin/ggrep
+which gfind  # Should be /opt/homebrew/bin/gfind
 ```
 
-### Exit QEMU
+### File System Considerations
+- macOS uses case-insensitive file system by default
+- Be aware of cross-platform compatibility issues
+- Git case sensitivity may cause conflicts
 
-- Press `Ctrl+A`, then `X` to exit QEMU
-- Or type `exit` in the SAGE-OS shell
+## 🔧 Development Workflow
 
-## Architecture-Specific Notes
+### Recommended IDE Setup
+1. **Visual Studio Code**
+   ```bash
+   brew install --cask visual-studio-code
+   ```
+   
+   Extensions:
+   - C/C++ Extension Pack
+   - Assembly (MASM)
+   - GitLens
+   - Makefile Tools
 
-### ARM64 (AArch64)
-- **Status**: ✅ Working
-- **Target**: Raspberry Pi 4/5, QEMU virt machine
-- **QEMU Command**: `qemu-system-aarch64 -M virt -cpu cortex-a72`
+2. **Xcode** (for debugging)
+   ```bash
+   xcode-select --install
+   ```
 
-### x86_64
-- **Status**: ⚠️ Partial (GRUB boots, kernel needs debugging)
-- **Target**: Modern PCs, VMs
-- **QEMU Command**: `qemu-system-x86_64 -cdrom sageos.iso`
+### Build Optimization
+```bash
+# Parallel builds
+make -j$(sysctl -n hw.ncpu) ARCH=i386 TARGET=generic
 
-### i386
-- **Status**: ✅ Working
-- **Target**: Legacy PCs, VMs
-- **QEMU Command**: `qemu-system-i386 -kernel kernel.img`
+# Debug builds
+make ARCH=i386 TARGET=generic DEBUG=1
 
-### RISC-V 64-bit
-- **Status**: ⚠️ Builds, OpenSBI loads, kernel hangs
-- **Target**: RISC-V development boards, QEMU
-- **QEMU Command**: `qemu-system-riscv64 -M virt`
+# Release builds
+make ARCH=i386 TARGET=generic RELEASE=1
+```
 
-## Troubleshooting
+## 🐛 Troubleshooting
 
 ### Common Issues
 
-#### 1. Cross-compiler not found
+#### GNU Tools Missing
 ```bash
-# Check if toolchains are installed
-which aarch64-unknown-linux-gnu-gcc
-which x86_64-unknown-linux-gnu-gcc
-
-# If missing, reinstall
-brew reinstall aarch64-unknown-linux-gnu
+# Error: gsed: command not found
+brew install gnu-sed grep findutils gnu-tar
 ```
 
-#### 2. QEMU not found
+#### Cross-Compiler Missing
 ```bash
-# Install QEMU
+# Error: i386-elf-gcc: command not found
+brew install i386-elf-gcc
+# Or use system clang:
+make ARCH=i386 TARGET=generic CC=clang
+```
+
+#### QEMU Issues
+```bash
+# QEMU not found
 brew install qemu
 
-# Verify installation
-qemu-system-aarch64 --version
+# Graphics not working
+# Use VNC mode instead:
+./scripts/testing/test-qemu.sh i386 generic graphics
 ```
 
-#### 3. Permission denied on scripts
+#### Permission Errors
 ```bash
-# Make scripts executable
-chmod +x build.sh
-chmod +x build-all-architectures-macos.sh
-chmod +x run_qemu.sh
+# Fix script permissions
+chmod +x scripts/testing/test-qemu.sh
+chmod +x scripts/build/build-graphics.sh
+chmod +x tools/organize_project.py
 ```
 
-#### 4. Build fails with linker errors
+### Performance Optimization
+
+#### Faster Builds
 ```bash
-# Clean and rebuild
-make clean
-./build.sh build aarch64
-```
-
-### macOS-Specific Issues
-
-#### 1. Rosetta 2 (Apple Silicon Macs)
-If you're on Apple Silicon and need x86_64 tools:
-```bash
-# Install Rosetta 2
-softwareupdate --install-rosetta
-```
-
-#### 2. Homebrew Path Issues
-```bash
-# Add Homebrew to PATH (Apple Silicon)
-echo 'export PATH="/opt/homebrew/bin:$PATH"' >> ~/.zshrc
-source ~/.zshrc
-
-# Add Homebrew to PATH (Intel)
-echo 'export PATH="/usr/local/bin:$PATH"' >> ~/.zshrc
-source ~/.zshrc
-```
-
-## Development Workflow
-
-### 1. Edit Code
-```bash
-# Edit kernel code
-nano kernel/kernel.c
-
-# Edit drivers
-nano drivers/uart.c
-```
-
-### 2. Build and Test
-```bash
-# Quick build and test
-make ARCH=aarch64 && qemu-system-aarch64 -M virt -cpu cortex-a72 -kernel build/aarch64/kernel.img -nographic
-```
-
-### 3. Debug
-```bash
-# Build with debug symbols
-make ARCH=aarch64 CFLAGS="-g -O0"
-
-# Run with GDB
-qemu-system-aarch64 -M virt -cpu cortex-a72 -kernel build/aarch64/kernel.img -nographic -s -S &
-aarch64-unknown-linux-gnu-gdb build/aarch64/kernel.elf
-(gdb) target remote localhost:1234
-(gdb) continue
-```
-
-## UTM Setup (Alternative to QEMU)
-
-For a GUI-based approach, you can use UTM:
-
-### 1. Install UTM
-```bash
-brew install --cask utm
-```
-
-### 2. Create VM
-1. Open UTM
-2. Create new VM
-3. Choose "Emulate"
-4. Select architecture (ARM64, x86_64, etc.)
-5. Load SAGE-OS kernel or ISO
-
-### 3. Configure VM
-- **Memory**: 512MB - 2GB
-- **Storage**: Not needed for kernel testing
-- **Network**: Disabled for basic testing
-
-## Performance Tips
-
-### 1. Parallel Builds
-```bash
-# Use multiple cores for building
-make -j$(nproc) ARCH=aarch64
-```
-
-### 2. Incremental Builds
-```bash
-# Only rebuild changed files
-make ARCH=aarch64
-```
-
-### 3. Build Caching
-```bash
-# Use ccache for faster rebuilds
+# Use ccache
 brew install ccache
 export CC="ccache gcc"
+
+# Parallel compilation
+make -j$(sysctl -n hw.ncpu)
 ```
 
-## Advanced Features
-
-### 1. Docker Builds
+#### QEMU Performance
 ```bash
-# Build using Docker (if Docker is installed)
-make docker-build-all
+# Hardware acceleration (if available)
+qemu-system-i386 -accel hvf -kernel kernel.img
+
+# More memory
+qemu-system-i386 -m 512M -kernel kernel.img
 ```
 
-### 2. ISO Creation
+## 🚀 Advanced Features
+
+### UTM Integration
 ```bash
-# Create bootable ISO
-./build.sh build x86_64 generic iso
+# Install UTM for GUI virtualization
+brew install --cask utm
+# See docs/UTM_MACOS_SETUP_GUIDE.md
 ```
 
-### 3. Security Scanning
+### Docker Development
 ```bash
-# Run security scans
-./scan-vulnerabilities.sh --format html --arch aarch64
+# Build in container
+docker build -t sage-os-build .
+docker run -v $(pwd):/workspace sage-os-build make ARCH=i386
 ```
 
-## Next Steps
+### Continuous Integration
+GitHub Actions workflow supports macOS builds automatically.
 
-1. **Explore the Code**: Start with `kernel/kernel.c` and `kernel/shell.c`
-2. **Add Features**: Implement new shell commands or drivers
-3. **Test on Hardware**: Deploy to actual Raspberry Pi
-4. **Contribute**: Submit pull requests with improvements
+## 📚 Documentation
 
-## Support
+### Updated Guides
+- [Graphics Mode Guide](../../../GRAPHICS_MODE_GUIDE.md) - **New!**
+- [Build System Guide](../../build/BUILD_SYSTEM.md)
+- [UTM Setup Guide](../../UTM_MACOS_SETUP_GUIDE.md)
+- [Project Structure](../../../PROJECT_STRUCTURE.md)
 
-- **Documentation**: Check `docs/` directory
-- **Issues**: Report bugs on GitHub
-- **Community**: Join development discussions
+### Key Files
+- `tools/build/Makefile.macos` - macOS-specific Makefile
+- `scripts/testing/test-qemu.sh` - Enhanced testing script
+- `scripts/build/build-graphics.sh` - Graphics mode builder
+- `config/platforms/` - Platform configurations
 
-## Useful Commands Reference
+## 🤝 Contributing
 
+### Development Guidelines
+1. Follow coding standards in `CONTRIBUTING.md`
+2. Test both serial and graphics modes
+3. Update documentation for macOS-specific changes
+4. Use organized project structure
+
+### Submitting Changes
 ```bash
-# Quick commands for daily development
-./build.sh status                    # Check build status
-./build.sh clean                     # Clean all builds
-./build.sh build aarch64 rpi5        # Build for RPi 5
-./build.sh test aarch64 rpi5         # Test in QEMU
-make ARCH=aarch64 info              # Show build info
+# Create feature branch
+git checkout -b feature/macos-improvement
+
+# Test thoroughly
+make test-i386
+make test-i386-graphics
+
+# Commit with proper message
+git add .
+git commit -m "feat: improve macOS graphics support"
+git push origin feature/macos-improvement
 ```
 
-This guide should get you up and running with SAGE-OS development on macOS. The automated setup scripts handle most of the complexity, but the manual steps are provided for those who prefer more control over their development environment.
+## 📞 Support
+
+### Getting Help
+1. Check this updated guide
+2. Review [Graphics Mode Guide](../../../GRAPHICS_MODE_GUIDE.md)
+3. Search GitHub issues
+4. Create new issue with:
+   - macOS version (Intel/Apple Silicon)
+   - Error messages
+   - Steps to reproduce
+
+### Community Resources
+- [GitHub Issues](https://github.com/Asadzero/SAGE-OS/issues)
+- [Discussions](https://github.com/Asadzero/SAGE-OS/discussions)
+- [Contributing Guidelines](../../../CONTRIBUTING.md)
+
+---
+
+**Latest Updates (2025-06-11)**:
+- ✅ VGA Graphics Mode with keyboard input
+- ✅ Organized project structure
+- ✅ Enhanced testing system with auto-detection
+- ✅ macOS-specific build improvements
+- ✅ Restored prototype directory
+- ✅ Updated documentation and guides
+
+For the most current information, visit the [GitHub repository](https://github.com/Asadzero/SAGE-OS).

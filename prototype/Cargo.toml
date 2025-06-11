@@ -1,0 +1,60 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# SAGE OS — Copyright (c) 2025 Ashish Vasant Yesale (ashishyesale007@gmail.com)
+# SPDX-License-Identifier: BSD-3-Clause OR Proprietary
+# SAGE OS is dual-licensed under the BSD 3-Clause License and a Commercial License.
+# 
+# This file is part of the SAGE OS Project.
+# ─────────────────────────────────────────────────────────────────────────────
+[package]
+name = "sage-os"
+version = "0.1.0"
+edition = "2021"
+authors = ["SAGE OS Team"]
+description = "Self-Aware General Environment Operating System"
+repository = "https://github.com/AshishYesale7/SAGE-OS"
+license = "BSD-3-Clause"
+
+[lib]
+name = "sage_os"
+crate-type = ["staticlib", "rlib"]
+
+[dependencies]
+# Core dependencies
+libc = "0.2"
+bitflags = "2.4"
+spin = "0.9"
+volatile = "0.4"
+lazy_static = { version = "1.4", features = ["spin_no_std"] }
+
+# Hardware Abstraction Layer
+embedded-hal = "0.2"
+cortex-a = "8.1"
+
+# Memory management
+linked_list_allocator = "0.10"
+
+# Cryptography
+aes-gcm = { version = "0.10", default-features = false }
+sha2 = { version = "0.10", default-features = false }
+ed25519-dalek = { version = "2.0", default-features = false }
+
+# Optional features
+tflite-micro = { version = "0.1", optional = true }
+
+[features]
+default = []
+ai = ["tflite-micro"]
+crypto = []
+full = ["ai", "crypto"]
+
+[profile.dev]
+panic = "abort"
+debug = true
+opt-level = 0
+
+[profile.release]
+panic = "abort"
+debug = false
+opt-level = 3
+lto = true
+codegen-units = 1

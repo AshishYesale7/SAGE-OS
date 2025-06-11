@@ -1,0 +1,51 @@
+─────────────────────────────────────────────────────────────────────────────
+SAGE OS — Copyright (c) 2025 Ashish Vasant Yesale (ashishyesale007@gmail.com)
+SPDX-License-Identifier: BSD-3-Clause OR Proprietary
+SAGE OS is dual-licensed under the BSD 3-Clause License and a Commercial License.
+
+This file is part of the SAGE OS Project.
+─────────────────────────────────────────────────────────────────────────────
+# SAGE OS Configuration for Raspberry Pi 5
+# This file configures the Raspberry Pi 5 bootloader for SAGE OS
+
+# Kernel filename
+kernel=kernel8-rpi5.img
+
+# 64-bit mode
+arm_64bit=1
+
+# CPU configuration
+arm_boost=1
+arm_freq=2400
+over_voltage=6
+
+# GPU configuration
+gpu_freq=750
+gpu_mem=512
+
+# UART configuration for console
+enable_uart=1
+uart_2ndstage=1
+
+# Display configuration
+hdmi_force_hotplug=1
+hdmi_drive=2
+hdmi_group=2
+hdmi_mode=87
+hdmi_cvt=1024 768 60 6 0 0 0
+
+# Boot options
+boot_delay=0
+disable_splash=1
+avoid_warnings=1
+
+# AI HAT+ configuration
+dtoverlay=i2c-gpio,i2c_gpio_sda=2,i2c_gpio_scl=3
+dtoverlay=spi-gpio,spi_gpio_sclk=11,spi_gpio_mosi=10,spi_gpio_miso=9,spi_gpio_cs0=8
+
+# Enable I2C and SPI for AI HAT+ communication
+dtparam=i2c_arm=on
+dtparam=spi=on
+
+# Power management for AI HAT+
+max_usb_current=1

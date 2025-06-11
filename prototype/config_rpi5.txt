@@ -1,0 +1,53 @@
+─────────────────────────────────────────────────────────────────────────────
+SAGE OS — Copyright (c) 2025 Ashish Vasant Yesale (ashishyesale007@gmail.com)
+SPDX-License-Identifier: BSD-3-Clause OR Proprietary
+SAGE OS is dual-licensed under the BSD 3-Clause License and a Commercial License.
+
+This file is part of the SAGE OS Project.
+─────────────────────────────────────────────────────────────────────────────
+# SAGE OS Configuration for Raspberry Pi 5
+
+# Enable 64-bit mode
+arm_64bit=1
+
+# Set CPU clock speed (optional)
+#arm_freq=2400
+
+# Set GPU memory (minimum)
+gpu_mem=16
+
+# Enable UART for console
+enable_uart=1
+uart_2ndstage=1
+
+# Set UART clock
+init_uart_clock=48000000
+
+# Disable rainbow splash screen
+disable_splash=1
+
+# Kernel filename
+kernel=kernel8.img
+
+# Disable overscan
+disable_overscan=1
+
+# Boot in headless mode (no HDMI)
+#hdmi_blanking=2
+
+# Overclock settings (optional, use with caution)
+#over_voltage=2
+#arm_freq=3000
+
+# Enable PCIe for high-speed peripherals
+#dtoverlay=pcie-32bit-dma
+
+# Enable I2C for AI HAT+ communication
+dtparam=i2c_arm=on
+dtparam=i2c_arm_baudrate=400000
+
+# Enable SPI for AI HAT+ high-speed data transfer
+dtparam=spi=on
+
+# Enable hardware-accelerated crypto (if available)
+dtoverlay=crypto

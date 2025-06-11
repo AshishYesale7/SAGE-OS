@@ -28,7 +28,7 @@ NC='\033[0m' # No Color
 
 # Script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+PROJECT_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
 
 # Function to print colored output
 print_info() {
@@ -86,7 +86,7 @@ Press Ctrl+A then X to exit QEMU.
 EOF
 }
 
-# Function to get kernel image path
+# Function to get kernel image path with auto-detection
 get_kernel_path() {
     local arch="$1"
     local target="${2:-generic}"
@@ -94,6 +94,36 @@ get_kernel_path() {
     local version
     version=$(cat "$PROJECT_ROOT/VERSION" 2>/dev/null || echo "1.0.1")
     
+    # Try different possible paths
+    local possible_paths=()
+    
+    if [[ "$mode" == "graphics" ]]; then
+        # Graphics mode paths
+        possible_paths+=(
+            "$PROJECT_ROOT/output/$arch/sage-os-v${version}-${arch}-${target}-graphics.img"
+            "$PROJECT_ROOT/build-output/$arch/sage-os-v${version}-${arch}-${target}-graphics.img"
+            "$PROJECT_ROOT/build/$arch-graphics/kernel.img"
+            "$PROJECT_ROOT/output/$arch/kernel-graphics.img"
+        )
+    else
+        # Regular mode paths
+        possible_paths+=(
+            "$PROJECT_ROOT/output/$arch/sage-os-v${version}-${arch}-${target}.img"
+            "$PROJECT_ROOT/build-output/$arch/sage-os-v${version}-${arch}-${target}.img"
+            "$PROJECT_ROOT/build/$arch/kernel.img"
+            "$PROJECT_ROOT/output/$arch/kernel.img"
+        )
+    fi
+    
+    # Return first existing path
+    for path in "${possible_paths[@]}"; do
+        if [[ -f "$path" ]]; then
+            echo "$path"
+            return 0
+        fi
+    done
+    
+    # Return default path if none found
     if [[ "$mode" == "graphics" ]]; then
         echo "$PROJECT_ROOT/output/$arch/sage-os-v${version}-${arch}-${target}-graphics.img"
     else
@@ -118,7 +148,7 @@ test_qemu() {
         
         if [[ "$mode" == "graphics" ]]; then
             print_info "Building graphics kernel for $arch..."
-            ./scripts/build-graphics.sh "$arch" "$target"
+            ./scripts/build/build-graphics.sh "$arch" "$target"
         else
             print_info "Building kernel for $arch..."
             make ARCH="$arch" TARGET="$target"

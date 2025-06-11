@@ -1,15 +1,30 @@
-# SAGE-OS Developer Guide for Linux
+# SAGE-OS Developer Guide for Linux (Updated 2025-06-11)
 
 ## Overview
 
-This guide provides comprehensive instructions for setting up SAGE-OS development environment on Linux distributions, building the OS for all supported architectures, and testing in QEMU.
+This guide provides comprehensive instructions for setting up SAGE-OS development environment on Linux distributions, building the OS for all supported architectures, and testing both serial console and VGA graphics modes.
+
+## 🚀 Quick Start
+
+```bash
+# Clone and setup
+git clone https://github.com/Asadzero/SAGE-OS.git
+cd SAGE-OS
+
+# Install dependencies (auto-detects distribution)
+./tools/build/install-deps.sh
+
+# Test both modes
+make test-i386                # Serial console mode
+make test-i386-graphics       # VGA graphics mode (NEW!)
+```
 
 ## Supported Distributions
 
-- **Ubuntu/Debian** (apt-based)
-- **Fedora/RHEL/CentOS** (yum/dnf-based)
-- **Arch Linux** (pacman-based)
-- **Other distributions** (manual installation)
+- **Ubuntu/Debian** (apt-based) - Fully supported
+- **Fedora/RHEL/CentOS** (yum/dnf-based) - Fully supported
+- **Arch Linux** (pacman-based) - Fully supported
+- **Other distributions** (manual installation) - Partial support
 
 ## Prerequisites
 
@@ -18,26 +33,30 @@ This guide provides comprehensive instructions for setting up SAGE-OS developmen
 - Internet connection for package installation
 - sudo/root access for package installation
 
-## Quick Setup
+## 🏗️ Project Structure
 
-### 1. Clone SAGE-OS Repository
-
-```bash
-git clone https://github.com/Asadzero/SAGE-OS.git
-cd SAGE-OS
+The project is now organized for better maintainability:
 ```
-
-### 2. Automated Setup
-
-```bash
-# Make the build script executable
-chmod +x build.sh
-
-# Install all dependencies automatically
-./build.sh install-deps
+SAGE-OS/
+├── tools/
+│   ├── build/           # Build tools and scripts
+│   ├── testing/         # Testing utilities
+│   └── development/     # Development tools
+├── scripts/
+│   ├── build/           # Build scripts (build-graphics.sh)
+│   ├── testing/         # Test scripts (test-qemu.sh)
+│   └── deployment/      # Deployment scripts
+├── config/
+│   ├── platforms/       # Platform configurations
+│   └── grub.cfg         # Boot configuration
+├── prototype/           # Restored prototype code
+├── examples/            # Example code and demos
+├── kernel/
+│   ├── kernel.c         # Serial mode kernel
+│   └── kernel_graphics.c # Graphics mode kernel (NEW!)
+└── drivers/
+    └── vga.c            # VGA text mode driver (ENHANCED!)
 ```
-
-The script will automatically detect your distribution and install the appropriate packages.
 
 ## Manual Setup by Distribution
 

@@ -230,30 +230,30 @@ all-arch:
 # Quick test targets using unified script
 test:
 	@echo "🧪 Testing $(ARCH) build in QEMU..."
-	@./scripts/test-qemu.sh $(ARCH) $(TARGET)
+	@./scripts/testing/test-qemu.sh $(ARCH) $(TARGET)
 
 test-i386:
-	@./scripts/test-qemu.sh i386 generic
+	@./scripts/testing/test-qemu.sh i386 generic
 
 test-aarch64:
-	@./scripts/test-qemu.sh aarch64 generic
+	@./scripts/testing/test-qemu.sh aarch64 generic
 
 test-x86_64:
-	@./scripts/test-qemu.sh x86_64 generic
+	@./scripts/testing/test-qemu.sh x86_64 generic
 
 test-riscv64:
-	@./scripts/test-qemu.sh riscv64 generic
+	@./scripts/testing/test-qemu.sh riscv64 generic
 
 # Graphics mode testing (x86 only)
 test-graphics:
 	@echo "🖥️ Testing $(ARCH) build in QEMU graphics mode..."
-	@./scripts/test-qemu.sh $(ARCH) $(TARGET) graphics
+	@./scripts/testing/test-qemu.sh $(ARCH) $(TARGET) graphics
 
 test-i386-graphics:
-	@./scripts/test-qemu.sh i386 generic graphics
+	@./scripts/testing/test-qemu.sh i386 generic graphics
 
 test-x86_64-graphics:
-	@./scripts/test-qemu.sh x86_64 generic graphics
+	@./scripts/testing/test-qemu.sh x86_64 generic graphics
 
 # Help target
 help:
@@ -288,8 +288,8 @@ help:
 	@echo "  make test-x86_64-graphics         - Test x86_64 in graphics mode"
 	@echo ""
 	@echo "🔧 Direct Script Usage:"
-	@echo "  ./scripts/test-qemu.sh <arch>     - Serial console mode"
-	@echo "  ./scripts/test-qemu.sh <arch> <target> graphics - Graphics mode"
+	@echo "  ./scripts/testing/test-qemu.sh <arch>     - Serial console mode"
+	@echo "  ./scripts/testing/test-qemu.sh <arch> <target> graphics - Graphics mode"
 	@echo ""
 	@echo "📝 Examples:"
 	@echo "  make ARCH=aarch64 TARGET=rpi5     - Build for Raspberry Pi 5"
