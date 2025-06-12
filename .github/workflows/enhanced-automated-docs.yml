@@ -761,10 +761,10 @@ jobs:
         site_name: SAGE-OS Documentation
         site_description: Self-Aware General Environment Operating System - Enhanced Documentation with AI Integration
         site_author: SAGE-OS Development Team
-        site_url: https://ashishyesale7.github.io/newos/
+        site_url: https://ashishyesale7.github.io/SAGE-OS/
         
-        repo_name: ashishyesale7/newos
-        repo_url: https://github.com/ashishyesale7/newos
+        repo_name: ashishyesale7/SAGE-OS
+        repo_url: https://github.com/ashishyesale7/SAGE-OS
         edit_uri: edit/main/docs/
         
         theme:
@@ -909,13 +909,13 @@ jobs:
         extra:
           social:
             - icon: fontawesome/brands/github
-              link: https://github.com/ashishyesale7/newos
+              link: https://github.com/ashishyesale7/SAGE-OS
               name: GitHub Repository
             - icon: fontawesome/solid/bug
-              link: https://github.com/ashishyesale7/newos/issues
+              link: https://github.com/ashishyesale7/SAGE-OS/issues
               name: Report Issues
             - icon: fontawesome/solid/comments
-              link: https://github.com/ashishyesale7/newos/discussions
+              link: https://github.com/ashishyesale7/SAGE-OS/discussions
               name: Discussions
           version:
             provider: mike

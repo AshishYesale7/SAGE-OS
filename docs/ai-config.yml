@@ -7,8 +7,8 @@ general:
   project_description: "Self-Aware General Environment Operating System"
   version: "1.0.1"
   author: "Ashish Vasant Yesale"
-  repository: "https://github.com/ashishyesale7/newos"
-  documentation_url: "https://ashishyesale7.github.io/newos/"
+  repository: "https://github.com/ashishyesale7/SAGE-OS"
+  documentation_url: "https://ashishyesale7.github.io/SAGE-OS/"
 
 # Documentation Settings
 documentation:

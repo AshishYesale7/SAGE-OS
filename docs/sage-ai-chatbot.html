@@ -1,0 +1,1265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SAGE-OS AI Assistant - Live Chat</title>
+    <meta name="description" content="Interactive AI assistant for SAGE-OS development, architecture, and support">
+    <meta name="keywords" content="SAGE-OS, AI, chatbot, operating system, development, support">
+    
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>">
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-color: #2196F3;
+            --primary-dark: #1976D2;
+            --secondary-color: #00BCD4;
+            --accent-color: #FF5722;
+            --success-color: #4CAF50;
+            --warning-color: #FF9800;
+            --error-color: #F44336;
+            --background-color: #f5f7fa;
+            --surface-color: #ffffff;
+            --text-primary: #2c3e50;
+            --text-secondary: #7f8c8d;
+            --border-color: #e1e8ed;
+            --shadow: 0 2px 10px rgba(0,0,0,0.1);
+            --shadow-hover: 0 4px 20px rgba(0,0,0,0.15);
+            --border-radius: 12px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .chat-container {
+            width: 100%;
+            max-width: 900px;
+            height: 90vh;
+            max-height: 800px;
+            background: var(--surface-color);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-hover);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 24px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .chat-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="0.5"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
+            opacity: 0.3;
+        }
+
+        .chat-header-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .chat-header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .chat-header .subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+            font-weight: 400;
+        }
+
+        .status-indicator {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255,255,255,0.2);
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success-color);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 24px;
+            overflow-y: auto;
+            background: var(--background-color);
+            scroll-behavior: smooth;
+        }
+
+        .chat-messages::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .chat-messages::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 3px;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb:hover {
+            background: var(--text-secondary);
+        }
+
+        .message {
+            margin-bottom: 20px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.user {
+            justify-content: flex-end;
+        }
+
+        .message.user .message-content {
+            order: -1;
+        }
+
+        .message-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .message.user .message-avatar {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            color: white;
+        }
+
+        .message.assistant .message-avatar {
+            background: linear-gradient(135deg, var(--secondary-color), var(--success-color));
+            color: white;
+        }
+
+        .message-content {
+            max-width: 70%;
+            padding: 16px 20px;
+            border-radius: var(--border-radius);
+            word-wrap: break-word;
+            position: relative;
+            box-shadow: var(--shadow);
+        }
+
+        .message.user .message-content {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.assistant .message-content {
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            border-bottom-left-radius: 4px;
+        }
+
+        .message-time {
+            font-size: 12px;
+            opacity: 0.7;
+            margin-top: 8px;
+        }
+
+        .typing-indicator {
+            display: none;
+            margin-bottom: 20px;
+        }
+
+        .typing-indicator .message-content {
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .typing-dots {
+            display: flex;
+            gap: 4px;
+        }
+
+        .typing-dots span {
+            width: 8px;
+            height: 8px;
+            background: var(--text-secondary);
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dots span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dots span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+            0%, 60%, 100% {
+                transform: translateY(0);
+                opacity: 0.5;
+            }
+            30% {
+                transform: translateY(-10px);
+                opacity: 1;
+            }
+        }
+
+        .welcome-section {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-secondary);
+        }
+
+        .welcome-section h3 {
+            color: var(--text-primary);
+            margin-bottom: 16px;
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .welcome-section p {
+            margin-bottom: 24px;
+            font-size: 16px;
+        }
+
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            margin: 24px 0;
+        }
+
+        .quick-action {
+            padding: 12px 16px;
+            background: var(--surface-color);
+            border: 2px solid var(--border-color);
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-align: left;
+        }
+
+        .quick-action:hover {
+            border-color: var(--primary-color);
+            background: var(--primary-color);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .chat-input-container {
+            padding: 24px;
+            background: var(--surface-color);
+            border-top: 1px solid var(--border-color);
+        }
+
+        .chat-input {
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+        }
+
+        .input-wrapper {
+            flex: 1;
+            position: relative;
+        }
+
+        .chat-input textarea {
+            width: 100%;
+            min-height: 50px;
+            max-height: 120px;
+            padding: 16px 50px 16px 20px;
+            border: 2px solid var(--border-color);
+            border-radius: 25px;
+            outline: none;
+            font-size: 16px;
+            font-family: inherit;
+            resize: none;
+            transition: var(--transition);
+            background: var(--background-color);
+        }
+
+        .chat-input textarea:focus {
+            border-color: var(--primary-color);
+            background: var(--surface-color);
+        }
+
+        .chat-input textarea::placeholder {
+            color: var(--text-secondary);
+        }
+
+        .input-actions {
+            position: absolute;
+            right: 12px;
+            bottom: 12px;
+            display: flex;
+            gap: 8px;
+        }
+
+        .input-action {
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: transparent;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+            color: var(--text-secondary);
+        }
+
+        .input-action:hover {
+            background: var(--border-color);
+            color: var(--text-primary);
+        }
+
+        .send-button {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 18px;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .send-button:hover:not(:disabled) {
+            transform: scale(1.05);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .send-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .error-message {
+            background: var(--error-color);
+            color: white;
+            padding: 12px 20px;
+            border-radius: var(--border-radius);
+            margin: 12px 24px;
+            display: none;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .api-status {
+            position: absolute;
+            bottom: 24px;
+            left: 24px;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            display: none;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .chat-container {
+                height: 100vh;
+                max-height: none;
+                border-radius: 0;
+            }
+
+            .chat-header {
+                padding: 20px;
+            }
+
+            .chat-header h1 {
+                font-size: 24px;
+            }
+
+            .chat-messages {
+                padding: 16px;
+            }
+
+            .message-content {
+                max-width: 85%;
+            }
+
+            .quick-actions {
+                grid-template-columns: 1fr;
+            }
+
+            .chat-input-container {
+                padding: 16px;
+            }
+
+            .status-indicator {
+                position: static;
+                margin-top: 12px;
+                justify-content: center;
+            }
+        }
+
+        /* Dark mode support */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --background-color: #1a1a1a;
+                --surface-color: #2d2d2d;
+                --text-primary: #ffffff;
+                --text-secondary: #b0b0b0;
+                --border-color: #404040;
+            }
+        }
+
+        /* Loading animation */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Code highlighting */
+        .message-content code {
+            background: rgba(0,0,0,0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 14px;
+        }
+
+        .message-content pre {
+            background: rgba(0,0,0,0.05);
+            padding: 12px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 8px 0;
+        }
+
+        .message-content pre code {
+            background: none;
+            padding: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <div class="status-indicator">
+                <div class="status-dot"></div>
+                <span id="statusText">Online</span>
+            </div>
+            <div class="chat-header-content">
+                <h1>
+                    <i class="fas fa-robot"></i>
+                    SAGE-OS AI Assistant
+                </h1>
+                <p class="subtitle">Your intelligent companion for SAGE-OS development and support</p>
+            </div>
+        </div>
+
+        <div class="error-message" id="errorMessage">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span id="errorText"></span>
+        </div>
+
+        <div class="chat-messages" id="chatMessages">
+            <div class="welcome-section">
+                <h3>👋 Welcome to SAGE-OS AI Assistant!</h3>
+                <p>I'm here to help you with SAGE-OS development, architecture, troubleshooting, and more. Ask me anything!</p>
+                
+                <div class="quick-actions">
+                    <div class="quick-action" onclick="sendQuickMessage('How do I build SAGE-OS?')">
+                        <i class="fas fa-hammer"></i>
+                        Build Instructions
+                    </div>
+                    <div class="quick-action" onclick="sendQuickMessage('What is the architecture of SAGE-OS?')">
+                        <i class="fas fa-sitemap"></i>
+                        System Architecture
+                    </div>
+                    <div class="quick-action" onclick="sendQuickMessage('How do I contribute to SAGE-OS?')">
+                        <i class="fas fa-hands-helping"></i>
+                        Contributing Guide
+                    </div>
+                    <div class="quick-action" onclick="sendQuickMessage('What are the system requirements?')">
+                        <i class="fas fa-desktop"></i>
+                        Requirements
+                    </div>
+                    <div class="quick-action" onclick="sendQuickMessage('How do I debug SAGE-OS?')">
+                        <i class="fas fa-bug"></i>
+                        Debugging Help
+                    </div>
+                    <div class="quick-action" onclick="sendQuickMessage('Show me the API reference')">
+                        <i class="fas fa-book"></i>
+                        API Reference
+                    </div>
+                </div>
+            </div>
+
+            <div class="typing-indicator" id="typingIndicator">
+                <div class="message-avatar">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div class="message-content">
+                    <div class="typing-dots">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                    <span style="margin-left: 12px; color: var(--text-secondary);">AI is thinking...</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="chat-input-container">
+            <div class="chat-input">
+                <div class="input-wrapper">
+                    <textarea 
+                        id="messageInput" 
+                        placeholder="Ask me about SAGE-OS development, architecture, or anything else..."
+                        rows="1"
+                        onkeydown="handleKeyDown(event)"
+                        oninput="autoResize(this)"
+                    ></textarea>
+                    <div class="input-actions">
+                        <button class="input-action" onclick="clearChat()" title="Clear chat">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                        <button class="input-action" onclick="toggleDarkMode()" title="Toggle theme">
+                            <i class="fas fa-moon"></i>
+                        </button>
+                    </div>
+                </div>
+                <button class="send-button" onclick="sendMessage()" id="sendButton">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="api-status" id="apiStatus">
+            API Status: <span id="apiStatusText">Checking...</span>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const CONFIG = {
+            API_ENDPOINT: 'https://models.inference.ai.azure.com/chat/completions',
+            API_KEY: '', // Will be set from GitHub Pages environment or user input
+            MODEL: 'gpt-4',
+            MAX_TOKENS: 1000,
+            TEMPERATURE: 0.7,
+            MAX_HISTORY: 10,
+            TYPING_DELAY: 1000,
+            RETRY_ATTEMPTS: 3,
+            RETRY_DELAY: 2000
+        };
+
+        // SAGE-OS Knowledge Base
+        const SAGE_OS_KNOWLEDGE = {
+            overview: `SAGE-OS (Self-Aware General Environment Operating System) is a cutting-edge embedded operating system designed for AI-enhanced computing environments.`,
+            
+            features: [
+                "Multi-architecture support (i386, x86_64, ARM, AArch64, RISC-V)",
+                "AI integration with GitHub Models API",
+                "VGA graphics and serial communication",
+                "Comprehensive driver support (VGA, Serial, Keyboard, AI HAT+)",
+                "Modern build system with CMake",
+                "QEMU integration for testing",
+                "Professional ASCII art branding",
+                "Interactive command shell",
+                "Real-time documentation generation",
+                "Secure AI-powered development tools"
+            ],
+
+            architecture: {
+                kernel: "Core system functionality with memory management and process scheduling",
+                drivers: "Hardware abstraction layer supporting multiple device types",
+                ai_subsystem: "Machine learning integration with GitHub Models API",
+                graphics: "VGA display support with text and graphics modes",
+                memory: "Efficient memory allocation and management system",
+                build_system: "CMake-based cross-compilation support"
+            },
+
+            build_instructions: {
+                prerequisites: ["make", "gcc", "qemu", "cmake (optional)"],
+                steps: [
+                    "Clone the repository: git clone https://github.com/mullaasad5420c/newos.git",
+                    "Navigate to directory: cd newos",
+                    "Build for i386: make ARCH=i386 TARGET=generic",
+                    "Test with QEMU: qemu-system-i386 -kernel build/i386/kernel.elf -m 128M",
+                    "For graphics mode: qemu-system-i386 -kernel build/i386/kernel.elf -m 128M -vga std"
+                ]
+            },
+
+            troubleshooting: {
+                common_issues: [
+                    "Build errors: Check dependencies and compiler version",
+                    "QEMU not starting: Verify QEMU installation and kernel path",
+                    "Graphics issues: Use -vga std flag with QEMU",
+                    "Memory errors: Increase memory allocation with -m flag",
+                    "Boot failures: Check multiboot compliance and kernel format"
+                ]
+            },
+
+            development: {
+                contributing: "Fork repository, create feature branch, make changes, test thoroughly, submit pull request",
+                coding_standards: "Follow existing code style, add comprehensive comments, write tests",
+                testing: "Use QEMU for testing, validate on multiple architectures, run security tests"
+            }
+        };
+
+        // State management
+        let conversationHistory = [];
+        let isTyping = false;
+        let apiKeyConfigured = false;
+
+        // Initialize the chatbot
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeChatbot();
+            checkAPIConfiguration();
+            loadChatHistory();
+            autoResize(document.getElementById('messageInput'));
+        });
+
+        function initializeChatbot() {
+            console.log('🤖 SAGE-OS AI Assistant initialized');
+            updateStatus('online', 'Online');
+            
+            // Focus on input
+            document.getElementById('messageInput').focus();
+            
+            // Check for API key in URL parameters (for testing)
+            const urlParams = new URLSearchParams(window.location.search);
+            const apiKey = urlParams.get('api_key');
+            if (apiKey) {
+                CONFIG.API_KEY = apiKey;
+                apiKeyConfigured = true;
+                updateStatus('online', 'AI Ready');
+            }
+        }
+
+        function checkAPIConfiguration() {
+            // In a real deployment, you might check for API key availability
+            // For demo purposes, we'll simulate API availability
+            setTimeout(() => {
+                if (!CONFIG.API_KEY) {
+                    showApiKeyPrompt();
+                } else {
+                    updateStatus('online', 'AI Ready');
+                }
+            }, 1000);
+        }
+
+        function showApiKeyPrompt() {
+            const apiKey = prompt('Enter your GitHub Models API key to enable AI features (or leave empty for demo mode):');
+            if (apiKey && apiKey.trim()) {
+                CONFIG.API_KEY = apiKey.trim();
+                apiKeyConfigured = true;
+                updateStatus('online', 'AI Ready');
+                showMessage('✅ AI features enabled! You can now chat with the SAGE-OS AI assistant.', 'assistant');
+            } else {
+                updateStatus('warning', 'Demo Mode');
+                showMessage('🔄 Running in demo mode. Responses will be simulated. To enable AI features, refresh and enter your GitHub Models API key.', 'assistant');
+            }
+        }
+
+        function updateStatus(type, text) {
+            const statusDot = document.querySelector('.status-dot');
+            const statusText = document.getElementById('statusText');
+            
+            statusText.textContent = text;
+            
+            statusDot.style.background = {
+                'online': 'var(--success-color)',
+                'warning': 'var(--warning-color)',
+                'error': 'var(--error-color)',
+                'offline': 'var(--text-secondary)'
+            }[type] || 'var(--success-color)';
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            const errorText = document.getElementById('errorText');
+            
+            errorText.textContent = message;
+            errorDiv.style.display = 'flex';
+            
+            setTimeout(() => {
+                errorDiv.style.display = 'none';
+            }, 5000);
+        }
+
+        function addMessage(content, sender = 'user', timestamp = null) {
+            const messagesContainer = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+            
+            const avatarDiv = document.createElement('div');
+            avatarDiv.className = 'message-avatar';
+            avatarDiv.innerHTML = sender === 'user' ? '<i class="fas fa-user"></i>' : '<i class="fas fa-robot"></i>';
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            contentDiv.innerHTML = formatMessage(content);
+            
+            if (timestamp) {
+                const timeDiv = document.createElement('div');
+                timeDiv.className = 'message-time';
+                timeDiv.textContent = timestamp;
+                contentDiv.appendChild(timeDiv);
+            }
+            
+            messageDiv.appendChild(avatarDiv);
+            messageDiv.appendChild(contentDiv);
+            messagesContainer.appendChild(messageDiv);
+            
+            // Remove welcome section after first message
+            const welcomeSection = messagesContainer.querySelector('.welcome-section');
+            if (welcomeSection && sender === 'user') {
+                welcomeSection.remove();
+            }
+            
+            scrollToBottom();
+            saveChatHistory();
+        }
+
+        function formatMessage(content) {
+            // Enhanced message formatting
+            return content
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                .replace(/`([^`]+)`/g, '<code>$1</code>')
+                .replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>')
+                .replace(/\n/g, '<br>')
+                .replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
+        }
+
+        function showTypingIndicator() {
+            document.getElementById('typingIndicator').style.display = 'flex';
+            scrollToBottom();
+            isTyping = true;
+        }
+
+        function hideTypingIndicator() {
+            document.getElementById('typingIndicator').style.display = 'none';
+            isTyping = false;
+        }
+
+        function scrollToBottom() {
+            const messagesContainer = document.getElementById('chatMessages');
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        async function callAI(message) {
+            if (!apiKeyConfigured || !CONFIG.API_KEY) {
+                return simulateAIResponse(message);
+            }
+
+            const conversationContext = conversationHistory.slice(-CONFIG.MAX_HISTORY).map(msg => ({
+                role: msg.sender === 'user' ? 'user' : 'assistant',
+                content: msg.content
+            }));
+
+            const systemPrompt = `You are the SAGE-OS AI Assistant, an expert on the SAGE-OS operating system. 
+
+SAGE-OS Knowledge Base:
+${JSON.stringify(SAGE_OS_KNOWLEDGE, null, 2)}
+
+Guidelines:
+1. Provide accurate, helpful information about SAGE-OS
+2. Use the knowledge base above for specific details
+3. Be friendly and professional
+4. Include code examples when relevant
+5. If you don't know something specific, suggest checking the documentation
+6. Format responses with markdown for better readability
+7. Keep responses concise but comprehensive
+
+Current user question: ${message}`;
+
+            const payload = {
+                model: CONFIG.MODEL,
+                messages: [
+                    { role: 'system', content: systemPrompt },
+                    ...conversationContext,
+                    { role: 'user', content: message }
+                ],
+                max_tokens: CONFIG.MAX_TOKENS,
+                temperature: CONFIG.TEMPERATURE
+            };
+
+            for (let attempt = 1; attempt <= CONFIG.RETRY_ATTEMPTS; attempt++) {
+                try {
+                    const response = await fetch(CONFIG.API_ENDPOINT, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${CONFIG.API_KEY}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        return data.choices[0].message.content;
+                    } else if (response.status === 429) {
+                        throw new Error('Rate limit exceeded. Please wait a moment.');
+                    } else if (response.status === 401) {
+                        throw new Error('Invalid API key. Please check your configuration.');
+                    } else {
+                        throw new Error(`API error: ${response.status}`);
+                    }
+                } catch (error) {
+                    console.error(`Attempt ${attempt} failed:`, error);
+                    
+                    if (attempt === CONFIG.RETRY_ATTEMPTS) {
+                        throw error;
+                    }
+                    
+                    await new Promise(resolve => setTimeout(resolve, CONFIG.RETRY_DELAY * attempt));
+                }
+            }
+        }
+
+        function simulateAIResponse(message) {
+            return new Promise((resolve) => {
+                setTimeout(() => {
+                    const responses = generateSmartResponse(message);
+                    resolve(responses);
+                }, CONFIG.TYPING_DELAY);
+            });
+        }
+
+        function generateSmartResponse(message) {
+            const msg = message.toLowerCase();
+            
+            // Build-related queries
+            if (msg.includes('build') || msg.includes('compile') || msg.includes('make')) {
+                return `## 🔨 Building SAGE-OS
+
+To build SAGE-OS, follow these steps:
+
+**Prerequisites:**
+${SAGE_OS_KNOWLEDGE.build_instructions.prerequisites.map(p => `- ${p}`).join('\n')}
+
+**Build Steps:**
+${SAGE_OS_KNOWLEDGE.build_instructions.steps.map((step, i) => `${i + 1}. ${step}`).join('\n')}
+
+**For different architectures:**
+- i386: \`make ARCH=i386 TARGET=generic\`
+- AArch64: \`make ARCH=aarch64 TARGET=generic\`
+
+Need help with a specific build issue? Let me know!`;
+            }
+            
+            // Architecture queries
+            if (msg.includes('architecture') || msg.includes('design') || msg.includes('structure')) {
+                return `## 🏗️ SAGE-OS Architecture
+
+SAGE-OS follows a modular architecture with these key components:
+
+**Core Components:**
+- **Kernel**: ${SAGE_OS_KNOWLEDGE.architecture.kernel}
+- **Drivers**: ${SAGE_OS_KNOWLEDGE.architecture.drivers}
+- **AI Subsystem**: ${SAGE_OS_KNOWLEDGE.architecture.ai_subsystem}
+- **Graphics**: ${SAGE_OS_KNOWLEDGE.architecture.graphics}
+- **Memory Management**: ${SAGE_OS_KNOWLEDGE.architecture.memory}
+
+**Supported Architectures:**
+- i386 (Primary) ✅
+- AArch64 (ARM 64-bit) ✅  
+- RISC-V (Partial) ⚠️
+- x86_64 (Planned) 🔄
+
+The system is designed for modularity and extensibility. Would you like details about any specific component?`;
+            }
+            
+            // Contributing queries
+            if (msg.includes('contribute') || msg.includes('development') || msg.includes('help')) {
+                return `## 🤝 Contributing to SAGE-OS
+
+**How to Contribute:**
+1. ${SAGE_OS_KNOWLEDGE.development.contributing}
+2. Follow our coding standards: ${SAGE_OS_KNOWLEDGE.development.coding_standards}
+3. Testing: ${SAGE_OS_KNOWLEDGE.development.testing}
+
+**Areas needing help:**
+- Driver development for new hardware
+- Architecture ports (x86_64, ARM variants)
+- Documentation improvements
+- Testing and QA
+- AI integration features
+- Performance optimization
+
+**Getting Started:**
+1. Check out our [GitHub repository](https://github.com/mullaasad5420c/newos)
+2. Look for issues labeled "good first issue"
+3. Join our development discussions
+4. Read the contributing guidelines
+
+What specific area interests you most?`;
+            }
+            
+            // Troubleshooting queries
+            if (msg.includes('error') || msg.includes('problem') || msg.includes('debug') || msg.includes('issue')) {
+                return `## 🐛 SAGE-OS Troubleshooting
+
+**Common Issues & Solutions:**
+
+${SAGE_OS_KNOWLEDGE.troubleshooting.common_issues.map(issue => `- ${issue}`).join('\n')}
+
+**Debug Steps:**
+1. Check build logs for specific error messages
+2. Verify all dependencies are installed
+3. Try building with verbose output: \`make VERBOSE=1\`
+4. Test with different QEMU configurations
+5. Check system requirements and compatibility
+
+**Getting More Help:**
+- Describe your specific error message
+- Include your system information (OS, architecture)
+- Share relevant log outputs
+- Check our troubleshooting documentation
+
+What specific issue are you encountering?`;
+            }
+            
+            // Requirements queries
+            if (msg.includes('requirement') || msg.includes('system') || msg.includes('hardware')) {
+                return `## 💻 SAGE-OS System Requirements
+
+**Development Requirements:**
+- **OS**: Linux, macOS, or Windows (with WSL2)
+- **Memory**: Minimum 4GB RAM (8GB recommended)
+- **Storage**: 2GB free space for build environment
+- **Processor**: x86_64 or ARM64 processor
+
+**Build Tools:**
+- GCC 9.0+ or Clang 10.0+
+- Make 4.0+
+- QEMU 5.0+ (for testing)
+- CMake 3.16+ (optional)
+- Git 2.20+
+
+**Target Hardware:**
+- **Minimum**: 32MB RAM, i386 processor
+- **Recommended**: 128MB+ RAM, modern processor
+- **Graphics**: VGA-compatible display
+- **Storage**: 1MB+ for kernel image
+
+**Supported Platforms:**
+- Physical hardware (i386, AArch64)
+- Virtual machines (QEMU, VirtualBox, VMware)
+- Embedded systems (Raspberry Pi, development boards)
+
+Need help setting up your development environment?`;
+            }
+            
+            // API/Documentation queries
+            if (msg.includes('api') || msg.includes('documentation') || msg.includes('reference')) {
+                return `## 📚 SAGE-OS API Reference & Documentation
+
+**Available Documentation:**
+- **API Reference**: Complete function and structure documentation
+- **Developer Guides**: Step-by-step development tutorials
+- **Architecture Docs**: System design and component details
+- **Build Guides**: Platform-specific build instructions
+- **Troubleshooting**: Common issues and solutions
+
+**Key APIs:**
+- **Kernel API**: Core system functions and memory management
+- **Driver API**: Hardware abstraction and device interfaces
+- **Graphics API**: VGA display and rendering functions
+- **AI API**: Machine learning integration interfaces
+- **Memory API**: Allocation and management functions
+
+**Documentation Locations:**
+- Online: [GitHub Pages](https://mullaasad5420c.github.io/newos/)
+- Repository: \`docs/\` directory
+- Auto-generated: API docs from source code
+- Interactive: This AI assistant for real-time help
+
+**Getting Started:**
+1. Check the main documentation site
+2. Browse the \`docs/\` directory in the repository
+3. Look at example code in \`examples/\`
+4. Ask me specific questions about any API
+
+What specific API or documentation are you looking for?`;
+            }
+            
+            // Default response
+            return `## 🤖 SAGE-OS AI Assistant
+
+I'm here to help with SAGE-OS! I can assist with:
+
+**🔨 Development:**
+- Build instructions and troubleshooting
+- Architecture and design questions
+- API reference and documentation
+- Contributing guidelines
+
+**🏗️ System Information:**
+- Architecture details and supported platforms
+- System requirements and compatibility
+- Performance optimization tips
+- Security features and best practices
+
+**🐛 Support:**
+- Debugging help and error resolution
+- Configuration assistance
+- Testing and validation guidance
+- Deployment and production setup
+
+**Popular Topics:**
+- "How do I build SAGE-OS?"
+- "What is the system architecture?"
+- "How can I contribute to the project?"
+- "What are the system requirements?"
+- "How do I debug build issues?"
+
+Feel free to ask me anything about SAGE-OS development, architecture, or usage. I'm here to help make your SAGE-OS experience smooth and productive!
+
+What would you like to know about SAGE-OS?`;
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const sendButton = document.getElementById('sendButton');
+            const message = input.value.trim();
+            
+            if (!message || isTyping) return;
+            
+            // Add user message
+            addMessage(message, 'user', new Date().toLocaleTimeString());
+            input.value = '';
+            autoResize(input);
+            sendButton.disabled = true;
+            
+            // Show typing indicator
+            showTypingIndicator();
+            
+            try {
+                // Get AI response
+                const response = await callAI(message);
+                
+                // Hide typing indicator and add response
+                hideTypingIndicator();
+                addMessage(response, 'assistant', new Date().toLocaleTimeString());
+                
+                // Update conversation history
+                conversationHistory.push(
+                    { content: message, sender: 'user', timestamp: new Date().toISOString() },
+                    { content: response, sender: 'assistant', timestamp: new Date().toISOString() }
+                );
+                
+                // Limit history size
+                if (conversationHistory.length > CONFIG.MAX_HISTORY * 2) {
+                    conversationHistory = conversationHistory.slice(-CONFIG.MAX_HISTORY * 2);
+                }
+                
+            } catch (error) {
+                hideTypingIndicator();
+                showError(`Sorry, I encountered an error: ${error.message}`);
+                addMessage("I apologize, but I'm having trouble processing your request right now. Please try again in a moment, or rephrase your question.", 'assistant', new Date().toLocaleTimeString());
+            } finally {
+                sendButton.disabled = false;
+                input.focus();
+            }
+        }
+
+        function sendQuickMessage(message) {
+            document.getElementById('messageInput').value = message;
+            sendMessage();
+        }
+
+        function handleKeyDown(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+        }
+
+        function autoResize(textarea) {
+            textarea.style.height = 'auto';
+            textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+        }
+
+        function clearChat() {
+            if (confirm('Are you sure you want to clear the chat history?')) {
+                const messagesContainer = document.getElementById('chatMessages');
+                messagesContainer.innerHTML = `
+                    <div class="welcome-section">
+                        <h3>👋 Welcome back to SAGE-OS AI Assistant!</h3>
+                        <p>Chat cleared. How can I help you with SAGE-OS today?</p>
+                    </div>
+                `;
+                conversationHistory = [];
+                localStorage.removeItem('sage_chat_history');
+            }
+        }
+
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+            const isDark = document.body.classList.contains('dark-mode');
+            localStorage.setItem('sage_dark_mode', isDark);
+            
+            const icon = document.querySelector('.input-action i.fa-moon');
+            icon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
+        }
+
+        function saveChatHistory() {
+            try {
+                localStorage.setItem('sage_chat_history', JSON.stringify(conversationHistory));
+            } catch (error) {
+                console.warn('Failed to save chat history:', error);
+            }
+        }
+
+        function loadChatHistory() {
+            try {
+                const saved = localStorage.getItem('sage_chat_history');
+                if (saved) {
+                    conversationHistory = JSON.parse(saved);
+                    
+                    // Restore recent messages
+                    const messagesContainer = document.getElementById('chatMessages');
+                    const welcomeSection = messagesContainer.querySelector('.welcome-section');
+                    
+                    if (conversationHistory.length > 0 && welcomeSection) {
+                        welcomeSection.remove();
+                        
+                        // Show last few messages
+                        const recentMessages = conversationHistory.slice(-6);
+                        recentMessages.forEach(msg => {
+                            addMessage(msg.content, msg.sender, new Date(msg.timestamp).toLocaleTimeString());
+                        });
+                    }
+                }
+                
+                // Load dark mode preference
+                const darkMode = localStorage.getItem('sage_dark_mode') === 'true';
+                if (darkMode) {
+                    document.body.classList.add('dark-mode');
+                    const icon = document.querySelector('.input-action i.fa-moon');
+                    icon.className = 'fas fa-sun';
+                }
+            } catch (error) {
+                console.warn('Failed to load chat history:', error);
+            }
+        }
+
+        // Utility functions
+        function showMessage(content, sender) {
+            addMessage(content, sender, new Date().toLocaleTimeString());
+        }
+
+        // Initialize on load
+        window.addEventListener('load', () => {
+            console.log('🚀 SAGE-OS AI Assistant fully loaded');
+        });
+
+        // Handle page visibility for better UX
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+                document.getElementById('messageInput').focus();
+            }
+        });
+    </script>
+</body>
+</html>

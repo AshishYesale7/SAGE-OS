@@ -32,7 +32,7 @@ This guide will help you configure the enhanced GitHub workflows with AI integra
 
 2. **Verify Deployment:**
    ```
-   URL: https://ashishyesale7.github.io/newos/
+   URL: https://ashishyesale7.github.io/SAGE-OS/
    Status: Should show "Your site is published at..."
    ```
 
@@ -271,7 +271,7 @@ env:
 
 The enhanced documentation is automatically deployed to:
 ```
-URL: https://ashishyesale7.github.io/newos/
+URL: https://ashishyesale7.github.io/SAGE-OS/
 Source: GitHub Actions
 Branch: Automatic (from workflow)
 ```
@@ -368,7 +368,7 @@ After setup, verify:
 
 You'll know everything is working when:
 
-✅ **Documentation Site:** https://ashishyesale7.github.io/newos/ loads successfully  
+✅ **Documentation Site:** https://ashishyesale7.github.io/SAGE-OS/ loads successfully  
 ✅ **AI Analysis:** GitHub Models integration shows "✅ Available"  
 ✅ **Security Scan:** Security score shows 75+ out of 100  
 ✅ **Performance:** Build times under 10 minutes  

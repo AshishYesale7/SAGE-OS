@@ -792,7 +792,7 @@ jobs:
                                     return `To build SAGE-OS:
 
 1. **Prerequisites**: Install make, gcc, and qemu
-2. **Clone**: \`git clone https://github.com/ashishyesale7/newos.git\`
+2. **Clone**: \`git clone https://github.com/ashishyesale7/SAGE-OS.git\`
 3. **Build**: \`make ARCH=i386 TARGET=generic\`
 4. **Test**: \`qemu-system-i386 -kernel build/i386/kernel.elf -m 128M\`
 
@@ -1210,7 +1210,7 @@ Timestamp: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
             cat > mkdocs.yml << 'EOF'
         site_name: SAGE-OS Documentation
         site_description: AI-Generated Documentation for SAGE-OS
-        site_url: https://ashishyesale7.github.io/newos/
+        site_url: https://ashishyesale7.github.io/SAGE-OS/
         
         theme:
           name: material
