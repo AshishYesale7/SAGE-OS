@@ -1,0 +1,423 @@
+# SAGE-OS AI Documentation Configuration
+# This file configures the AI-powered documentation generation system
+
+# General Configuration
+general:
+  project_name: "SAGE-OS"
+  project_description: "Self-Aware General Environment Operating System"
+  version: "1.0.1"
+  author: "Ashish Vasant Yesale"
+  repository: "https://github.com/ashishyesale7/newos"
+  documentation_url: "https://ashishyesale7.github.io/newos/"
+
+# Documentation Settings
+documentation:
+  # Output format: 'md' for Markdown, 'html' for HTML
+  format: "md"
+  
+  # Documentation directory
+  output_dir: "docs"
+  
+  # File organization
+  structure:
+    files: "docs/files"          # Individual file documentation
+    api: "docs/api"              # API reference
+    guides: "docs/guides"        # User guides
+    tutorials: "docs/tutorials"  # Step-by-step tutorials
+    reference: "docs/reference"  # Technical reference
+    
+  # GitHub Pages compatibility
+  github_pages:
+    enabled: true
+    use_jekyll: false
+    use_mkdocs: true
+    custom_domain: null
+    
+  # Navigation structure
+  navigation:
+    - name: "Home"
+      path: "index.md"
+      icon: "🏠"
+    - name: "Getting Started"
+      path: "guides/getting-started.md"
+      icon: "🚀"
+    - name: "Architecture"
+      path: "reference/architecture.md"
+      icon: "🏗️"
+    - name: "API Reference"
+      path: "api/index.md"
+      icon: "📚"
+    - name: "AI Assistant"
+      path: "ai-assistant.html"
+      icon: "🤖"
+
+# AI Integration Settings
+ai:
+  # GitHub Models API configuration
+  github_models:
+    enabled: true
+    model: "gpt-4"
+    fallback_model: "gpt-3.5-turbo"
+    max_tokens: 2000
+    temperature: 0.3
+    timeout: 60
+    
+  # Rate limiting
+  rate_limiting:
+    requests_per_minute: 20
+    delay_between_requests: 2
+    max_retries: 3
+    
+  # Content generation settings
+  content_generation:
+    max_file_size_kb: 50
+    max_files_per_batch: 5
+    supported_extensions: [".c", ".h", ".py", ".rs", ".cpp", ".hpp"]
+    
+  # Analysis types
+  analysis_types:
+    - name: "code-review"
+      description: "Comprehensive code quality analysis"
+      prompt_template: |
+        Analyze this code for:
+        1. Code quality and style
+        2. Potential bugs and issues
+        3. Best practices compliance
+        4. Performance considerations
+        5. Security implications
+        
+        Provide specific, actionable feedback.
+        
+    - name: "security-analysis"
+      description: "Security vulnerability assessment"
+      prompt_template: |
+        Perform security analysis focusing on:
+        1. Vulnerability identification
+        2. Attack vector analysis
+        3. Input validation review
+        4. Memory safety assessment
+        5. Cryptographic usage review
+        
+        Rate security level (1-10) and provide fixes.
+        
+    - name: "performance-optimization"
+      description: "Performance bottleneck identification"
+      prompt_template: |
+        Analyze for performance optimization:
+        1. Algorithm efficiency
+        2. Memory usage patterns
+        3. CPU optimization opportunities
+        4. I/O optimization potential
+        5. Scalability considerations
+        
+        Provide measurable improvement suggestions.
+        
+    - name: "documentation-generation"
+      description: "Comprehensive documentation creation"
+      prompt_template: |
+        Generate documentation including:
+        1. Function and module descriptions
+        2. Parameter and return documentation
+        3. Usage examples
+        4. Integration guidelines
+        5. Best practices
+        
+        Create clear, developer-friendly content.
+
+# File Processing Rules
+file_processing:
+  # Automatic processing triggers
+  triggers:
+    on_file_add: true
+    on_file_modify: true
+    on_file_delete: true
+    on_schedule: true
+    
+  # File type specific rules
+  file_types:
+    c_files:
+      extensions: [".c"]
+      analysis_types: ["code-review", "security-analysis", "performance-optimization"]
+      documentation_template: "c_function_docs"
+      extract_functions: true
+      extract_structs: true
+      
+    header_files:
+      extensions: [".h", ".hpp"]
+      analysis_types: ["code-review", "documentation-generation"]
+      documentation_template: "header_docs"
+      extract_declarations: true
+      extract_macros: true
+      
+    python_files:
+      extensions: [".py"]
+      analysis_types: ["code-review", "documentation-generation"]
+      documentation_template: "python_docs"
+      extract_classes: true
+      extract_functions: true
+      
+    rust_files:
+      extensions: [".rs"]
+      analysis_types: ["code-review", "security-analysis"]
+      documentation_template: "rust_docs"
+      extract_functions: true
+      extract_traits: true
+
+# Chatbot Configuration
+chatbot:
+  enabled: true
+  interface_file: "ai-assistant.html"
+  
+  # Knowledge base
+  knowledge_base:
+    project_context: |
+      SAGE-OS (Self-Aware General Environment Operating System) is a cutting-edge 
+      embedded operating system designed for AI-enhanced computing environments.
+      
+      Key Features:
+      - Multi-architecture support (i386, x86_64, ARM, AArch64, RISC-V)
+      - AI integration with GitHub Models API
+      - VGA graphics and serial communication
+      - Comprehensive driver support
+      - Modern build system with CMake
+      - QEMU integration for testing
+      
+    build_instructions: |
+      To build SAGE-OS:
+      1. Clone the repository
+      2. Install dependencies (make, gcc, qemu)
+      3. Run: make ARCH=i386 TARGET=generic
+      4. Test: qemu-system-i386 -kernel build/i386/kernel.elf -m 128M
+      
+    architecture_overview: |
+      SAGE-OS Architecture:
+      - Kernel: Core system functionality
+      - Drivers: Hardware abstraction layer (VGA, Serial, Keyboard, AI HAT+)
+      - AI Subsystem: Machine learning integration
+      - Graphics: VGA display support
+      - Memory Management: Efficient allocation system
+      
+  # Quick actions for chatbot
+  quick_actions:
+    - text: "How do I build SAGE-OS?"
+      category: "build"
+    - text: "What is the architecture of SAGE-OS?"
+      category: "architecture"
+    - text: "How do I contribute to SAGE-OS?"
+      category: "contributing"
+    - text: "What are the system requirements?"
+      category: "requirements"
+    - text: "How do I debug SAGE-OS?"
+      category: "debugging"
+    - text: "Show me the API reference"
+      category: "api"
+
+# Workflow Integration
+workflow:
+  # GitHub Actions integration
+  github_actions:
+    workflow_file: ".github/workflows/ai-file-management.yml"
+    
+    # Trigger conditions
+    triggers:
+      push_branches: ["main", "dev"]
+      pull_request_branches: ["main", "dev"]
+      schedule_cron: "0 */6 * * *"  # Every 6 hours
+      
+    # Job configuration
+    jobs:
+      detect_changes:
+        timeout_minutes: 10
+        
+      ai_content_generator:
+        timeout_minutes: 45
+        requires_api_key: true
+        
+      deploy_to_pages:
+        timeout_minutes: 15
+        requires_pages_permission: true
+        
+  # Performance settings
+  performance:
+    max_concurrent_jobs: 3
+    cache_enabled: true
+    cache_version: "v3"
+    timeout_minutes: 45
+
+# Security Settings
+security:
+  # Sandboxing configuration
+  sandbox:
+    enabled: true
+    docs_only_mode: true
+    allowed_write_dirs: ["docs/"]
+    protected_dirs: ["kernel/", "boot/", "drivers/", "src/", ".github/workflows/", "scripts/"]
+    
+  # File access controls
+  file_access:
+    read_only_source_analysis: true
+    write_restricted_to_docs: true
+    block_path_traversal: true
+    block_symlink_attacks: true
+    max_file_size_mb: 1
+    
+  # API key management
+  api_keys:
+    github_models:
+      secret_name: "GITHUB_MODELS_API_KEY"
+      required: true
+      validation_pattern: "^[a-zA-Z0-9_-]{20,}$"
+      
+  # Content filtering
+  content_filtering:
+    enabled: true
+    max_file_size_mb: 1
+    blocked_patterns:
+      - "password\\s*[:=]"
+      - "api[_-]key\\s*[:=]"
+      - "secret\\s*[:=]"
+      - "token\\s*[:=]"
+      - "ghp_[a-zA-Z0-9]{36}"
+      - "ghs_[a-zA-Z0-9]{36}"
+      
+  # Security monitoring
+  monitoring:
+    log_all_file_access: true
+    log_security_blocks: true
+    alert_on_violations: true
+    
+  # Rate limiting for security
+  rate_limits:
+    api_calls_per_hour: 1000
+    documentation_generations_per_day: 100
+    max_concurrent_operations: 3
+
+# Monitoring and Logging
+monitoring:
+  # Metrics collection
+  metrics:
+    enabled: true
+    track_generation_time: true
+    track_api_usage: true
+    track_error_rates: true
+    
+  # Logging configuration
+  logging:
+    level: "INFO"
+    include_timestamps: true
+    include_request_ids: true
+    
+  # Alerts
+  alerts:
+    api_quota_threshold: 80  # Percentage
+    error_rate_threshold: 10  # Percentage
+    generation_time_threshold: 300  # Seconds
+
+# Templates
+templates:
+  # Documentation templates
+  c_function_docs: |
+    # {filename}
+    
+    **Generated**: {timestamp}
+    **Source**: {filepath}
+    **Type**: C Source File
+    
+    ## Overview
+    
+    {ai_overview}
+    
+    ## Functions
+    
+    {ai_functions}
+    
+    ## Usage Examples
+    
+    {ai_examples}
+    
+    ## Related Files
+    
+    {ai_related_files}
+    
+  header_docs: |
+    # {filename}
+    
+    **Generated**: {timestamp}
+    **Source**: {filepath}
+    **Type**: C Header File
+    
+    ## Overview
+    
+    {ai_overview}
+    
+    ## Declarations
+    
+    {ai_declarations}
+    
+    ## Macros and Constants
+    
+    {ai_macros}
+    
+    ## Usage
+    
+    {ai_usage}
+    
+  python_docs: |
+    # {filename}
+    
+    **Generated**: {timestamp}
+    **Source**: {filepath}
+    **Type**: Python Module
+    
+    ## Overview
+    
+    {ai_overview}
+    
+    ## Classes
+    
+    {ai_classes}
+    
+    ## Functions
+    
+    {ai_functions}
+    
+    ## Examples
+    
+    {ai_examples}
+
+# Error Handling
+error_handling:
+  # Fallback behavior
+  fallback:
+    on_api_failure: "generate_basic_docs"
+    on_timeout: "skip_ai_analysis"
+    on_quota_exceeded: "use_cached_results"
+    
+  # Retry configuration
+  retry:
+    max_attempts: 3
+    backoff_multiplier: 2
+    initial_delay_seconds: 1
+    
+  # Error reporting
+  reporting:
+    log_errors: true
+    create_issues: false  # Set to true to auto-create GitHub issues
+    notify_maintainers: false
+
+# Feature Flags
+features:
+  ai_analysis: true
+  chatbot_interface: true
+  automatic_deployment: true
+  performance_monitoring: true
+  security_scanning: true
+  real_time_updates: true
+  
+# Version and Compatibility
+version: "2.0.0"
+compatibility:
+  github_actions: ">=4.0"
+  github_pages: ">=4.0"
+  mkdocs: ">=1.5.0"
+  python: ">=3.8"
