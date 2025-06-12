@@ -160,9 +160,9 @@ Actions → AI-Powered File Management → Run workflow
 
 ### 3. Access Generated Content
 
-- **Documentation Site**: `https://mullaasad5420c.github.io/newos/`
-- **AI Assistant**: `https://mullaasad5420c.github.io/newos/ai-assistant.html`
-- **API Reference**: `https://mullaasad5420c.github.io/newos/api-reference.html`
+- **Documentation Site**: `https://AshishYesale7.github.io/SAGE-OS/`
+- **AI Assistant**: `https://AshishYesale7.github.io/SAGE-OS/ai-assistant.html`
+- **API Reference**: `https://AshishYesale7.github.io/SAGE-OS/api-reference.html`
 
 ## 🧪 Testing and Validation
 

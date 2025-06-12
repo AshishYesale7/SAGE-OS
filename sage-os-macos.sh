@@ -9,6 +9,17 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
+# Function to find available VNC port
+find_available_vnc_port() {
+    for port in {1..10}; do
+        if ! lsof -i :$((5900 + port)) >/dev/null 2>&1; then
+            echo $port
+            return
+        fi
+    done
+    echo "1"  # fallback to port 1
+}
+
 echo "🍎 SAGE OS - macOS All-in-One Setup & Launch"
 echo "============================================="
 echo ""
@@ -312,12 +323,18 @@ run_sage_os() {
         echo "🍎 Launching on Apple Silicon Mac..."
         echo "   Starting QEMU with VNC display (more reliable on Apple Silicon)..."
         
-        # Start QEMU in background with VNC
+        # Find available VNC port
+        VNC_PORT=$(find_available_vnc_port)
+        VNC_DISPLAY_PORT=$((5900 + VNC_PORT))
+        
+        echo "   Using VNC port :$VNC_PORT (localhost:$VNC_DISPLAY_PORT)"
+        
+        # Start QEMU in background with VNC (no password required)
         qemu-system-i386 \
             -drive file="build/macos/sage_os_macos.img",format=raw,if=floppy,readonly=on \
             -boot a \
             -m 128M \
-            -vnc :1 \
+            -vnc :$VNC_PORT,password=off \
             -no-fd-bootchk \
             -no-reboot \
             -name "SAGE OS - macOS Build" &
@@ -327,12 +344,13 @@ run_sage_os() {
         
         if ps -p $QEMU_PID > /dev/null 2>&1; then
             echo "✅ QEMU started successfully!"
-            echo "📺 VNC server running on localhost:5901"
+            echo "📺 VNC server running on localhost:$VNC_DISPLAY_PORT"
             echo ""
             echo "🎮 To view SAGE OS:"
             echo "   1. Open 'Screen Sharing' app on macOS"
-            echo "   2. Connect to: localhost:5901"
-            echo "   3. Or use any VNC viewer"
+            echo "   2. Connect to: localhost:$VNC_DISPLAY_PORT"
+            echo "   3. If prompted for password, leave blank or click 'Connect'"
+            echo "   4. Alternative: Use any VNC viewer (no password required)"
             echo ""
             echo "🎯 You should see:"
             echo "   - SAGE OS bootloader message"
@@ -371,12 +389,16 @@ run_sage_os() {
             -name "SAGE OS - macOS Build" 2>/dev/null || {
                 echo "⚠️  Cocoa display timed out or failed, using VNC..."
                 
+                # Find available VNC port for Intel fallback
+                VNC_PORT=$(find_available_vnc_port)
+                VNC_DISPLAY_PORT=$((5900 + VNC_PORT))
+                
                 # Start QEMU with VNC in background
                 qemu-system-i386 \
                     -drive file=build/macos/sage_os_macos.img,format=raw,if=floppy,readonly=on \
                     -boot a \
                     -m 128M \
-                    -vnc :1 \
+                    -vnc :$VNC_PORT,password=off \
                     -no-fd-bootchk \
                     -no-reboot \
                     -name "SAGE OS - macOS Build" &
@@ -386,8 +408,8 @@ run_sage_os() {
                 
                 if ps -p $QEMU_PID > /dev/null 2>&1; then
                     echo "✅ QEMU started with VNC!"
-                    echo "📺 VNC server running on localhost:5901"
-                    echo "   Connect with Screen Sharing app or VNC viewer"
+                    echo "📺 VNC server running on localhost:$VNC_DISPLAY_PORT"
+                    echo "   Connect with Screen Sharing app (no password required)"
                     echo "   Press Ctrl+C to stop QEMU when done"
                     wait $QEMU_PID
                 else
@@ -436,8 +458,8 @@ main() {
         echo "📝 To run SAGE OS later:"
         echo ""
         echo "   🖥️  VNC (recommended for Apple Silicon):"
-        echo "   qemu-system-i386 -drive file=build/macos/sage_os_macos.img,format=raw,if=floppy,readonly=on -boot a -m 128M -vnc :1 -no-fd-bootchk &"
-        echo "   Then connect to localhost:5901 with Screen Sharing app"
+        echo "   qemu-system-i386 -drive file=build/macos/sage_os_macos.img,format=raw,if=floppy,readonly=on -boot a -m 128M -vnc :1,password=off -no-fd-bootchk &"
+        echo "   Then connect to localhost:5901 with Screen Sharing app (no password)"
         echo ""
         echo "   🍎 Cocoa (for Intel Macs):"
         echo "   qemu-system-i386 -drive file=build/macos/sage_os_macos.img,format=raw,if=floppy,readonly=on -boot a -m 128M -display cocoa -no-fd-bootchk"
