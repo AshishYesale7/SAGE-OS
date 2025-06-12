@@ -312,16 +312,20 @@ run_sage_os() {
         echo "🍎 Launching on Apple Silicon Mac..."
         qemu-system-i386 \
             -fda "build/macos/sage_os_macos.img" \
+            -boot a \
             -m 128M \
             -display cocoa \
+            -no-fd-bootchk \
             -no-reboot \
             -name "SAGE OS - macOS Build" \
             2>/dev/null || {
                 echo "⚠️  Cocoa display failed, trying VNC..."
                 qemu-system-i386 \
                     -fda "build/macos/sage_os_macos.img" \
+                    -boot a \
                     -m 128M \
                     -vnc :1 \
+                    -no-fd-bootchk \
                     -no-reboot \
                     -name "SAGE OS - macOS Build" &
                 echo "📺 VNC server started on localhost:5901"
@@ -333,24 +337,30 @@ run_sage_os() {
         echo "💻 Launching on Intel Mac..."
         qemu-system-i386 \
             -fda build/macos/sage_os_macos.img \
+            -boot a \
             -m 128M \
             -display cocoa \
+            -no-fd-bootchk \
             -no-reboot \
             -name "SAGE OS - macOS Build" \
             2>/dev/null || {
                 echo "⚠️  Cocoa display failed, trying SDL..."
                 qemu-system-i386 \
                     -fda build/macos/sage_os_macos.img \
+                    -boot a \
                     -m 128M \
                     -display sdl \
+                    -no-fd-bootchk \
                     -no-reboot \
                     -name "SAGE OS - macOS Build" \
                     2>/dev/null || {
                         echo "⚠️  SDL display failed, trying VNC..."
                         qemu-system-i386 \
                             -fda build/macos/sage_os_macos.img \
+                            -boot a \
                             -m 128M \
                             -vnc :1 \
+                            -no-fd-bootchk \
                             -no-reboot \
                             -name "SAGE OS - macOS Build" &
                         echo "📺 VNC server started on localhost:5901"
@@ -398,7 +408,7 @@ main() {
         run_sage_os
     else
         echo "📝 To run SAGE OS later, use:"
-        echo "   qemu-system-i386 -fda build/macos/sage_os_macos.img -m 128M -display cocoa"
+        echo "   qemu-system-i386 -fda build/macos/sage_os_macos.img -boot a -m 128M -display cocoa -no-fd-bootchk"
         echo ""
         echo "📁 Build output location:"
         echo "   $(pwd)/build/macos/sage_os_macos.img"
