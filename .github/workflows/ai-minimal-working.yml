@@ -1,0 +1,128 @@
+name: 🤖 SAGE-AI Minimal Working Version
+
+on:
+  issues:
+    types: [opened]
+  issue_comment:
+    types: [created]
+  workflow_dispatch:
+
+jobs:
+  sage-ai-assistant:
+    runs-on: ubuntu-latest
+    if: github.event.action == 'opened' || contains(github.event.comment.body, '@sage-ai')
+    
+    permissions:
+      issues: write
+      contents: read
+
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 🤖 SAGE-AI Analysis
+        id: ai-analysis
+        uses: actions/ai-inference@v1
+        with:
+          model: gpt-4o-mini
+          prompt: |
+            You are SAGE-AI, the AI assistant for SAGE-OS (Self-Aware General Environment Operating System).
+            
+            SAGE-OS is an embedded operating system with AI integration for Raspberry Pi and x86 systems.
+            
+            Analyze this GitHub activity and provide helpful assistance:
+            
+            **Context:**
+            - Event: ${{ github.event_name }}
+            - Action: ${{ github.event.action }}
+            - Repository: ${{ github.repository }}
+            
+            **Content to analyze:**
+            ${{ github.event.issue.title || 'Comment response' }}
+            
+            ${{ github.event.issue.body || github.event.comment.body }}
+            
+            **Instructions:**
+            1. Provide a brief, helpful analysis
+            2. Suggest relevant labels if this is a new issue
+            3. Offer specific next steps or solutions
+            4. Keep response concise and actionable
+            5. Focus on SAGE-OS development context
+            
+            **Response format:**
+            ## 🤖 SAGE-AI Analysis
+            
+            [Your analysis here]
+            
+            **Suggested Actions:**
+            - [Action 1]
+            - [Action 2]
+            
+            **Relevant Resources:**
+            - [Link to relevant docs or guides]
+
+      - name: 💬 Post AI Response
+        run: |
+          # Create response comment
+          cat << 'EOF' > ai-response.md
+          ${{ steps.ai-analysis.outputs.response }}
+          
+          ---
+          
+          **🔗 Quick Links:**
+          - [Build Guide](https://github.com/AshishYesale7/SAGE-OS/blob/main/BUILD.md)
+          - [QEMU macOS M1 Setup](https://github.com/AshishYesale7/SAGE-OS/blob/main/QEMU_MACOS_M1_COMPLETE_GUIDE.md)
+          - [Troubleshooting](https://github.com/AshishYesale7/SAGE-OS/blob/main/TROUBLESHOOTING.md)
+          
+          *💡 Tip: Mention `@sage-ai` in comments for AI assistance!*
+          EOF
+          
+          # Post comment to issue
+          ISSUE_NUMBER="${{ github.event.issue.number }}"
+          if [ -z "$ISSUE_NUMBER" ]; then
+            ISSUE_NUMBER="${{ github.event.issue.number }}"
+          fi
+          
+          if [ ! -z "$ISSUE_NUMBER" ]; then
+            gh issue comment "$ISSUE_NUMBER" --body-file ai-response.md
+            echo "✅ Posted AI response to issue #$ISSUE_NUMBER"
+          else
+            echo "❌ Could not determine issue number"
+            echo "Event: ${{ github.event_name }}"
+            echo "Issue number: ${{ github.event.issue.number }}"
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Test AI system health
+  ai-health-check:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+    
+    permissions:
+      contents: read
+
+    steps:
+      - name: 🔍 AI Health Check
+        id: health
+        uses: actions/ai-inference@v1
+        with:
+          model: gpt-4o-mini
+          prompt: |
+            Perform a quick health check of the SAGE-AI system.
+            
+            Respond with:
+            1. Status: HEALTHY/DEGRADED/CRITICAL
+            2. Current time understanding: ${{ github.run_id }}
+            3. Brief system status
+            
+            Keep response under 100 words.
+
+      - name: 📊 Report Health Status
+        run: |
+          echo "🏥 SAGE-AI Health Check Results:"
+          echo "================================"
+          echo "${{ steps.health.outputs.response }}"
+          echo ""
+          echo "✅ Health check completed successfully"
+          echo "🕐 Check time: $(date -u +"%Y-%m-%d %H:%M:%S UTC")"

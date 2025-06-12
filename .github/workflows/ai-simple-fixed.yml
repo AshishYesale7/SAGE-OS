@@ -1,0 +1,91 @@
+name: 🤖 SAGE-AI Simple - Fixed Model References
+
+on:
+  issues:
+    types: [opened]
+  issue_comment:
+    types: [created]
+  workflow_dispatch:
+
+jobs:
+  simple-ai-analysis:
+    runs-on: ubuntu-latest
+    if: github.event.action == 'opened' || contains(github.event.comment.body, '@sage-ai')
+    
+    permissions:
+      issues: write
+      contents: read
+
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 🤖 AI Issue Analysis
+        id: analysis
+        uses: actions/ai-inference@v1
+        with:
+          model: microsoft/phi-4  # Using available GitHub Models
+          prompt: |
+            You are SAGE-AI, an AI assistant for SAGE-OS (Self-Aware General Environment Operating System).
+            
+            Analyze this issue and provide:
+            1. **Summary** (1-2 sentences)
+            2. **Category** (Bug Report, Feature Request, Documentation, Build Issue, QEMU/Emulation, macOS M1)
+            3. **Priority** (Critical, High, Medium, Low)
+            4. **Suggested Labels** (comma-separated)
+            5. **Next Steps** (actionable recommendations)
+            
+            Issue Details:
+            **Title:** ${{ github.event.issue.title || 'Comment response' }}
+            **Body:** ${{ github.event.issue.body || github.event.comment.body }}
+            **Author:** ${{ github.event.issue.user.login || github.event.comment.user.login }}
+            
+            Keep response concise and helpful for SAGE-OS development.
+
+      - name: 💬 Post AI Analysis
+        run: |
+          cat << 'EOF' > comment.md
+          ## 🤖 SAGE-AI Analysis
+          
+          ${{ steps.analysis.outputs.response }}
+          
+          ---
+          
+          **🔗 Helpful Resources:**
+          - [Build Guide](https://github.com/AshishYesale7/SAGE-OS/blob/main/BUILD.md)
+          - [QEMU macOS M1 Guide](https://github.com/AshishYesale7/SAGE-OS/blob/main/QEMU_MACOS_M1_COMPLETE_GUIDE.md)
+          
+          *Analysis by SAGE-AI - mention `@sage-ai` for help!*
+          EOF
+          
+          if [ "${{ github.event_name }}" = "issues" ]; then
+            gh issue comment ${{ github.event.issue.number }} --body-file comment.md
+          else
+            gh issue comment ${{ github.event.issue.number }} --body-file comment.md
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  test-model-availability:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
+
+    steps:
+      - name: 🧪 Test Available Models
+        id: test-models
+        continue-on-error: true
+        uses: actions/ai-inference@v1
+        with:
+          model: microsoft/phi-4
+          prompt: "Test: Can you respond with 'SAGE-AI is working!' ?"
+
+      - name: 📊 Log Test Results
+        run: |
+          echo "Model test result: ${{ steps.test-models.outputs.response }}"
+          if [ "${{ steps.test-models.outcome }}" = "success" ]; then
+            echo "✅ Model microsoft/phi-4 is working"
+          else
+            echo "❌ Model microsoft/phi-4 failed"
+          fi

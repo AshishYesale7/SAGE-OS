@@ -25,7 +25,7 @@ jobs:
         id: analysis
         uses: actions/ai-inference@v1
         with:
-          model: gpt-4o-mini  # Fast and efficient for issue analysis
+          model: openai/openai/gpt-4o-mini  # Fast and efficient for issue analysis
           prompt: |
             You are an AI assistant for SAGE-OS (Self-Aware General Environment Operating System), 
             an embedded OS with AI integration for Raspberry Pi and x86 systems.
@@ -113,7 +113,7 @@ jobs:
         id: response
         uses: actions/ai-inference@v1
         with:
-          model: gpt-4o-mini
+          model: openai/openai/gpt-4o-mini
           prompt: |
             You are SAGE-AI, the AI assistant for SAGE-OS. A user mentioned you in a comment.
             Provide a helpful response based on the context.
@@ -158,7 +158,7 @@ jobs:
         id: code-analysis
         uses: actions/ai-inference@v1
         with:
-          model: codestral-latest  # Specialized for code analysis
+          model: mistral-ai/codestral-2501  # Specialized for code analysis
           prompt: |
             Analyze this SAGE-OS issue for potential code problems or build issues.
             

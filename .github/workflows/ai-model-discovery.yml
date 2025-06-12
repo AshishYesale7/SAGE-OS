@@ -1,0 +1,153 @@
+name: 🔍 AI Model Discovery & Testing
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/ai-model-discovery.yml'
+
+jobs:
+  discover-models:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
+
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 🔍 Test Common Model Formats
+        run: |
+          echo "🧪 Testing different model formats..."
+          
+          # Test different model name formats
+          MODELS=(
+            "gpt-4o"
+            "openai/gpt-4o"
+            "gpt-4o-mini"
+            "openai/gpt-4o-mini"
+            "phi-3-mini-4k-instruct"
+            "microsoft/phi-3-mini-4k-instruct"
+            "llama-3.1-8b-instruct"
+            "meta/llama-3.1-8b-instruct"
+            "codestral-latest"
+            "mistral/codestral-latest"
+          )
+          
+          echo "Available models to test:"
+          for model in "${MODELS[@]}"; do
+            echo "  - $model"
+          done
+
+      - name: 🧪 Test Model 1 - GPT-4o-mini
+        id: test1
+        continue-on-error: true
+        uses: actions/ai-inference@v1
+        with:
+          model: gpt-4o-mini
+          prompt: "Test 1: Respond with 'Model gpt-4o-mini works!'"
+
+      - name: 🧪 Test Model 2 - OpenAI GPT-4o-mini
+        id: test2
+        continue-on-error: true
+        uses: actions/ai-inference@v1
+        with:
+          model: openai/gpt-4o-mini
+          prompt: "Test 2: Respond with 'Model openai/gpt-4o-mini works!'"
+
+      - name: 🧪 Test Model 3 - Phi-3-mini
+        id: test3
+        continue-on-error: true
+        uses: actions/ai-inference@v1
+        with:
+          model: phi-3-mini-4k-instruct
+          prompt: "Test 3: Respond with 'Model phi-3-mini-4k-instruct works!'"
+
+      - name: 🧪 Test Model 4 - Microsoft Phi-3-mini
+        id: test4
+        continue-on-error: true
+        uses: actions/ai-inference@v1
+        with:
+          model: microsoft/phi-3-mini-4k-instruct
+          prompt: "Test 4: Respond with 'Model microsoft/phi-3-mini-4k-instruct works!'"
+
+      - name: 📊 Report Test Results
+        run: |
+          echo "🧪 Model Testing Results:"
+          echo "========================"
+          
+          echo "Test 1 (gpt-4o-mini): ${{ steps.test1.outcome }}"
+          if [ "${{ steps.test1.outcome }}" = "success" ]; then
+            echo "  Response: ${{ steps.test1.outputs.response }}"
+          fi
+          
+          echo "Test 2 (openai/gpt-4o-mini): ${{ steps.test2.outcome }}"
+          if [ "${{ steps.test2.outcome }}" = "success" ]; then
+            echo "  Response: ${{ steps.test2.outputs.response }}"
+          fi
+          
+          echo "Test 3 (phi-3-mini-4k-instruct): ${{ steps.test3.outcome }}"
+          if [ "${{ steps.test3.outcome }}" = "success" ]; then
+            echo "  Response: ${{ steps.test3.outputs.response }}"
+          fi
+          
+          echo "Test 4 (microsoft/phi-3-mini-4k-instruct): ${{ steps.test4.outcome }}"
+          if [ "${{ steps.test4.outcome }}" = "success" ]; then
+            echo "  Response: ${{ steps.test4.outputs.response }}"
+          fi
+          
+          # Determine working model
+          if [ "${{ steps.test1.outcome }}" = "success" ]; then
+            echo "✅ WORKING MODEL: gpt-4o-mini"
+          elif [ "${{ steps.test2.outcome }}" = "success" ]; then
+            echo "✅ WORKING MODEL: openai/gpt-4o-mini"
+          elif [ "${{ steps.test3.outcome }}" = "success" ]; then
+            echo "✅ WORKING MODEL: phi-3-mini-4k-instruct"
+          elif [ "${{ steps.test4.outcome }}" = "success" ]; then
+            echo "✅ WORKING MODEL: microsoft/phi-3-mini-4k-instruct"
+          else
+            echo "❌ NO WORKING MODELS FOUND"
+          fi
+
+      - name: 📝 Create Model Configuration
+        run: |
+          cat << 'EOF' > WORKING_MODELS.md
+          # 🤖 Working AI Models for SAGE-OS
+          
+          ## Test Results
+          
+          | Model | Format | Status | Response |
+          |-------|--------|--------|----------|
+          | gpt-4o-mini | `gpt-4o-mini` | ${{ steps.test1.outcome }} | ${{ steps.test1.outputs.response }} |
+          | gpt-4o-mini | `openai/gpt-4o-mini` | ${{ steps.test2.outcome }} | ${{ steps.test2.outputs.response }} |
+          | phi-3-mini | `phi-3-mini-4k-instruct` | ${{ steps.test3.outcome }} | ${{ steps.test3.outputs.response }} |
+          | phi-3-mini | `microsoft/phi-3-mini-4k-instruct` | ${{ steps.test4.outcome }} | ${{ steps.test4.outputs.response }} |
+          
+          ## Recommended Configuration
+          
+          Based on test results, use these models in workflows:
+          
+          ```yaml
+          # Primary model (fastest working)
+          model: gpt-4o-mini  # or openai/gpt-4o-mini if first fails
+          
+          # Alternative models
+          fallback_model: phi-3-mini-4k-instruct
+          ```
+          
+          ## Usage in Workflows
+          
+          ```yaml
+          - name: AI Analysis
+            uses: actions/ai-inference@v1
+            with:
+              model: gpt-4o-mini  # Use the working format
+              prompt: "Your prompt here"
+          ```
+          
+          ---
+          Generated: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          EOF
+          
+          echo "📝 Model configuration saved to WORKING_MODELS.md"
