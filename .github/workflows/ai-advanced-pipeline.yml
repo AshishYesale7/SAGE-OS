@@ -7,8 +7,8 @@ on:
     types: [opened, edited, closed, merged, review_requested]
   issue_comment:
     types: [created]
-  # push:
-  #   branches: [main, dev]  # Temporarily disabled due to protected branch rules
+  push:
+    branches: [main, dev]
   release:
     types: [published]
   schedule:

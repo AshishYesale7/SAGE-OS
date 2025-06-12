@@ -17,12 +17,12 @@ on:
         required: false
         default: true
         type: boolean
-  # push:
-  #   branches: [main, dev]  # Temporarily disabled due to protected branch rules
-  #   paths:
-  #     - '.github/workflows/integration-test-ai-workflow.yml'
-  #     - '.github/workflows/ai-file-management.yml'
-  #     - 'docs/sage-os-ai-assistant.html'
+  push:
+    branches: [main, dev]
+    paths:
+      - '.github/workflows/integration-test-ai-workflow.yml'
+      - '.github/workflows/ai-file-management.yml'
+      - 'docs/sage-os-ai-assistant.html'
 
 permissions:
   contents: read
