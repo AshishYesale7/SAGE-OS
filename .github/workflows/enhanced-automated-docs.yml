@@ -39,6 +39,7 @@ on:
     - cron: '0 2 * * *'
 
 permissions:
+  models: read
   contents: write
   pages: write
   id-token: write
@@ -325,11 +326,11 @@ jobs:
       id: ai
       if: inputs.enable_ai_analysis == true || github.event_name == 'schedule'
       env:
-        AI_API_KEY: ${{ secrets.AI_API_KEY }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         echo "🤖 Performing AI-powered code analysis..."
         
-        if [ -z "$AI_API_KEY" ]; then
+        if [ -z "$GITHUB_TOKEN" ]; then
           echo "⚠️  GitHub Models API key not configured, skipping AI analysis"
           echo "analysis={\"enabled\": false, \"reason\": \"no_api_key\"}" >> $GITHUB_OUTPUT
           exit 0
@@ -343,13 +344,14 @@ jobs:
         
         def analyze_with_github_models(code_content, file_path):
             """Analyze code using GitHub Models API"""
-            api_key = os.environ.get('AI_API_KEY')
+            api_key = os.environ.get('GITHUB_TOKEN')
             if not api_key:
                 return None
                 
             headers = {
                 'Authorization': f'Bearer {api_key}',
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'api-version': '2024-08-01-preview'
             }
             
             prompt = f"""
@@ -366,7 +368,7 @@ jobs:
             """
             
             payload = {
-                'model': 'gpt-4',
+                'model': 'openai/gpt-4o-mini',
                 'messages': [
                     {'role': 'system', 'content': 'You are a code analysis expert. Provide concise, actionable insights.'},
                     {'role': 'user', 'content': prompt}
@@ -706,7 +708,7 @@ jobs:
         To enable AI features, configure your GitHub Models API key:
         
         ```bash
-        export AI_API_KEY="your-api-key-here"
+        export GITHUB_TOKEN="your-api-key-here"
         ```
         
         ### Supported Models
@@ -741,7 +743,7 @@ jobs:
         ## Current AI Analysis Status
         
         - **Status**: ⚠️ Disabled (API key not configured)
-        - **To Enable**: Configure AI_API_KEY secret
+        - **To Enable**: Configure GITHUB_TOKEN secret
         
         '''
         

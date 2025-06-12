@@ -15,34 +15,103 @@ jobs:
       contents: read
       issues: write
       pull-requests: write
+      models: read
 
     steps:
       - name: 📥 Checkout Repository
         uses: actions/checkout@v4
 
-      - name: 📚 Generate Documentation
-        id: docs
-        uses: actions/ai-inference@v1
-        with:
-          model: gpt-4o-mini
-          prompt: |
-            Generate helpful documentation for this SAGE-OS activity:
-            
-            **Repository**: SAGE-OS (Self-Aware General Environment Operating System)
-            **Context**: Embedded OS with AI integration for Raspberry Pi and x86 systems
-            
-            **Activity Details:**
-            - Event: ${{ github.event_name }}
-            - Title: ${{ github.event.issue.title || github.event.pull_request.title }}
-            - Body: ${{ github.event.issue.body || github.event.pull_request.body }}
-            
-            **Generate:**
-            1. **Summary**: Brief overview of the activity
-            2. **Technical Context**: Relevant technical details
-            3. **Documentation Links**: Suggest relevant documentation
-            4. **Next Steps**: Recommended actions
-            
-            Keep response helpful and concise for SAGE-OS development.
+      - name: 📚 Generate Documentation with AI
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          EVENT_NAME: ${{ github.event_name }}
+          ISSUE_TITLE: ${{ github.event.issue.title || github.event.pull_request.title }}
+          ISSUE_BODY: ${{ github.event.issue.body || github.event.pull_request.body }}
+        run: |
+          echo "📚 Generating AI documentation..."
+          
+          python3 << 'EOF'
+          import os
+          import json
+          import requests
+          
+          # Configuration
+          GITHUB_TOKEN = os.environ.get('GITHUB_TOKEN')
+          EVENT_NAME = os.environ.get('EVENT_NAME')
+          ISSUE_TITLE = os.environ.get('ISSUE_TITLE', '')
+          ISSUE_BODY = os.environ.get('ISSUE_BODY', '')
+          
+          def call_github_models_api(prompt):
+              """Call GitHub Models API for documentation generation"""
+              headers = {
+                  'Authorization': f'Bearer {GITHUB_TOKEN}',
+                  'Content-Type': 'application/json',
+                  'api-version': '2024-08-01-preview'
+              }
+              
+              data = {
+                  'model': 'openai/gpt-4o-mini',
+                  'messages': [
+                      {
+                          'role': 'system',
+                          'content': 'You are a technical documentation expert specializing in operating systems and embedded development. Generate clear, helpful documentation for SAGE-OS development activities.'
+                      },
+                      {
+                          'role': 'user',
+                          'content': prompt
+                      }
+                  ],
+                  'max_tokens': 2000,
+                  'temperature': 0.3
+              }
+              
+              try:
+                  response = requests.post('https://models.inference.ai.azure.com/chat/completions', 
+                                         headers=headers, 
+                                         json=data, 
+                                         timeout=30)
+                  response.raise_for_status()
+                  result = response.json()
+                  return result['choices'][0]['message']['content']
+              except Exception as e:
+                  return f"Error generating documentation: {str(e)}"
+          
+          # Generate documentation
+          prompt = f"""
+          Generate helpful documentation for this SAGE-OS activity:
+          
+          **Repository**: SAGE-OS (Self-Aware General Environment Operating System)
+          **Context**: Embedded OS with AI integration for Raspberry Pi and x86 systems
+          
+          **Activity Details:**
+          - Event: {EVENT_NAME}
+          - Title: {ISSUE_TITLE}
+          - Body: {ISSUE_BODY}
+          
+          **Generate:**
+          1. **Summary**: Brief overview of the activity
+          2. **Technical Context**: Relevant technical details
+          3. **Documentation Links**: Suggest relevant documentation
+          4. **Next Steps**: Recommended actions
+          
+          Keep response helpful and concise for SAGE-OS development.
+          """
+          
+          documentation = call_github_models_api(prompt)
+          
+          # Save documentation
+          with open('/tmp/ai_documentation.md', 'w') as f:
+              f.write(f"## 📚 AI-Generated Documentation\n\n")
+              f.write(f"**Event**: {EVENT_NAME}\n")
+              f.write(f"**Title**: {ISSUE_TITLE}\n\n")
+              f.write(documentation)
+          
+          # Set environment variable for next step
+          with open(os.environ['GITHUB_ENV'], 'a') as f:
+              f.write(f"AI_DOCUMENTATION<<EOF\n{documentation}\nEOF\n")
+          
+          print("✅ AI documentation generated successfully!")
+          EOF
 
       - name: 💬 Post Documentation
         run: |
