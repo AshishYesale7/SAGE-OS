@@ -4,9 +4,11 @@
  * SAGE OS is dual-licensed under the BSD 3-Clause License and a Commercial License.
  * 
  * This file is part of the SAGE OS Project.
+ * Fixed version compatible with both GNU as and clang
  * ───────────────────────────────────────────────────────────────────────────── */
 
 #if defined(__x86_64__) || defined(__i386__)
+
 /* Multiboot header for x86 - must be at the very beginning */
 .section .multiboot,"a",@progbits
 .align 4

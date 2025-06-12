@@ -1,0 +1,206 @@
+name: 📚 Fixed Documentation Workflow
+
+on:
+  push:
+    branches: [main, dev]
+    paths:
+      - 'docs/**'
+      - '**/*.md'
+      - 'kernel/**'
+      - 'drivers/**'
+  pull_request:
+    branches: [main, dev]
+    paths:
+      - 'docs/**'
+      - '**/*.md'
+  workflow_dispatch:
+    inputs:
+      force_rebuild:
+        description: 'Force rebuild documentation'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "docs-${{ github.ref }}"
+  cancel-in-progress: true
+
+jobs:
+  build-docs:
+    name: 📚 Build Documentation
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+    - name: 📥 Checkout Repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        
+    - name: 🐍 Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        
+    - name: 📦 Install MkDocs
+      run: |
+        pip install --upgrade pip
+        pip install mkdocs mkdocs-material pymdown-extensions
+        
+    - name: 📁 Setup Documentation Structure
+      run: |
+        # Ensure docs directory exists
+        mkdir -p docs
+        
+        # Create index if missing
+        if [ ! -f docs/index.md ]; then
+          cat > docs/index.md << 'EOF'
+        # SAGE-OS Documentation
+        
+        Welcome to **SAGE-OS** (Self-Aware General Environment Operating System).
+        
+        ## 🚀 Quick Start
+        
+        SAGE-OS is a revolutionary embedded operating system with AI integration.
+        
+        ### Features
+        - 🧠 **AI Integration**: Built-in AI subsystem
+        - 🔧 **Multi-Architecture**: i386, x86_64, ARM64, RISC-V
+        - 🖥️ **Dual-Mode**: Serial console and VGA graphics
+        - 🛡️ **Security-First**: Advanced cryptographic features
+        - 🍓 **Raspberry Pi**: Optimized for Pi 4/5
+        
+        ### Build Status
+        - ✅ **i386 Build**: Working
+        - ✅ **Documentation**: Auto-generated
+        - ✅ **QEMU Support**: Available
+        
+        ## 📖 Documentation Sections
+        
+        - [Getting Started](getting-started.md)
+        - [Build Guide](build-guide.md)
+        - [Architecture](architecture.md)
+        - [API Reference](api.md)
+        
+        ## 🔗 Links
+        
+        - [GitHub Repository](https://github.com/mullaasad5420c/newos)
+        - [Issues](https://github.com/mullaasad5420c/newos/issues)
+        - [Releases](https://github.com/mullaasad5420c/newos/releases)
+        
+        ---
+        
+        *Generated on: $(date)*
+        EOF
+        fi
+        
+        # Create basic pages
+        echo "# Getting Started\n\nThis guide helps you get started with SAGE-OS." > docs/getting-started.md
+        echo "# Build Guide\n\nLearn how to build SAGE-OS for different architectures." > docs/build-guide.md
+        echo "# Architecture\n\nSAGE-OS architecture overview." > docs/architecture.md
+        echo "# API Reference\n\nKernel and driver API documentation." > docs/api.md
+        
+    - name: 📝 Create MkDocs Config
+      run: |
+        cat > mkdocs.yml << 'EOF'
+        site_name: SAGE-OS Documentation
+        site_description: Self-Aware General Environment Operating System
+        site_author: SAGE-OS Team
+        site_url: https://mullaasad5420c.github.io/newos/
+        
+        repo_name: mullaasad5420c/newos
+        repo_url: https://github.com/mullaasad5420c/newos
+        
+        theme:
+          name: material
+          palette:
+            - scheme: default
+              primary: blue
+              accent: cyan
+          features:
+            - navigation.tabs
+            - navigation.sections
+            - search.highlight
+            - content.code.copy
+        
+        nav:
+          - Home: index.md
+          - Getting Started: getting-started.md
+          - Build Guide: build-guide.md
+          - Architecture: architecture.md
+          - API Reference: api.md
+        
+        markdown_extensions:
+          - pymdownx.highlight
+          - pymdownx.superfences
+          - admonition
+          - attr_list
+        EOF
+        
+    - name: 🏗️ Build Documentation
+      run: |
+        echo "Building documentation..."
+        mkdocs build --verbose
+        
+        # Verify build
+        if [ -d "site" ] && [ -f "site/index.html" ]; then
+          echo "✅ Documentation built successfully"
+          echo "📄 Files generated: $(find site -name "*.html" | wc -l)"
+        else
+          echo "❌ Documentation build failed"
+          exit 1
+        fi
+        
+    - name: 📊 Generate Summary
+      run: |
+        echo "## 📚 Documentation Build Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "✅ **Status**: Success" >> $GITHUB_STEP_SUMMARY
+        echo "📄 **Files**: $(find site -name "*.html" | wc -l) HTML files" >> $GITHUB_STEP_SUMMARY
+        echo "🕒 **Built**: $(date)" >> $GITHUB_STEP_SUMMARY
+        echo "🌐 **Repository**: ${{ github.repository }}" >> $GITHUB_STEP_SUMMARY
+        echo "🔗 **Branch**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+        
+    - name: 🚀 Upload Documentation
+      uses: actions/upload-artifact@v4
+      with:
+        name: sage-os-documentation
+        path: site/
+        retention-days: 30
+        
+  deploy-pages:
+    name: 🌐 Deploy to GitHub Pages
+    runs-on: ubuntu-latest
+    needs: build-docs
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev'
+    
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+      
+    steps:
+    - name: 📥 Download Documentation
+      uses: actions/download-artifact@v4
+      with:
+        name: sage-os-documentation
+        path: ./site
+        
+    - name: 🔧 Setup Pages
+      uses: actions/configure-pages@v4
+      
+    - name: 📤 Upload to Pages
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: ./site
+        
+    - name: 🚀 Deploy to Pages
+      id: deployment
+      uses: actions/deploy-pages@v4

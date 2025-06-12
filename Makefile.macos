@@ -1,0 +1,270 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# SAGE OS — macOS M1 Compatible Makefile
+# Copyright (c) 2025 Ashish Vasant Yesale (ashishyesale007@gmail.com)
+# SPDX-License-Identifier: BSD-3-Clause OR Proprietary
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Build Configuration
+ARCH ?= i386
+TARGET ?= generic
+
+# Version Management
+VERSION := $(shell cat VERSION 2>/dev/null || echo "1.0.0")
+BUILD_ID := sage-os-v$(VERSION)-$(ARCH)-$(TARGET)
+
+# Directory Structure
+BUILD_DIR := build/$(ARCH)
+OUTPUT_DIR := output/$(ARCH)
+
+# Detect host system
+HOST_OS := $(shell uname -s)
+HOST_ARCH := $(shell uname -m)
+
+# macOS M1 specific configuration
+ifeq ($(HOST_OS),Darwin)
+    ifeq ($(HOST_ARCH),arm64)
+        # macOS M1 detected
+        MACOS_M1 := 1
+        
+        # Use Homebrew cross-compilers if available
+        ifeq ($(ARCH),i386)
+            # Check for i386-elf-gcc from Homebrew
+            ifneq ($(shell which i386-elf-gcc 2>/dev/null),)
+                CC := i386-elf-gcc
+                LD := i386-elf-ld
+                AS := i386-elf-as
+                OBJCOPY := i386-elf-objcopy
+                CROSS_COMPILE := i386-elf-
+            else
+                # Fallback to clang with cross-compilation flags
+                CC := clang
+                LD := ld
+                AS := clang
+                OBJCOPY := objcopy
+                CROSS_COMPILE := 
+                CLANG_TARGET := --target=i386-unknown-none-elf
+            endif
+        else ifeq ($(ARCH),x86_64)
+            ifneq ($(shell which x86_64-elf-gcc 2>/dev/null),)
+                CC := x86_64-elf-gcc
+                LD := x86_64-elf-ld
+                AS := x86_64-elf-as
+                OBJCOPY := x86_64-elf-objcopy
+                CROSS_COMPILE := x86_64-elf-
+            else
+                CC := clang
+                LD := ld
+                AS := clang
+                OBJCOPY := objcopy
+                CROSS_COMPILE := 
+                CLANG_TARGET := --target=x86_64-unknown-none-elf
+            endif
+        endif
+    endif
+else
+    # Linux/other systems
+    ifeq ($(ARCH),i386)
+        CC := gcc
+        LD := ld
+        AS := gcc
+        OBJCOPY := objcopy
+        CROSS_COMPILE := 
+    else ifeq ($(ARCH),x86_64)
+        CC := gcc
+        LD := ld
+        AS := gcc
+        OBJCOPY := objcopy
+        CROSS_COMPILE := 
+    endif
+endif
+
+# Compiler and Linker Flags
+CFLAGS := -nostdlib -nostartfiles -ffreestanding -O2 -Wall -Wextra
+CFLAGS += -I. -Ikernel -Idrivers
+
+# Architecture-specific flags
+ifeq ($(ARCH),i386)
+    CFLAGS += -m32 -D__i386__
+    LDFLAGS += -m elf_i386
+    ASFLAGS += -32
+    BOOT_FILE := boot/boot.S
+    
+    # Use clang-compatible boot file on macOS M1
+    ifdef MACOS_M1
+        ifdef CLANG_TARGET
+            CFLAGS += $(CLANG_TARGET)
+            ASFLAGS += $(CLANG_TARGET)
+            BOOT_FILE := boot/boot_clang.S
+        endif
+    endif
+else ifeq ($(ARCH),x86_64)
+    CFLAGS += -m64 -D__x86_64__
+    LDFLAGS += -m elf_x86_64
+    ASFLAGS += -64
+    BOOT_FILE := boot/boot.S
+    
+    ifdef MACOS_M1
+        ifdef CLANG_TARGET
+            CFLAGS += $(CLANG_TARGET)
+            ASFLAGS += $(CLANG_TARGET)
+            BOOT_FILE := boot/boot_clang.S
+        endif
+    endif
+endif
+
+# Additional flags for freestanding environment
+CFLAGS += -fno-pic -fno-pie -fno-stack-protector
+CFLAGS += -mno-red-zone -mno-mmx -mno-sse -mno-sse2
+
+# Linker flags
+LDFLAGS += -nostdlib -static
+LDFLAGS += -T linker.ld
+
+# Source files
+KERNEL_SOURCES := $(wildcard kernel/*.c)
+DRIVER_SOURCES := $(wildcard drivers/*.c)
+C_SOURCES := $(KERNEL_SOURCES) $(DRIVER_SOURCES)
+
+# Object files
+BOOT_OBJ := $(BUILD_DIR)/boot/boot.o
+C_OBJECTS := $(C_SOURCES:%.c=$(BUILD_DIR)/%.o)
+OBJECTS := $(BOOT_OBJ) $(C_OBJECTS)
+
+# Default target
+all: $(BUILD_DIR)/kernel.elf
+
+# Create directories
+$(BUILD_DIR):
+	mkdir -p $(BUILD_DIR)/boot $(BUILD_DIR)/kernel $(BUILD_DIR)/drivers
+
+# Compile boot assembly
+$(BOOT_OBJ): $(BOOT_FILE) | $(BUILD_DIR)
+	@echo "🔧 Compiling boot code for $(ARCH)..."
+	$(AS) $(ASFLAGS) -c $< -o $@
+
+# Compile C sources
+$(BUILD_DIR)/%.o: %.c | $(BUILD_DIR)
+	@echo "🔧 Compiling $<..."
+	$(CC) $(CFLAGS) -c $< -o $@
+
+# Link kernel
+$(BUILD_DIR)/kernel.elf: $(OBJECTS)
+	@echo "🔗 Linking kernel for $(ARCH)..."
+	$(LD) $(LDFLAGS) -o $@ $^
+	@echo "✅ Kernel built successfully: $@"
+
+# Create disk image
+$(BUILD_DIR)/kernel.img: $(BUILD_DIR)/kernel.elf
+	@echo "💾 Creating disk image..."
+	# Create a simple disk image with the kernel
+	dd if=/dev/zero of=$@ bs=1M count=10
+	# This would need a proper bootloader for real hardware
+
+# QEMU testing targets
+qemu: $(BUILD_DIR)/kernel.elf
+	@echo "🚀 Starting QEMU for $(ARCH)..."
+ifeq ($(ARCH),i386)
+	qemu-system-i386 -kernel $< -m 128M -nographic
+else ifeq ($(ARCH),x86_64)
+	qemu-system-x86_64 -kernel $< -m 128M -nographic
+endif
+
+qemu-graphics: $(BUILD_DIR)/kernel.elf
+	@echo "🖥️ Starting QEMU with graphics for $(ARCH)..."
+ifeq ($(ARCH),i386)
+	qemu-system-i386 -kernel $< -m 256M -vga std -display gtk -device usb-kbd -device usb-mouse
+else ifeq ($(ARCH),x86_64)
+	qemu-system-x86_64 -kernel $< -m 256M -vga std -display gtk -device usb-kbd -device usb-mouse
+endif
+
+qemu-debug: $(BUILD_DIR)/kernel.elf
+	@echo "🐛 Starting QEMU with debug for $(ARCH)..."
+ifeq ($(ARCH),i386)
+	qemu-system-i386 -kernel $< -m 128M -nographic -s -S
+else ifeq ($(ARCH),x86_64)
+	qemu-system-x86_64 -kernel $< -m 128M -nographic -s -S
+endif
+
+# macOS M1 specific QEMU (force TCG acceleration)
+qemu-m1: $(BUILD_DIR)/kernel.elf
+	@echo "🍎 Starting QEMU for macOS M1 (TCG acceleration)..."
+ifeq ($(ARCH),i386)
+	qemu-system-i386 -kernel $< -m 128M -nographic -accel tcg
+else ifeq ($(ARCH),x86_64)
+	qemu-system-x86_64 -kernel $< -m 128M -nographic -accel tcg
+endif
+
+qemu-m1-graphics: $(BUILD_DIR)/kernel.elf
+	@echo "🍎🖥️ Starting QEMU with graphics for macOS M1..."
+ifeq ($(ARCH),i386)
+	qemu-system-i386 -kernel $< -m 256M -vga std -display cocoa -device usb-kbd -device usb-mouse -accel tcg
+else ifeq ($(ARCH),x86_64)
+	qemu-system-x86_64 -kernel $< -m 256M -vga std -display cocoa -device usb-kbd -device usb-mouse -accel tcg
+endif
+
+# Utility targets
+clean:
+	@echo "🧹 Cleaning build files..."
+	rm -rf $(BUILD_DIR)
+
+distclean: clean
+	@echo "🧹 Deep cleaning..."
+	rm -rf build/ output/
+
+install-deps-macos:
+	@echo "📦 Installing dependencies for macOS..."
+	@if ! command -v brew >/dev/null 2>&1; then \
+		echo "❌ Homebrew not found. Please install Homebrew first."; \
+		exit 1; \
+	fi
+	brew install qemu
+	@echo "🔧 Installing cross-compilers..."
+	-brew install x86_64-elf-gcc i386-elf-gcc
+	@echo "✅ Dependencies installed"
+
+check-deps:
+	@echo "🔍 Checking dependencies..."
+	@echo "Host OS: $(HOST_OS)"
+	@echo "Host Architecture: $(HOST_ARCH)"
+	@echo "Target Architecture: $(ARCH)"
+	@echo "Compiler: $(CC)"
+	@echo "Linker: $(LD)"
+	@echo "Assembler: $(AS)"
+	@if command -v $(CC) >/dev/null 2>&1; then \
+		echo "✅ Compiler found: $(shell $(CC) --version | head -1)"; \
+	else \
+		echo "❌ Compiler not found: $(CC)"; \
+	fi
+	@if command -v qemu-system-$(ARCH) >/dev/null 2>&1; then \
+		echo "✅ QEMU found: $(shell qemu-system-$(ARCH) --version | head -1)"; \
+	else \
+		echo "❌ QEMU not found for $(ARCH)"; \
+	fi
+
+help:
+	@echo "🚀 SAGE OS Build System - macOS M1 Compatible"
+	@echo ""
+	@echo "Usage: make [target] [ARCH=arch] [TARGET=target]"
+	@echo ""
+	@echo "Targets:"
+	@echo "  all                 - Build kernel (default)"
+	@echo "  qemu               - Run in QEMU (console mode)"
+	@echo "  qemu-graphics      - Run in QEMU (graphics mode)"
+	@echo "  qemu-debug         - Run in QEMU (debug mode)"
+	@echo "  qemu-m1            - Run in QEMU (macOS M1 optimized)"
+	@echo "  qemu-m1-graphics   - Run in QEMU (macOS M1 graphics)"
+	@echo "  clean              - Clean build files"
+	@echo "  distclean          - Deep clean"
+	@echo "  install-deps-macos - Install macOS dependencies"
+	@echo "  check-deps         - Check dependencies"
+	@echo "  help               - Show this help"
+	@echo ""
+	@echo "Architectures: i386, x86_64"
+	@echo "Targets: generic"
+	@echo ""
+	@echo "Examples:"
+	@echo "  make ARCH=i386                    # Build for i386"
+	@echo "  make qemu-m1 ARCH=i386          # Run on macOS M1"
+	@echo "  make qemu-graphics ARCH=x86_64   # Graphics mode"
+
+.PHONY: all qemu qemu-graphics qemu-debug qemu-m1 qemu-m1-graphics clean distclean install-deps-macos check-deps help

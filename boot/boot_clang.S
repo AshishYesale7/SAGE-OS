@@ -3,12 +3,13 @@
  * SPDX-License-Identifier: BSD-3-Clause OR Proprietary
  * SAGE OS is dual-licensed under the BSD 3-Clause License and a Commercial License.
  * 
- * This file is part of the SAGE OS Project.
+ * This file is part of the SAGE OS Project - Clang/macOS Compatible Version
  * ───────────────────────────────────────────────────────────────────────────── */
 
 #if defined(__x86_64__) || defined(__i386__)
-/* Multiboot header for x86 - must be at the very beginning */
-.section .multiboot,"a",@progbits
+
+// Multiboot header for x86 - must be at the very beginning
+.section __TEXT,__multiboot
 .align 4
 
 #define MULTIBOOT_MAGIC         0x1BADB002
@@ -20,93 +21,88 @@ multiboot_header:
     .long MULTIBOOT_FLAGS
     .long MULTIBOOT_CHECKSUM
 
-.section .text,"ax",@progbits
+.section __TEXT,__text
 .global _start
 
-/* Entry point for the kernel */
+// Entry point for the kernel
 _start:
-    /* Disable interrupts */
+    // Disable interrupts
     cli
     
-    /* Set up stack */
+    // Set up stack
 #ifdef __x86_64__
     movq $stack_top, %rsp
 #else
     movl $stack_top, %esp
 #endif
     
-    /* Clear direction flag */
+    // Clear direction flag
     cld
     
-    /* Call kernel main */
-    call kernel_main
+    // Call kernel main
+    call _kernel_main
     
-    /* If kernel_main returns, halt */
+    // If kernel_main returns, halt
 halt_loop:
     hlt
     jmp halt_loop
 
-/* Stack space */
-.section .bss,"aw",@nobits
+// Stack space
+.section __DATA,__bss
 .align 16
 stack_bottom:
-    .skip 16384  /* 16KB stack */
+    .space 16384  // 16KB stack
 stack_top:
 
-#elif defined(__aarch64__) || defined(__arm64__)
+#elif defined(__aarch64__)
 
-.section .text,"ax",@progbits
+// ARM64 boot code
+.section __TEXT,__text
 .global _start
 
 _start:
-    /* Check processor ID, stop all but core 0 */
-    mrs     x1, mpidr_el1
-    and     x1, x1, #3
-    cbz     x1, 2f
-    /* CPU ID > 0, stop */
-1:  wfe
-    b       1b
-2:  /* CPU ID == 0 */
+    // Set up stack pointer
+    adrp x0, stack_top
+    add sp, x0, :lo12:stack_top
+    
+    // Call kernel main
+    bl _kernel_main
+    
+    // If kernel_main returns, halt
+halt_loop:
+    wfe
+    b halt_loop
 
-    /* Set stack pointer */
-    ldr     x1, =stack_top
-    mov     sp, x1
-
-    /* Jump to kernel main */
-    bl      kernel_main
-    /* Should never return */
-4:  wfe
-    b       4b
-
-/* Stack space */
-.section .bss,"aw",@nobits
+.section __DATA,__bss
 .align 16
 stack_bottom:
-    .skip 16384  /* 16KB stack */
+    .space 16384  // 16KB stack
 stack_top:
 
-#elif defined(__riscv) && (__riscv_xlen == 64)
+#elif defined(__riscv)
 
-.section .text,"ax",@progbits
+// RISC-V boot code
+.section .text
 .global _start
 
 _start:
-    /* Set stack pointer */
-    la      sp, stack_top
+    // Set up stack pointer
+    la sp, stack_top
+    
+    // Call kernel main
+    call kernel_main
+    
+    // If kernel_main returns, halt
+halt_loop:
+    wfi
+    j halt_loop
 
-    /* Jump to kernel main */
-    call    kernel_main
-    /* Should never return */
-2:  wfi
-    j       2b
-
-/* Stack space */
-.section .bss,"aw",@nobits
+.section .bss
 .align 16
 stack_bottom:
-    .skip 16384  /* 16KB stack */
+    .space 16384  // 16KB stack
 stack_top:
 
 #else
-    #error "Unsupported architecture"
+#error "Unsupported architecture"
 #endif

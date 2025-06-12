@@ -6,38 +6,38 @@
 # This file is part of the SAGE OS Project.
 # ─────────────────────────────────────────────────────────────────────────────
 
-# Multiboot header for i386
-.section ".multiboot"
+/* Multiboot header for i386 */
+.section .multiboot,"a",@progbits
 .align 4
 multiboot_header:
-    .long 0x1BADB002          # magic
-    .long 0x00000000          # flags
-    .long -(0x1BADB002 + 0x00000000)  # checksum
+    .long 0x1BADB002          /* magic */
+    .long 0x00000000          /* flags */
+    .long -(0x1BADB002 + 0x00000000)  /* checksum */
 
-.section ".text"
+.section .text,"ax",@progbits
 .global _start
 
 _start:
-    # Disable interrupts
+    /* Disable interrupts */
     cli
     
-    # Set up stack
-    mov $stack_top, %esp
+    /* Set up stack */
+    movl $stack_top, %esp
     
-    # Clear direction flag
+    /* Clear direction flag */
     cld
     
-    # Call kernel main
+    /* Call kernel main */
     call kernel_main
     
-    # If kernel_main returns, halt
+    /* If kernel_main returns, halt */
 halt_loop:
     hlt
     jmp halt_loop
 
-# Stack space
-.section ".bss"
+/* Stack space */
+.section .bss,"aw",@nobits
 .align 16
 stack_bottom:
-    .skip 16384  # 16KB stack
+    .skip 16384  /* 16KB stack */
 stack_top:
