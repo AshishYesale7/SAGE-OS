@@ -30,7 +30,7 @@ jobs:
 
     strategy:
       matrix:
-        model: [gpt-4o, gpt-4o-mini, claude-3-sonnet, codestral-latest]
+        model: [openai/openai/gpt-4o, openai/openai/openai/gpt-4o-mini, microsoft/phi-4, mistral-ai/codestral-2501]
 
     steps:
       - name: 📥 Checkout Repository
@@ -81,7 +81,7 @@ jobs:
 
     strategy:
       matrix:
-        model: [codestral-latest, gpt-4o, claude-3-sonnet]
+        model: [mistral-ai/codestral-2501, openai/gpt-4o, microsoft/phi-4]
 
     steps:
       - name: 📥 Checkout Repository
@@ -143,7 +143,7 @@ jobs:
 
     strategy:
       matrix:
-        model: [gpt-4o, claude-3-sonnet, gpt-4-turbo]
+        model: [openai/gpt-4o, microsoft/phi-4, gpt-4-turbo]
 
     steps:
       - name: 📥 Checkout Repository
@@ -227,10 +227,10 @@ jobs:
           
           ### Current Optimal Configuration
           ```yaml
-          primary_model: gpt-4o          # Best overall performance
-          fast_model: gpt-4o-mini        # Quick decisions
-          code_model: codestral-latest   # Code analysis
-          planning_model: claude-3-sonnet # Strategic thinking
+          primary_model: openai/gpt-4o          # Best overall performance
+          fast_model: openai/openai/gpt-4o-mini        # Quick decisions
+          code_model: mistral-ai/codestral-2501   # Code analysis
+          planning_model: microsoft/phi-4 # Strategic thinking
           ```
           
           ### Performance Insights
@@ -282,7 +282,7 @@ jobs:
         id: optimize
         uses: actions/ai-inference@v1
         with:
-          model: gpt-4o
+          model: openai/gpt-4o
           prompt: |
             Based on the model testing results, suggest optimizations for SAGE-AI prompts.
             

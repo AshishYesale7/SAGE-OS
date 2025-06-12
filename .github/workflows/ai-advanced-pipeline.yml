@@ -7,8 +7,8 @@ on:
     types: [opened, edited, closed, merged, review_requested]
   issue_comment:
     types: [created]
-  push:
-    branches: [main, dev]
+  # push:
+  #   branches: [main, dev]  # Temporarily disabled due to protected branch rules
   release:
     types: [published]
   schedule:
@@ -40,7 +40,7 @@ jobs:
         id: repo-context
         uses: actions/ai-inference@v1
         with:
-          model: gpt-4o
+          model: openai/openai/gpt-4o
           prompt: |
             Analyze the SAGE-OS repository structure and recent activity to provide context.
             
@@ -58,7 +58,7 @@ jobs:
         id: classification
         uses: actions/ai-inference@v1
         with:
-          model: claude-3-sonnet  # Best for complex reasoning
+          model: microsoft/phi-4  # Best for complex reasoning
           prompt: |
             You are SAGE-AI, the advanced AI system for SAGE-OS repository management.
             
@@ -95,7 +95,7 @@ jobs:
         if: contains(github.event.issue.body, '```') || contains(github.event.issue.title, 'build') || contains(github.event.issue.title, 'compile') || contains(github.event.issue.title, 'error')
         uses: actions/ai-inference@v1
         with:
-          model: codestral-latest  # Code specialist
+          model: mistral-ai/codestral-2501  # Code specialist
           prompt: |
             Perform technical analysis of this SAGE-OS issue:
             
@@ -119,7 +119,7 @@ jobs:
         id: assignment
         uses: actions/ai-inference@v1
         with:
-          model: gpt-4o-mini  # Fast for decision making
+          model: openai/openai/gpt-4o-mini  # Fast for decision making
           prompt: |
             Based on this analysis, determine the best assignee for this SAGE-OS issue:
             
@@ -214,7 +214,7 @@ jobs:
         id: progress
         uses: actions/ai-inference@v1
         with:
-          model: gpt-4o-mini
+          model: openai/openai/gpt-4o-mini
           prompt: |
             Analyze the progress of this SAGE-OS issue:
             
@@ -287,7 +287,7 @@ jobs:
         id: release-notes
         uses: actions/ai-inference@v1
         with:
-          model: gpt-4o  # Best for comprehensive documentation
+          model: openai/gpt-4o  # Best for comprehensive documentation
           prompt: |
             Generate professional release notes for SAGE-OS based on recent activity:
             
@@ -375,7 +375,7 @@ jobs:
         id: health-check
         uses: actions/ai-inference@v1
         with:
-          model: claude-3-sonnet  # Best for analytical thinking
+          model: microsoft/phi-4  # Best for analytical thinking
           prompt: |
             Perform a comprehensive weekly health analysis of the SAGE-OS repository:
             
@@ -461,7 +461,7 @@ jobs:
         id: pr-analysis
         uses: actions/ai-inference@v1
         with:
-          model: gpt-4o
+          model: openai/gpt-4o
           prompt: |
             Analyze this SAGE-OS pull request for impact and quality:
             

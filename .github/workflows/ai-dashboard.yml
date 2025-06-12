@@ -64,7 +64,7 @@ jobs:
         id: analytics
         uses: actions/ai-inference@v1
         with:
-          model: gpt-4o
+          model: openai/gpt-4o
           prompt: |
             Generate a comprehensive SAGE-AI performance analytics report:
             
@@ -106,7 +106,7 @@ jobs:
         id: community
         uses: actions/ai-inference@v1
         with:
-          model: claude-3-sonnet
+          model: microsoft/phi-4
           prompt: |
             Analyze SAGE-AI's impact on community engagement:
             
@@ -138,7 +138,7 @@ jobs:
         id: technical
         uses: actions/ai-inference@v1
         with:
-          model: codestral-latest
+          model: mistral-ai/codestral-2501
           prompt: |
             Assess the technical health impact of SAGE-AI on the repository:
             
@@ -332,7 +332,7 @@ jobs:
         id: health-check
         uses: actions/ai-inference@v1
         with:
-          model: gpt-4o-mini
+          model: openai/openai/gpt-4o-mini
           prompt: |
             Perform a health check of the SAGE-AI system:
             
