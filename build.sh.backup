@@ -43,7 +43,6 @@ show_help() {
     echo "  build [arch]     Build specific architecture (default: i386)"
     echo "  test [arch]      Build and test in QEMU"
     echo "  graphics         Build and run graphics mode with VNC"
-    echo "  graphics-i386    Build and run i386 graphics mode (macOS optimized)"
     echo "  test-graphics    Test graphics mode (10 second demo)"
     echo "  all              Build all architectures"
     echo "  clean            Clean all build files"
@@ -267,13 +266,6 @@ main() {
         "graphics")
             print_header
             build_graphics_interactive
-            ;;
-        "graphics-i386")
-            print_header
-            print_info "Building i386 graphics mode..."
-            ./build-i386-graphics.sh
-            print_success "i386 graphics build completed!"
-            print_info "Run with: ./run-i386-graphics.sh cocoa"
             ;;
         "test-graphics")
             print_header

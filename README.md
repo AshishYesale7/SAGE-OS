@@ -311,3 +311,31 @@ You may use this project under the terms of the BSD 3-Clause License as stated i
 Alternatively, commercial use with extended rights is available — contact the author for commercial licensing.
 
 See the [LICENSE](./LICENSE) file for details.
+
+## 🎨 Graphics Mode (macOS Optimized)
+
+### Quick Start for macOS
+```bash
+# Build and run i386 graphics (recommended for macOS)
+./build-i386-graphics.sh
+./run-i386-graphics.sh cocoa
+
+# Or use unified launcher
+./sage-os-launcher.sh
+```
+
+### Build Options
+- `./build-i386-graphics.sh` - Dedicated i386 graphics builder
+- `./build-graphics-smart.sh` - Smart architecture detection
+- `make graphics-i386` - Makefile target
+
+### Run Options
+- `./run-i386-graphics.sh cocoa` - Native macOS window
+- `./run-i386-graphics.sh vnc` - VNC mode
+- `./quick-graphics-macos.sh` - Interactive menu
+
+### Verification
+```bash
+./verify-build-system.sh  # Comprehensive verification
+./test-i386-build.sh      # Quick build test
+```
