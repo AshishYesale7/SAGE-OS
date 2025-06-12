@@ -67,16 +67,38 @@ echo   • Press Ctrl+Alt+G to release mouse cursor
 echo   • Close window to exit
 echo.
 
-REM QEMU command for graphics mode
+REM Optimized QEMU command for Intel i5-3380M with graphics support
+echo 🎨 Graphics Configuration:
+echo   • VGA Standard (compatible with all systems)
+echo   • GTK Display (native Windows integration)
+echo   • USB Keyboard/Mouse (full input support)
+echo   • Optimized for Intel i5-3380M + 4GB RAM
+echo.
+
+REM Check for graphics libraries
+where gtk-query-immodules-2.0 >nul 2>&1
+if %errorlevel% neq 0 (
+    echo ⚠️  GTK libraries not detected, using SDL fallback...
+    set DISPLAY_TYPE=sdl
+) else (
+    echo ✅ GTK libraries detected
+    set DISPLAY_TYPE=gtk
+)
+
+REM Launch QEMU with optimized graphics settings
 qemu-system-i386 ^
     -kernel "%KERNEL_PATH%" ^
     -m %MEMORY% ^
+    -cpu Nehalem ^
+    -smp 2 ^
     -vga std ^
-    -display gtk ^
+    -display %DISPLAY_TYPE% ^
     -device usb-kbd ^
     -device usb-mouse ^
-    -name "SAGE OS v1.0.1" ^
-    -no-reboot
+    -name "SAGE OS v1.0.1 - Intel i5-3380M" ^
+    -rtc base=localtime ^
+    -no-reboot ^
+    -no-quit
 
 echo.
 echo 👋 SAGE OS session ended
