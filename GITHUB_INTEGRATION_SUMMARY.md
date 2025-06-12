@@ -95,7 +95,7 @@ test-github-integration.yml
 
 ### **🔧 CONFIGURATION REQUIREMENTS**
 - **GitHub Pages**: Enable in repository settings
-- **GitHub Models API**: Configure `GITHUB_MODELS_API_KEY` secret
+- **GitHub Models API**: Configure `AI_API_KEY` secret
 - **Repository Permissions**: Ensure workflow permissions enabled
 
 ### **🚀 DEPLOYMENT READY**

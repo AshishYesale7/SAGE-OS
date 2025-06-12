@@ -325,11 +325,11 @@ jobs:
       id: ai
       if: inputs.enable_ai_analysis == true || github.event_name == 'schedule'
       env:
-        GITHUB_MODELS_API_KEY: ${{ secrets.GITHUB_MODELS_API_KEY }}
+        AI_API_KEY: ${{ secrets.AI_API_KEY }}
       run: |
         echo "🤖 Performing AI-powered code analysis..."
         
-        if [ -z "$GITHUB_MODELS_API_KEY" ]; then
+        if [ -z "$AI_API_KEY" ]; then
           echo "⚠️  GitHub Models API key not configured, skipping AI analysis"
           echo "analysis={\"enabled\": false, \"reason\": \"no_api_key\"}" >> $GITHUB_OUTPUT
           exit 0
@@ -343,7 +343,7 @@ jobs:
         
         def analyze_with_github_models(code_content, file_path):
             """Analyze code using GitHub Models API"""
-            api_key = os.environ.get('GITHUB_MODELS_API_KEY')
+            api_key = os.environ.get('AI_API_KEY')
             if not api_key:
                 return None
                 
@@ -706,7 +706,7 @@ jobs:
         To enable AI features, configure your GitHub Models API key:
         
         ```bash
-        export GITHUB_MODELS_API_KEY="your-api-key-here"
+        export AI_API_KEY="your-api-key-here"
         ```
         
         ### Supported Models
@@ -741,7 +741,7 @@ jobs:
         ## Current AI Analysis Status
         
         - **Status**: ⚠️ Disabled (API key not configured)
-        - **To Enable**: Configure GITHUB_MODELS_API_KEY secret
+        - **To Enable**: Configure AI_API_KEY secret
         
         '''
         

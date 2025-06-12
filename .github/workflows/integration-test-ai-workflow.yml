@@ -73,7 +73,7 @@ jobs:
             VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
           fi
           
-          if grep -q "GITHUB_MODELS_API_KEY" .github/workflows/ai-file-management.yml; then
+          if grep -q "AI_API_KEY" .github/workflows/ai-file-management.yml; then
             echo "✅ API key integration found"
           else
             echo "❌ API key integration not found"
@@ -265,7 +265,7 @@ jobs:
             CONFIG_VALID="false"
           fi
           
-          if grep -q "GITHUB_MODELS_API_KEY" docs/sage-os-ai-assistant.html; then
+          if grep -q "AI_API_KEY" docs/sage-os-ai-assistant.html; then
             echo "✅ API key handling found in chatbot"
           else
             echo "❌ API key handling not found in chatbot"
@@ -535,7 +535,7 @@ jobs:
         
         ### 3. GitHub Models API Integration
         - **Endpoint**: `https://models.inference.ai.azure.com`
-        - **Authentication**: `GITHUB_MODELS_API_KEY` secret
+        - **Authentication**: `AI_API_KEY` secret
         - **Status**: ${{ needs.test-api-integration.outputs.config_valid == 'true' && '✅ Configured' || '❌ Configuration Issues' }}
         - **Fallback**: Demo mode available without API key
         
@@ -570,7 +570,7 @@ jobs:
            ```
         
         2. **Configure Secrets**:
-           - Add `GITHUB_MODELS_API_KEY` to repository secrets
+           - Add `AI_API_KEY` to repository secrets
            - Enable GitHub Pages in repository settings
         
         3. **Test Deployment**:

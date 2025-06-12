@@ -175,7 +175,7 @@ jobs:
     if: needs.detect-changes.outputs.needs_regeneration == 'true'
     timeout-minutes: ${{ fromJson(env.TIMEOUT_MINUTES) }}
     env:
-      GITHUB_MODELS_API_KEY: ${{ secrets.GITHUB_MODELS_API_KEY }}
+      AI_API_KEY: ${{ secrets.AI_API_KEY }}
     
     steps:
     - name: 📥 Checkout Repository
@@ -996,7 +996,7 @@ What specific aspect of SAGE-OS would you like to know more about?`;
                 return results
         
         # Initialize secure AI generator
-        api_key = os.environ.get('GITHUB_MODELS_API_KEY')
+        api_key = os.environ.get('AI_API_KEY')
         if not api_key:
             print("⚠️  GitHub Models API key not configured, using secure fallback generation")
             # Create basic documentation without AI (still with security restrictions)
@@ -1329,7 +1329,7 @@ Timestamp: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "### 🤖 AI Content Generation" >> $GITHUB_STEP_SUMMARY
         echo "- **Status**: ${{ needs.ai-content-generator.result == 'success' && '✅ Completed' || needs.ai-content-generator.result == 'skipped' && '⏭️ Skipped' || '❌ Failed' }}" >> $GITHUB_STEP_SUMMARY
-        echo "- **API Integration**: ${{ secrets.GITHUB_MODELS_API_KEY && '✅ Enabled' || '⚠️ Disabled' }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **API Integration**: ${{ secrets.AI_API_KEY && '✅ Enabled' || '⚠️ Disabled' }}" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "### 🚀 GitHub Pages Deployment" >> $GITHUB_STEP_SUMMARY
         echo "- **Status**: ${{ needs.deploy-to-pages.result == 'success' && '✅ Deployed' || needs.deploy-to-pages.result == 'skipped' && '⏭️ Skipped' || '❌ Failed' }}" >> $GITHUB_STEP_SUMMARY
