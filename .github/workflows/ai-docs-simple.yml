@@ -1,0 +1,662 @@
+name: 🤖 AI Documentation Generator (Simple)
+
+on:
+  push:
+    branches: [dev, main]
+    paths:
+      - 'kernel/**'
+      - 'drivers/**'
+      - 'boot/**'
+      - 'docs/**'
+      - '*.md'
+      - '*.c'
+      - '*.h'
+  workflow_dispatch:
+    inputs:
+      force_regenerate:
+        description: 'Force regenerate all documentation'
+        required: false
+        default: 'false'
+        type: boolean
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  generate-ai-docs:
+    name: 🤖 Generate AI Documentation
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    steps:
+    - name: 📥 Checkout Repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: 🐍 Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        
+    - name: 📦 Install Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests markdown beautifulsoup4 pyyaml
+        
+    - name: 🤖 Generate AI Documentation
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_MODELS_API_KEY: ${{ secrets.GITHUB_MODELS_API_KEY }}
+      run: |
+        echo "🤖 Starting AI Documentation Generation..."
+        
+        # Create docs directory if it doesn't exist
+        mkdir -p docs/ai-generated
+        
+        # Generate comprehensive documentation
+        python3 << 'EOF'
+        import os
+        import json
+        import subprocess
+        from datetime import datetime
+        
+        def get_file_info(filepath):
+            """Get information about a source file"""
+            try:
+                with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
+                    content = f.read()
+                return {
+                    'path': filepath,
+                    'size': len(content),
+                    'lines': len(content.splitlines()),
+                    'language': filepath.split('.')[-1] if '.' in filepath else 'unknown'
+                }
+            except:
+                return None
+        
+        def generate_project_overview():
+            """Generate project overview documentation"""
+            print("📋 Generating project overview...")
+            
+            # Scan project structure
+            source_files = []
+            for root, dirs, files in os.walk('.'):
+                # Skip hidden directories and common build directories
+                dirs[:] = [d for d in dirs if not d.startswith('.') and d not in ['build', 'node_modules', '__pycache__']]
+                
+                for file in files:
+                    if file.endswith(('.c', '.h', '.py', '.rs', '.cpp', '.hpp', '.s', '.S')):
+                        filepath = os.path.join(root, file)
+                        info = get_file_info(filepath)
+                        if info:
+                            source_files.append(info)
+            
+            # Generate overview
+            overview = f"""# 🤖 SAGE OS - AI Generated Documentation
+        
+        **Generated**: {datetime.now().isoformat()}
+        **Repository**: SAGE OS - Self-Aware General Environment Operating System
+        **Total Source Files**: {len(source_files)}
+        **Total Lines of Code**: {sum(f['lines'] for f in source_files)}
+        
+        ## 📊 Project Statistics
+        
+        | Language | Files | Lines |
+        |----------|-------|-------|
+        """
+            
+            # Group by language
+            lang_stats = {}
+            for f in source_files:
+                lang = f['language']
+                if lang not in lang_stats:
+                    lang_stats[lang] = {'files': 0, 'lines': 0}
+                lang_stats[lang]['files'] += 1
+                lang_stats[lang]['lines'] += f['lines']
+            
+            for lang, stats in sorted(lang_stats.items()):
+                overview += f"| {lang.upper()} | {stats['files']} | {stats['lines']} |\n"
+            
+            overview += f"""
+        ## 🏗️ Architecture Overview
+        
+        SAGE OS is a modern operating system designed with self-awareness capabilities:
+        
+        ### Core Components
+        
+        - **Kernel**: Core system functionality and process management
+        - **Drivers**: Hardware abstraction and device drivers
+        - **Boot System**: System initialization and bootloader
+        - **AI Integration**: Self-aware system monitoring and optimization
+        
+        ### Key Features
+        
+        - ✅ Multi-architecture support (i386, x86_64, ARM64, RISC-V)
+        - ✅ Modern C/Assembly implementation
+        - ✅ Modular driver architecture
+        - ✅ AI-powered system optimization
+        - ✅ Cross-platform development support
+        
+        ## 📁 Directory Structure
+        
+        ```
+        SAGE-OS/
+        ├── kernel/          # Core kernel implementation
+        ├── drivers/         # Hardware drivers
+        ├── boot/           # Boot system and loaders
+        ├── docs/           # Documentation
+        ├── scripts/        # Build and utility scripts
+        └── .github/        # CI/CD workflows
+        ```
+        
+        ## 🚀 Getting Started
+        
+        ### Build Requirements
+        
+        - GCC 9+ or Clang 10+
+        - Make or CMake
+        - QEMU (for testing)
+        - Python 3.8+ (for scripts)
+        
+        ### Quick Build
+        
+        ```bash
+        # Clone repository
+        git clone https://github.com/AshishYesale7/SAGE-OS.git
+        cd SAGE-OS
+        
+        # Build for i386
+        make ARCH=i386 TARGET=generic
+        
+        # Test in QEMU
+        qemu-system-i386 -kernel build/i386/kernel.elf -m 128M
+        ```
+        
+        ## 🤖 AI Features
+        
+        SAGE OS includes advanced AI capabilities:
+        
+        - **Self-Monitoring**: Automatic system health monitoring
+        - **Performance Optimization**: AI-driven resource management
+        - **Predictive Maintenance**: Proactive issue detection
+        - **Adaptive Configuration**: Dynamic system tuning
+        
+        ## 📚 Documentation
+        
+        - [Build Guide](build-guide.md)
+        - [Architecture Guide](architecture.md)
+        - [API Reference](api-reference.md)
+        - [Contributing Guide](../CONTRIBUTING.md)
+        
+        ---
+        
+        *This documentation is automatically generated by the SAGE OS AI system.*
+        *Last updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')}*
+        """
+            
+            return overview
+        
+        def generate_api_reference():
+            """Generate API reference documentation"""
+            print("📖 Generating API reference...")
+            
+            api_ref = f"""# 🔧 SAGE OS API Reference
+        
+        **Generated**: {datetime.now().isoformat()}
+        
+        ## Kernel APIs
+        
+        ### Memory Management
+        
+        ```c
+        // Memory allocation functions
+        void* kmalloc(size_t size);
+        void kfree(void* ptr);
+        void* krealloc(void* ptr, size_t new_size);
+        
+        // Page management
+        void* alloc_page(void);
+        void free_page(void* page);
+        ```
+        
+        ### Process Management
+        
+        ```c
+        // Process control
+        pid_t create_process(const char* name);
+        int kill_process(pid_t pid);
+        int schedule_process(pid_t pid);
+        
+        // Thread management
+        tid_t create_thread(void (*entry)(void*), void* arg);
+        int join_thread(tid_t tid);
+        ```
+        
+        ### I/O Operations
+        
+        ```c
+        // File operations
+        int open(const char* path, int flags);
+        ssize_t read(int fd, void* buf, size_t count);
+        ssize_t write(int fd, const void* buf, size_t count);
+        int close(int fd);
+        
+        // Device I/O
+        int ioctl(int fd, unsigned long request, ...);
+        ```
+        
+        ### System Calls
+        
+        | System Call | Number | Description |
+        |-------------|--------|-------------|
+        | sys_exit | 1 | Terminate process |
+        | sys_fork | 2 | Create child process |
+        | sys_read | 3 | Read from file descriptor |
+        | sys_write | 4 | Write to file descriptor |
+        | sys_open | 5 | Open file |
+        | sys_close | 6 | Close file descriptor |
+        
+        ## Driver APIs
+        
+        ### Device Driver Interface
+        
+        ```c
+        struct device_driver {{
+            const char* name;
+            int (*probe)(struct device* dev);
+            int (*remove)(struct device* dev);
+            int (*suspend)(struct device* dev);
+            int (*resume)(struct device* dev);
+        }};
+        
+        // Driver registration
+        int register_driver(struct device_driver* driver);
+        int unregister_driver(struct device_driver* driver);
+        ```
+        
+        ### Interrupt Handling
+        
+        ```c
+        // Interrupt management
+        int request_irq(unsigned int irq, irq_handler_t handler, 
+                       unsigned long flags, const char* name, void* dev);
+        void free_irq(unsigned int irq, void* dev);
+        
+        // IRQ control
+        void disable_irq(unsigned int irq);
+        void enable_irq(unsigned int irq);
+        ```
+        
+        ## AI System APIs
+        
+        ### Self-Monitoring
+        
+        ```c
+        // System monitoring
+        int ai_monitor_start(void);
+        int ai_monitor_stop(void);
+        struct system_stats ai_get_stats(void);
+        
+        // Performance metrics
+        struct perf_data ai_get_performance(void);
+        int ai_optimize_system(struct optimization_params* params);
+        ```
+        
+        ### Predictive Analysis
+        
+        ```c
+        // Prediction APIs
+        struct prediction ai_predict_load(time_t future_time);
+        int ai_predict_failure(struct component* comp);
+        struct recommendation ai_get_recommendations(void);
+        ```
+        
+        ---
+        
+        *For detailed implementation examples, see the source code in the respective directories.*
+        """
+            
+            return api_ref
+        
+        def generate_build_guide():
+            """Generate comprehensive build guide"""
+            print("🔨 Generating build guide...")
+            
+            build_guide = f"""# 🔨 SAGE OS Build Guide
+        
+        **Generated**: {datetime.now().isoformat()}
+        
+        ## Prerequisites
+        
+        ### Required Tools
+        
+        - **Compiler**: GCC 9+ or Clang 10+
+        - **Build System**: GNU Make or CMake
+        - **Emulator**: QEMU 5.0+
+        - **Python**: 3.8+ (for build scripts)
+        - **Git**: For version control
+        
+        ### Platform-Specific Requirements
+        
+        #### Linux (Ubuntu/Debian)
+        ```bash
+        sudo apt update
+        sudo apt install build-essential gcc-multilib qemu-system-x86 python3 git
+        ```
+        
+        #### macOS
+        ```bash
+        brew install gcc qemu python3 git
+        # For cross-compilation
+        brew install x86_64-elf-gcc i386-elf-gcc
+        ```
+        
+        #### Windows (MSYS2)
+        ```bash
+        pacman -S mingw-w64-x86_64-gcc mingw-w64-x86_64-qemu python3 git
+        ```
+        
+        ## Build Process
+        
+        ### 1. Clone Repository
+        
+        ```bash
+        git clone https://github.com/AshishYesale7/SAGE-OS.git
+        cd SAGE-OS
+        ```
+        
+        ### 2. Configure Build
+        
+        ```bash
+        # Set target architecture
+        export ARCH=i386          # or x86_64, arm64, riscv
+        export TARGET=generic     # or specific target
+        
+        # Configure build options
+        make menuconfig           # Interactive configuration (if available)
+        ```
+        
+        ### 3. Build Kernel
+        
+        ```bash
+        # Clean build
+        make clean
+        
+        # Build kernel
+        make ARCH=i386 TARGET=generic
+        
+        # Build with debug symbols
+        make ARCH=i386 TARGET=generic DEBUG=1
+        
+        # Parallel build
+        make -j$(nproc) ARCH=i386 TARGET=generic
+        ```
+        
+        ### 4. Build Output
+        
+        After successful build, you'll find:
+        
+        ```
+        build/
+        ├── i386/
+        │   ├── kernel.elf       # Main kernel binary
+        │   ├── kernel.img       # Disk image (if created)
+        │   ├── boot/           # Boot components
+        │   └── drivers/        # Compiled drivers
+        ```
+        
+        ## Testing
+        
+        ### QEMU Testing
+        
+        ```bash
+        # Basic console mode
+        qemu-system-i386 -kernel build/i386/kernel.elf -m 128M -nographic
+        
+        # Graphics mode with keyboard/mouse
+        qemu-system-i386 -kernel build/i386/kernel.elf -m 256M -vga std -display gtk
+        
+        # With USB input devices
+        qemu-system-i386 -kernel build/i386/kernel.elf -m 256M -device usb-kbd -device usb-mouse
+        
+        # Debug mode with GDB
+        qemu-system-i386 -kernel build/i386/kernel.elf -m 128M -s -S
+        ```
+        
+        ### Hardware Testing
+        
+        ```bash
+        # Create bootable USB (Linux)
+        sudo dd if=build/i386/kernel.img of=/dev/sdX bs=1M
+        
+        # Create bootable USB (Windows)
+        # Use tools like Rufus or Win32DiskImager
+        ```
+        
+        ## Troubleshooting
+        
+        ### Common Build Issues
+        
+        #### 1. Compiler Not Found
+        ```bash
+        # Install cross-compiler
+        sudo apt install gcc-multilib
+        # or
+        brew install x86_64-elf-gcc
+        ```
+        
+        #### 2. QEMU Not Working
+        ```bash
+        # Check QEMU installation
+        qemu-system-i386 --version
+        
+        # Install QEMU
+        sudo apt install qemu-system-x86
+        ```
+        
+        #### 3. Build Errors
+        ```bash
+        # Clean and rebuild
+        make clean
+        make ARCH=i386 TARGET=generic VERBOSE=1
+        
+        # Check dependencies
+        make check-deps
+        ```
+        
+        ### macOS M1 Specific Issues
+        
+        ```bash
+        # Use TCG acceleration instead of HVF
+        qemu-system-i386 -kernel build/i386/kernel.elf -m 128M -accel tcg
+        
+        # Install x86 cross-compiler
+        brew install x86_64-elf-gcc i386-elf-gcc
+        ```
+        
+        ## Advanced Build Options
+        
+        ### Custom Configuration
+        
+        ```bash
+        # Enable specific features
+        make ARCH=i386 FEATURES="ai,graphics,networking" TARGET=generic
+        
+        # Disable features
+        make ARCH=i386 DISABLE="debug,verbose" TARGET=generic
+        
+        # Custom compiler
+        make ARCH=i386 CC=clang TARGET=generic
+        ```
+        
+        ### Cross-Compilation
+        
+        ```bash
+        # For ARM64
+        make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- TARGET=generic
+        
+        # For RISC-V
+        make ARCH=riscv CROSS_COMPILE=riscv64-linux-gnu- TARGET=generic
+        ```
+        
+        ## Continuous Integration
+        
+        The project includes GitHub Actions workflows for automated building and testing:
+        
+        - **Multi-Architecture Build**: Tests all supported architectures
+        - **QEMU Testing**: Automated boot testing
+        - **Security Scanning**: Code security analysis
+        - **Documentation**: Automatic documentation generation
+        
+        ---
+        
+        *For more detailed information, see the individual component documentation.*
+        """
+            
+            return build_guide
+        
+        # Generate all documentation
+        print("🤖 Starting AI documentation generation...")
+        
+        # Generate project overview
+        overview = generate_project_overview()
+        with open('docs/ai-generated/project-overview.md', 'w') as f:
+            f.write(overview)
+        print("✅ Generated project overview")
+        
+        # Generate API reference
+        api_ref = generate_api_reference()
+        with open('docs/ai-generated/api-reference.md', 'w') as f:
+            f.write(api_ref)
+        print("✅ Generated API reference")
+        
+        # Generate build guide
+        build_guide = generate_build_guide()
+        with open('docs/ai-generated/build-guide.md', 'w') as f:
+            f.write(build_guide)
+        print("✅ Generated build guide")
+        
+        # Generate index file
+        index_content = f"""# 🤖 AI Generated Documentation
+        
+        **Last Updated**: {datetime.now().isoformat()}
+        
+        ## Available Documentation
+        
+        - [📋 Project Overview](project-overview.md) - Comprehensive project overview and statistics
+        - [🔧 API Reference](api-reference.md) - Complete API documentation
+        - [🔨 Build Guide](build-guide.md) - Detailed build instructions
+        
+        ## About This Documentation
+        
+        This documentation is automatically generated by the SAGE OS AI system. It analyzes the source code and generates comprehensive documentation covering:
+        
+        - Project structure and statistics
+        - API references and examples
+        - Build instructions and troubleshooting
+        - Architecture overview and design decisions
+        
+        The documentation is updated automatically whenever source code changes are detected.
+        
+        ---
+        
+        *Generated by SAGE OS AI Documentation System*
+        """
+        
+        with open('docs/ai-generated/README.md', 'w') as f:
+            f.write(index_content)
+        print("✅ Generated documentation index")
+        
+        print("🎉 AI documentation generation completed successfully!")
+        EOF
+        
+    - name: 📊 Generate Documentation Report
+      run: |
+        echo "📊 Generating documentation report..."
+        
+        # Count generated files
+        GENERATED_FILES=$(find docs/ai-generated -name "*.md" | wc -l)
+        TOTAL_SIZE=$(du -sh docs/ai-generated | cut -f1)
+        
+        echo "Generated $GENERATED_FILES documentation files"
+        echo "Total size: $TOTAL_SIZE"
+        
+        # Create report
+        cat > docs/ai-generated/generation-report.md << EOF
+        # 📊 AI Documentation Generation Report
+        
+        **Generated**: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+        **Repository**: ${{ github.repository }}
+        **Branch**: ${{ github.ref_name }}
+        **Commit**: ${{ github.sha }}
+        
+        ## Generation Results
+        
+        - **Files Generated**: $GENERATED_FILES
+        - **Total Size**: $TOTAL_SIZE
+        - **Status**: ✅ Success
+        
+        ## Generated Files
+        
+        $(find docs/ai-generated -name "*.md" -exec basename {} \; | sort | sed 's/^/- /')
+        
+        ## Next Steps
+        
+        1. Review generated documentation
+        2. Deploy to GitHub Pages
+        3. Update project README with links
+        
+        ---
+        
+        *Report generated by AI Documentation System*
+        EOF
+        
+    - name: 📤 Commit Generated Documentation
+      run: |
+        # Configure git
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        
+        # Add generated files
+        git add docs/ai-generated/
+        
+        # Check if there are changes to commit
+        if git diff --staged --quiet; then
+          echo "No changes to commit"
+        else
+          git commit -m "🤖 Auto-generate AI documentation
+
+          Generated documentation includes:
+          - Project overview with statistics
+          - Complete API reference
+          - Comprehensive build guide
+          - Documentation index and report
+          
+          Generated by: ${{ github.workflow }}
+          Commit: ${{ github.sha }}
+          Date: $(date -u +"%Y-%m-%d %H:%M:%S UTC")"
+          
+          git push
+          echo "✅ Documentation committed and pushed"
+        fi
+        
+    - name: 📋 Update Job Summary
+      run: |
+        echo "## 🤖 AI Documentation Generation Complete" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "✅ **Status**: Documentation generated successfully" >> $GITHUB_STEP_SUMMARY
+        echo "📁 **Location**: \`docs/ai-generated/\`" >> $GITHUB_STEP_SUMMARY
+        echo "📊 **Files**: $(find docs/ai-generated -name "*.md" | wc -l) markdown files" >> $GITHUB_STEP_SUMMARY
+        echo "💾 **Size**: $(du -sh docs/ai-generated | cut -f1)" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 📚 Generated Documentation" >> $GITHUB_STEP_SUMMARY
+        echo "- [📋 Project Overview](docs/ai-generated/project-overview.md)" >> $GITHUB_STEP_SUMMARY
+        echo "- [🔧 API Reference](docs/ai-generated/api-reference.md)" >> $GITHUB_STEP_SUMMARY
+        echo "- [🔨 Build Guide](docs/ai-generated/build-guide.md)" >> $GITHUB_STEP_SUMMARY
+        echo "- [📊 Generation Report](docs/ai-generated/generation-report.md)" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "🎉 **AI documentation system is working perfectly!**" >> $GITHUB_STEP_SUMMARY

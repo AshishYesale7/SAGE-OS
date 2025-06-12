@@ -51,6 +51,18 @@ CC=$(CROSS_COMPILE)gcc
 LD=$(CROSS_COMPILE)ld
 OBJCOPY=$(CROSS_COMPILE)objcopy
 
+# Handle macOS clang masquerading as gcc
+ifeq ($(shell uname),Darwin)
+    # On macOS, use clang directly with proper flags
+    ifeq ($(ARCH),i386)
+        CC=clang
+        ASFLAGS=-target i386-pc-none-elf -integrated-as
+        CFLAGS += -target i386-pc-none-elf
+    endif
+else
+    ASFLAGS=
+endif
+
 # Include paths
 INCLUDES=-I. -Ikernel -Idrivers
 

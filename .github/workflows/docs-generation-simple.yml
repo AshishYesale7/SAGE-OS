@@ -1,0 +1,260 @@
+name: 📚 Simple Documentation Generation
+
+on:
+  push:
+    branches: [main, dev]
+    paths:
+      - '**/*.md'
+      - '**/*.c'
+      - '**/*.h'
+      - 'docs/**'
+      - 'README*.md'
+  workflow_dispatch:
+    inputs:
+      force_rebuild:
+        description: 'Force rebuild documentation'
+        required: false
+        default: false
+        type: boolean
+  pull_request:
+    branches: [main, dev]
+    paths:
+      - 'docs/**'
+      - 'README*.md'
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "docs-generation-${{ github.ref }}"
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  generate-docs:
+    name: 📚 Generate Documentation
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    steps:
+    - name: 📥 Checkout Repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        
+    - name: 🐍 Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        cache: 'pip'
+        
+    - name: 📦 Install Dependencies
+      run: |
+        pip install --upgrade pip
+        pip install mkdocs mkdocs-material
+        pip install mkdocs-mermaid2-plugin
+        pip install pymdown-extensions
+        
+    - name: 📁 Create Documentation Structure
+      run: |
+        echo "📁 Creating documentation structure..."
+        
+        # Ensure docs directory exists
+        mkdir -p docs/{getting-started,architecture,development,platforms,api,security}
+        mkdir -p docs/platforms/{linux,macos,windows,raspberry-pi}
+        
+        # Create main index if it doesn't exist
+        if [ ! -f docs/index.md ]; then
+          cat > docs/index.md << 'EOF'
+        # SAGE-OS Documentation
+        
+        Welcome to **SAGE-OS** (Self-Aware General Environment Operating System) - a revolutionary embedded operating system.
+        
+        ## 🚀 Features
+        
+        - **🧠 AI Integration**: Built-in AI subsystem
+        - **🔧 Multi-Architecture**: Support for i386, x86_64, ARM64, RISC-V
+        - **🖥️ Dual-Mode**: Serial console and VGA graphics modes
+        - **🛡️ Security-First**: Advanced cryptographic features
+        - **🍓 Raspberry Pi 5**: Optimized for latest hardware
+        
+        ## 📚 Quick Navigation
+        
+        - [Getting Started](getting-started/overview.md)
+        - [Architecture](architecture/overview.md)
+        - [Development](development/build-system.md)
+        - [Platforms](platforms/linux/DEVELOPER_GUIDE.md)
+        - [API Reference](api/kernel.md)
+        - [Security](security/model.md)
+        
+        ## 🔗 Links
+        
+        - [GitHub Repository](https://github.com/mullaasad5420c/newos)
+        - [Latest Release](https://github.com/mullaasad5420c/newos/releases)
+        - [Issue Tracker](https://github.com/mullaasad5420c/newos/issues)
+        
+        ---
+        
+        *Documentation automatically generated from the SAGE-OS repository.*
+        EOF
+        fi
+        
+        # Create overview pages for each section
+        for section in getting-started architecture development security; do
+          if [ ! -f "docs/$section/overview.md" ]; then
+            mkdir -p "docs/$section"
+            cat > "docs/$section/overview.md" << EOF
+        # ${section^} Overview
+        
+        This section provides comprehensive information about ${section//-/ } in SAGE-OS.
+        
+        ## Coming Soon
+        
+        This documentation section is currently being developed.
+        
+        ## Related Resources
+        
+        - [Main Documentation](../index.md)
+        - [GitHub Repository](https://github.com/mullaasad5420c/newos)
+        EOF
+          fi
+        done
+        
+    - name: 📝 Create MkDocs Configuration
+      run: |
+        cat > mkdocs.yml << 'EOF'
+        site_name: SAGE-OS Documentation
+        site_description: Self-Aware General Environment Operating System
+        site_author: SAGE-OS Development Team
+        site_url: https://mullaasad5420c.github.io/newos/
+        
+        repo_name: mullaasad5420c/newos
+        repo_url: https://github.com/mullaasad5420c/newos
+        edit_uri: edit/dev/docs/
+        
+        theme:
+          name: material
+          palette:
+            - scheme: default
+              primary: blue
+              accent: cyan
+              toggle:
+                icon: material/brightness-7
+                name: Switch to dark mode
+            - scheme: slate
+              primary: blue
+              accent: cyan
+              toggle:
+                icon: material/brightness-4
+                name: Switch to light mode
+          features:
+            - navigation.tabs
+            - navigation.sections
+            - navigation.expand
+            - navigation.top
+            - search.highlight
+            - search.share
+            - content.code.copy
+            - content.action.edit
+          icon:
+            repo: fontawesome/brands/github
+        
+        plugins:
+          - search
+          - mermaid2
+        
+        markdown_extensions:
+          - pymdownx.highlight:
+              anchor_linenums: true
+          - pymdownx.inlinehilite
+          - pymdownx.snippets
+          - pymdownx.superfences:
+              custom_fences:
+                - name: mermaid
+                  class: mermaid
+                  format: !!python/name:pymdownx.superfences.fence_code_format
+          - admonition
+          - pymdownx.details
+          - attr_list
+          - def_list
+          - footnotes
+          - meta
+          - toc:
+              permalink: true
+        
+        nav:
+          - Home: index.md
+          - Getting Started:
+            - Overview: getting-started/overview.md
+          - Architecture:
+            - Overview: architecture/overview.md
+          - Development:
+            - Overview: development/overview.md
+          - Platforms:
+            - Linux: platforms/linux/DEVELOPER_GUIDE.md
+            - macOS: platforms/macos/DEVELOPER_GUIDE.md
+            - Windows: platforms/windows/DEVELOPER_GUIDE.md
+            - Raspberry Pi: platforms/raspberry-pi/DEVELOPER_GUIDE.md
+          - Security:
+            - Overview: security/overview.md
+        
+        extra:
+          social:
+            - icon: fontawesome/brands/github
+              link: https://github.com/mullaasad5420c/newos
+        EOF
+        
+    - name: 🏗️ Build Documentation
+      run: |
+        echo "🏗️ Building documentation with MkDocs..."
+        mkdocs build --verbose
+        
+        # Verify build
+        if [ -f "site/index.html" ]; then
+          echo "✅ Documentation built successfully"
+          echo "📄 Generated files:"
+          find site -name "*.html" | wc -l
+        else
+          echo "❌ Documentation build failed"
+          exit 1
+        fi
+        
+    - name: 📊 Generate Build Report
+      run: |
+        echo "📊 Documentation Build Report"
+        echo "============================="
+        echo "Build Date: $(date)"
+        echo "Repository: ${{ github.repository }}"
+        echo "Branch: ${{ github.ref_name }}"
+        echo "Commit: ${{ github.sha }}"
+        echo
+        echo "📄 Generated Files:"
+        find site -type f | wc -l
+        echo
+        echo "📁 Directory Structure:"
+        find site -type d | head -10
+        echo
+        echo "✅ Documentation generation completed successfully!"
+        
+    - name: 🚀 Upload Documentation Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: documentation-site
+        path: site/
+        retention-days: 30
+        
+    - name: 📋 Summary
+      run: |
+        echo "## 📚 Documentation Generation Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "✅ **Status**: Documentation generated successfully" >> $GITHUB_STEP_SUMMARY
+        echo "📄 **Files**: $(find site -type f | wc -l) files generated" >> $GITHUB_STEP_SUMMARY
+        echo "🕒 **Build Time**: $(date)" >> $GITHUB_STEP_SUMMARY
+        echo "🌐 **Repository**: ${{ github.repository }}" >> $GITHUB_STEP_SUMMARY
+        echo "🔗 **Branch**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "The documentation has been built and is available as an artifact." >> $GITHUB_STEP_SUMMARY

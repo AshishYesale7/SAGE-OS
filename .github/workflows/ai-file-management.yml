@@ -4,9 +4,27 @@ on:
   push:
     branches: [main, dev]
     paths:
-      - '**/*'
+      - 'kernel/**'
+      - 'drivers/**'
+      - 'boot/**'
+      - 'src/**'
+      - 'docs/**'
+      - '*.md'
+      - '*.c'
+      - '*.h'
+      - '*.py'
   pull_request:
     branches: [main, dev]
+    paths:
+      - 'kernel/**'
+      - 'drivers/**'
+      - 'boot/**'
+      - 'src/**'
+      - 'docs/**'
+      - '*.md'
+      - '*.c'
+      - '*.h'
+      - '*.py'
   workflow_dispatch:
     inputs:
       operation:
