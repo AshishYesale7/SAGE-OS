@@ -90,106 +90,182 @@ build_sage_os() {
     
     # Build the bootloader
     echo "   Building bootloader..."
-    if command -v i386-elf-gcc &> /dev/null; then
-        i386-elf-gcc -m32 -nostdlib -nostartfiles -Wl,--oformat=binary -Wl,-Ttext=0x7C00 simple_boot.S -o build/macos/bootloader.bin
+    
+    # First, try to use pre-built bootloader
+    if [ -f "simple_boot.bin" ]; then
+        echo "   ✅ Using pre-built bootloader (simple_boot.bin)"
+        cp "simple_boot.bin" "build/macos/bootloader.bin"
+    elif command -v i386-elf-gcc &> /dev/null; then
+        echo "   Compiling with i386-elf-gcc..."
+        i386-elf-gcc -m32 -nostdlib -nostartfiles -Wl,--oformat=binary -Wl,-Ttext=0x7C00 simple_boot.S -o "build/macos/bootloader.bin"
     else
-        # Fallback to system GCC
-        gcc -m32 -nostdlib -nostartfiles -Wl,--oformat=binary -Wl,-Ttext=0x7C00 simple_boot.S -o build/macos/bootloader.bin 2>/dev/null || {
-            echo "⚠️  32-bit compilation not supported, creating bootable image directly..."
-            cp simple_boot.bin build/macos/bootloader.bin 2>/dev/null || {
-                echo "❌ No pre-built bootloader found. Creating simple version..."
-                # Create minimal bootloader if none exists
-                cat > "build/macos/minimal_boot.S" << 'EOF'
-.code16
-.section .text
-.global _start
-_start:
-    cli
-    xor %ax, %ax
-    mov %ax, %ds
-    mov %ax, %es
-    mov %ax, %ss
-    mov $0x7C00, %sp
-    sti
+        # Try system GCC for 32-bit compilation
+        echo "   Trying system GCC for 32-bit compilation..."
+        gcc -m32 -nostdlib -nostartfiles -Wl,--oformat=binary -Wl,-Ttext=0x7C00 simple_boot.S -o "build/macos/bootloader.bin" 2>/dev/null || {
+            echo "⚠️  32-bit compilation not supported on Apple Silicon"
+            echo "   Creating pre-built bootloader..."
+            
+            # Create the pre-built bootloader using Python
+            python3 << 'PYTHON_EOF'
+import struct
+
+# Create a working 512-byte bootloader for Apple Silicon Macs
+bootloader = bytearray(512)
+
+# Simple bootloader code that works on Apple Silicon
+code = [
+    0xFA,                    # cli
+    0x31, 0xC0,              # xor ax, ax
+    0x8E, 0xD8,              # mov ds, ax
+    0x8E, 0xC0,              # mov es, ax
+    0x8E, 0xD0,              # mov ss, ax
+    0xBC, 0x00, 0x7C,        # mov sp, 0x7C00
+    0xFB,                    # sti
     
-    mov $msg, %si
-    call print
+    # Print boot message
+    0xBE, 0x30, 0x7C,        # mov si, msg
+    0xAC,                    # lodsb
+    0x84, 0xC0,              # test al, al
+    0x74, 0x06,              # jz done
+    0xB4, 0x0E,              # mov ah, 0x0E
+    0xCD, 0x10,              # int 0x10
+    0xEB, 0xF5,              # jmp print_loop
     
-    cli
-    lgdt gdt_desc
-    mov %cr0, %eax
-    or $1, %eax
-    mov %eax, %cr0
-    ljmp $0x08, $pm
+    # Setup protected mode
+    0x0F, 0x01, 0x16, 0x90, 0x7C,  # lgdt [gdt_desc]
+    0x0F, 0x20, 0xC0,        # mov eax, cr0
+    0x66, 0x83, 0xC8, 0x01,  # or eax, 1
+    0x0F, 0x22, 0xC0,        # mov cr0, eax
+    0xEA, 0x60, 0x7C, 0x08, 0x00,  # jmp 0x08:protected_mode
+]
 
-print:
-    lodsb
-    test %al, %al
-    jz done
-    mov $0x0E, %ah
-    int $0x10
-    jmp print
-done:
-    ret
+# Add the code
+for i, byte in enumerate(code):
+    if i < 510:
+        bootloader[i] = byte
 
-.code32
-pm:
-    mov $0x10, %ax
-    mov %ax, %ds
-    mov %ax, %es
-    mov %ax, %ss
-    mov $0x90000, %esp
+# Boot message at offset 0x30
+msg = b"SAGE OS macOS Loading...\r\n\0"
+for i, byte in enumerate(msg):
+    if 0x30 + i < 480:
+        bootloader[0x30 + i] = byte
+
+# Protected mode code at offset 0x60
+pm_code = [
+    0x66, 0xB8, 0x10, 0x00,  # mov ax, 0x10
+    0x8E, 0xD8,              # mov ds, ax
+    0x8E, 0xC0,              # mov es, ax
+    0x8E, 0xD0,              # mov ss, ax
+    0xBC, 0x00, 0x00, 0x09, 0x00,  # mov esp, 0x90000
     
-    mov $0xB8000, %edi
-    mov $0x07200720, %eax
-    mov $2000, %ecx
-    rep stosl
+    # Clear VGA and display SAGE OS
+    0xBF, 0x00, 0x80, 0x0B, 0x00,  # mov edi, 0xB8000
+    0xB8, 0x20, 0x07, 0x20, 0x07,  # mov eax, 0x07200720
+    0xB9, 0xD0, 0x07, 0x00, 0x00,  # mov ecx, 2000
+    0xF3, 0xAB,              # rep stosd
     
-    mov $0xB8000, %edi
-    movb $'S', (%edi); movb $0x0F, 1(%edi); add $2, %edi
-    movb $'A', (%edi); movb $0x0F, 1(%edi); add $2, %edi
-    movb $'G', (%edi); movb $0x0F, 1(%edi); add $2, %edi
-    movb $'E', (%edi); movb $0x0F, 1(%edi); add $2, %edi
-    movb $' ', (%edi); movb $0x0F, 1(%edi); add $2, %edi
-    movb $'O', (%edi); movb $0x0F, 1(%edi); add $2, %edi
-    movb $'S', (%edi); movb $0x0F, 1(%edi); add $2, %edi
+    # Display "SAGE OS macOS"
+    0xBF, 0x00, 0x80, 0x0B, 0x00,  # mov edi, 0xB8000
+    0xC6, 0x07, 0x53,        # mov byte [edi], 'S'
+    0xC6, 0x47, 0x01, 0x0F,  # mov byte [edi+1], 0x0F
+    0x83, 0xC7, 0x02,        # add edi, 2
+    0xC6, 0x07, 0x41,        # mov byte [edi], 'A'
+    0xC6, 0x47, 0x01, 0x0F,  # mov byte [edi+1], 0x0F
+    0x83, 0xC7, 0x02,        # add edi, 2
+    0xC6, 0x07, 0x47,        # mov byte [edi], 'G'
+    0xC6, 0x47, 0x01, 0x0F,  # mov byte [edi+1], 0x0F
+    0x83, 0xC7, 0x02,        # add edi, 2
+    0xC6, 0x07, 0x45,        # mov byte [edi], 'E'
+    0xC6, 0x47, 0x01, 0x0F,  # mov byte [edi+1], 0x0F
+    0x83, 0xC7, 0x02,        # add edi, 2
+    0xC6, 0x07, 0x20,        # mov byte [edi], ' '
+    0xC6, 0x47, 0x01, 0x0F,  # mov byte [edi+1], 0x0F
+    0x83, 0xC7, 0x02,        # add edi, 2
+    0xC6, 0x07, 0x4F,        # mov byte [edi], 'O'
+    0xC6, 0x47, 0x01, 0x0F,  # mov byte [edi+1], 0x0F
+    0x83, 0xC7, 0x02,        # add edi, 2
+    0xC6, 0x07, 0x53,        # mov byte [edi], 'S'
+    0xC6, 0x47, 0x01, 0x0F,  # mov byte [edi+1], 0x0F
+    0x83, 0xC7, 0x02,        # add edi, 2
+    0xC6, 0x07, 0x20,        # mov byte [edi], ' '
+    0xC6, 0x47, 0x01, 0x0F,  # mov byte [edi+1], 0x0F
+    0x83, 0xC7, 0x02,        # add edi, 2
+    0xC6, 0x07, 0x6D,        # mov byte [edi], 'm'
+    0xC6, 0x47, 0x01, 0x0B,  # mov byte [edi+1], 0x0B
+    0x83, 0xC7, 0x02,        # add edi, 2
+    0xC6, 0x07, 0x61,        # mov byte [edi], 'a'
+    0xC6, 0x47, 0x01, 0x0B,  # mov byte [edi+1], 0x0B
+    0x83, 0xC7, 0x02,        # add edi, 2
+    0xC6, 0x07, 0x63,        # mov byte [edi], 'c'
+    0xC6, 0x47, 0x01, 0x0B,  # mov byte [edi+1], 0x0B
+    0x83, 0xC7, 0x02,        # add edi, 2
+    0xC6, 0x07, 0x4F,        # mov byte [edi], 'O'
+    0xC6, 0x47, 0x01, 0x0B,  # mov byte [edi+1], 0x0B
+    0x83, 0xC7, 0x02,        # add edi, 2
+    0xC6, 0x07, 0x53,        # mov byte [edi], 'S'
+    0xC6, 0x47, 0x01, 0x0B,  # mov byte [edi+1], 0x0B
     
-loop:
-    in $0x64, %al
-    test $1, %al
-    jz loop
-    in $0x60, %al
-    hlt
-    jmp loop
+    # Keyboard input loop
+    0xE4, 0x64,              # in al, 0x64
+    0xA8, 0x01,              # test al, 1
+    0x74, 0xFA,              # jz input_loop
+    0xE4, 0x60,              # in al, 0x60
+    0xF4,                    # hlt
+    0xEB, 0xF6,              # jmp input_loop
+]
 
-msg:
-    .asciz "SAGE OS macOS Build Loading...\r\n"
+# Add protected mode code
+for i, byte in enumerate(pm_code):
+    if 0x60 + i < 480:
+        bootloader[0x60 + i] = byte
 
-gdt:
-    .quad 0
-    .word 0xFFFF, 0x0000
-    .byte 0x00, 0x9A, 0xCF, 0x00
-    .word 0xFFFF, 0x0000
-    .byte 0x00, 0x92, 0xCF, 0x00
+# GDT at offset 0x98
+gdt = [
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,  # Null descriptor
+    0xFF, 0xFF, 0x00, 0x00, 0x00, 0x9A, 0xCF, 0x00,  # Code segment
+    0xFF, 0xFF, 0x00, 0x00, 0x00, 0x92, 0xCF, 0x00,  # Data segment
+]
 
-gdt_desc:
-    .word gdt_desc - gdt - 1
-    .long gdt
+for i, byte in enumerate(gdt):
+    if 0x98 + i < 500:
+        bootloader[0x98 + i] = byte
 
-.space 510-(.-_start)
-.word 0xAA55
-EOF
-                gcc -m32 -nostdlib -nostartfiles -Wl,--oformat=binary -Wl,-Ttext=0x7C00 "build/macos/minimal_boot.S" -o "build/macos/bootloader.bin" 2>/dev/null || {
-                    echo "❌ Cannot compile 32-bit code on this system"
-                    echo "   Using pre-built bootloader..."
-                    cp simple_boot.bin build/macos/bootloader.bin 2>/dev/null || {
-                        echo "❌ No bootloader available. Please install i386-elf-gcc or use a different system."
-                        exit 1
-                    }
-                }
-            }
+# GDT descriptor at offset 0x90
+bootloader[0x90] = 0x17  # GDT limit
+bootloader[0x91] = 0x00
+bootloader[0x92] = 0x98  # GDT base low
+bootloader[0x93] = 0x7C  # GDT base high
+
+# Boot signature
+bootloader[510] = 0x55
+bootloader[511] = 0xAA
+
+# Write bootloader
+with open('build/macos/bootloader.bin', 'wb') as f:
+    f.write(bootloader)
+
+print("✅ Created macOS-compatible bootloader")
+PYTHON_EOF
+            
+            echo "   ✅ Created Apple Silicon compatible bootloader"
         }
     fi
+    
+    # Verify bootloader was created
+    if [ ! -f "build/macos/bootloader.bin" ]; then
+        echo "❌ Failed to create bootloader"
+        exit 1
+    fi
+    
+    # Check bootloader size
+    BOOTLOADER_SIZE=$(stat -f%z "build/macos/bootloader.bin" 2>/dev/null || stat -c%s "build/macos/bootloader.bin")
+    if [ "$BOOTLOADER_SIZE" -eq 512 ]; then
+        echo "   ✅ Bootloader size correct: $BOOTLOADER_SIZE bytes"
+    else
+        echo "   ⚠️  Bootloader size: $BOOTLOADER_SIZE bytes (expected 512)"
+    fi
+    
+    echo "✅ Bootloader built successfully"
     
     # Create disk image
     echo "   Creating bootable disk image..."
