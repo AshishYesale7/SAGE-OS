@@ -27,7 +27,12 @@ ARCH_OUTPUT_DIR := $(OUTPUT_DIR)/$(ARCH)
 ifeq ($(ARCH),x86_64)
     CROSS_COMPILE=x86_64-linux-gnu-
 else ifeq ($(ARCH),i386)
-    CROSS_COMPILE=
+    # Use proper cross-compiler for i386 on non-x86 hosts
+    ifeq ($(shell uname -m),x86_64)
+        CROSS_COMPILE=
+    else
+        CROSS_COMPILE=i686-linux-gnu-
+    endif
     CFLAGS += -m32
     LDFLAGS += -m elf_i386
 else ifeq ($(ARCH),arm64)
@@ -85,6 +90,9 @@ DRIVER_SOURCES = $(wildcard drivers/*.c) $(wildcard drivers/*/*.c)
 ifeq ($(ARCH),x86_64)
     BOOT_SOURCES = boot/boot_no_multiboot.S
     BOOT_OBJECTS = $(BUILD_DIR)/boot/boot_no_multiboot.o
+else ifeq ($(ARCH),i386)
+    BOOT_SOURCES = boot/boot_i386.S
+    BOOT_OBJECTS = $(BUILD_DIR)/boot/boot_i386.o
 else
     BOOT_SOURCES = boot/boot.S
     BOOT_OBJECTS = $(BUILD_DIR)/boot/boot.o
@@ -249,13 +257,18 @@ test-riscv64:
 # Graphics mode testing (x86 only)
 test-graphics:
 	@echo "🖥️ Testing $(ARCH) build in QEMU graphics mode..."
-	@./scripts/testing/test-qemu.sh $(ARCH) $(TARGET) graphics
+	@./scripts/testing/test-graphics-mode.sh $(ARCH) $(TARGET)
 
 test-i386-graphics:
-	@./scripts/testing/test-qemu.sh i386 generic graphics
+	@./scripts/testing/test-graphics-mode.sh i386 generic
 
 test-x86_64-graphics:
-	@./scripts/testing/test-qemu.sh x86_64 generic graphics
+	@./scripts/testing/test-graphics-mode.sh x86_64 generic
+
+# Legacy graphics testing (using old script)
+test-graphics-legacy:
+	@echo "🖥️ Testing $(ARCH) build in QEMU graphics mode (legacy)..."
+	@./scripts/testing/test-qemu.sh $(ARCH) $(TARGET) graphics
 
 # Help target
 help:
@@ -292,6 +305,8 @@ help:
 	@echo "🔧 Direct Script Usage:"
 	@echo "  ./scripts/testing/test-qemu.sh <arch>     - Serial console mode"
 	@echo "  ./scripts/testing/test-qemu.sh <arch> <target> graphics - Graphics mode"
+	@echo "  ./scripts/testing/test-graphics-mode.sh <arch> - Enhanced graphics mode"
+	@echo "  ./scripts/setup-cross-compilation.sh     - Setup cross-compilation tools"
 	@echo ""
 	@echo "📝 Examples:"
 	@echo "  make ARCH=aarch64 TARGET=rpi5     - Build for Raspberry Pi 5"
@@ -307,4 +322,4 @@ help:
 kernel: $(BUILD_DIR)/kernel.elf
 image: $(BUILD_DIR)/kernel.img
 
-.PHONY: all clean clean-output clean-all all-arch info version list-arch help kernel image iso test test-i386 test-aarch64 test-x86_64 test-riscv64 test-graphics test-i386-graphics test-x86_64-graphics
+.PHONY: all clean clean-output clean-all all-arch info version list-arch help kernel image iso test test-i386 test-aarch64 test-x86_64 test-riscv64 test-graphics test-i386-graphics test-x86_64-graphics test-graphics-legacy
