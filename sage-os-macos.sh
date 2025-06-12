@@ -314,7 +314,7 @@ run_sage_os() {
         
         # Start QEMU in background with VNC
         qemu-system-i386 \
-            -drive file="build/macos/sage_os_macos.img",format=raw,if=floppy \
+            -drive file="build/macos/sage_os_macos.img",format=raw,if=floppy,readonly=on \
             -boot a \
             -m 128M \
             -vnc :1 \
@@ -347,7 +347,7 @@ run_sage_os() {
             echo "❌ Failed to start QEMU"
             echo "   Trying Cocoa display as fallback..."
             qemu-system-i386 \
-                -drive file="build/macos/sage_os_macos.img",format=raw,if=floppy \
+                -drive file="build/macos/sage_os_macos.img",format=raw,if=floppy,readonly=on \
                 -boot a \
                 -m 128M \
                 -display cocoa \
@@ -362,7 +362,7 @@ run_sage_os() {
         
         # Try Cocoa with timeout
         timeout 5s qemu-system-i386 \
-            -drive file=build/macos/sage_os_macos.img,format=raw,if=floppy \
+            -drive file=build/macos/sage_os_macos.img,format=raw,if=floppy,readonly=on \
             -boot a \
             -m 128M \
             -display cocoa \
@@ -373,7 +373,7 @@ run_sage_os() {
                 
                 # Start QEMU with VNC in background
                 qemu-system-i386 \
-                    -drive file=build/macos/sage_os_macos.img,format=raw,if=floppy \
+                    -drive file=build/macos/sage_os_macos.img,format=raw,if=floppy,readonly=on \
                     -boot a \
                     -m 128M \
                     -vnc :1 \
@@ -436,11 +436,11 @@ main() {
         echo "📝 To run SAGE OS later:"
         echo ""
         echo "   🖥️  VNC (recommended for Apple Silicon):"
-        echo "   qemu-system-i386 -drive file=build/macos/sage_os_macos.img,format=raw,if=floppy -boot a -m 128M -vnc :1 -no-fd-bootchk &"
+        echo "   qemu-system-i386 -drive file=build/macos/sage_os_macos.img,format=raw,if=floppy,readonly=on -boot a -m 128M -vnc :1 -no-fd-bootchk &"
         echo "   Then connect to localhost:5901 with Screen Sharing app"
         echo ""
         echo "   🍎 Cocoa (for Intel Macs):"
-        echo "   qemu-system-i386 -drive file=build/macos/sage_os_macos.img,format=raw,if=floppy -boot a -m 128M -display cocoa -no-fd-bootchk"
+        echo "   qemu-system-i386 -drive file=build/macos/sage_os_macos.img,format=raw,if=floppy,readonly=on -boot a -m 128M -display cocoa -no-fd-bootchk"
         echo ""
         echo "   🚀 Quick test script:"
         echo "   ./quick_test_sage_os.sh"
