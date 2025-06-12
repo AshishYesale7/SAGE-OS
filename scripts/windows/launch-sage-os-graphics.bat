@@ -75,17 +75,34 @@ echo   • USB Keyboard/Mouse (full input support)
 echo   • Optimized for Intel i5-3380M + 4GB RAM
 echo.
 
-REM Check for graphics libraries
+REM Check for graphics libraries and set display type
+echo 🔍 Detecting graphics libraries...
+set DISPLAY_TYPE=gtk
+
+REM Check for GTK (primary choice)
 where gtk-query-immodules-2.0 >nul 2>&1
 if %errorlevel% neq 0 (
-    echo ⚠️  GTK libraries not detected, using SDL fallback...
-    set DISPLAY_TYPE=sdl
+    echo ⚠️  GTK libraries not detected, trying SDL...
+    
+    REM Check for SDL as fallback
+    where sdl2-config >nul 2>&1
+    if %errorlevel% neq 0 (
+        echo ⚠️  SDL libraries not detected, using default GTK...
+        echo 💡 QEMU will use built-in graphics support
+        set DISPLAY_TYPE=gtk
+    ) else (
+        echo ✅ SDL libraries detected
+        set DISPLAY_TYPE=sdl
+    )
 ) else (
     echo ✅ GTK libraries detected
     set DISPLAY_TYPE=gtk
 )
 
 REM Launch QEMU with optimized graphics settings
+echo 🚀 Starting QEMU with display type: %DISPLAY_TYPE%
+echo.
+
 qemu-system-i386 ^
     -kernel "%KERNEL_PATH%" ^
     -m %MEMORY% ^
@@ -97,8 +114,7 @@ qemu-system-i386 ^
     -device usb-mouse ^
     -name "SAGE OS v1.0.1 - Intel i5-3380M" ^
     -rtc base=localtime ^
-    -no-reboot ^
-    -no-quit
+    -no-reboot
 
 echo.
 echo 👋 SAGE OS session ended

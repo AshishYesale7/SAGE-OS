@@ -44,18 +44,22 @@ echo 🔗 Creating desktop shortcuts...
 REM Quick Launch shortcut
 echo   📱 Quick Launch SAGE OS...
 cscript //nologo create_shortcut.vbs "%DESKTOP_DIR%\🚀 Quick Launch SAGE OS.lnk" "%CURRENT_DIR%\scripts\windows\quick-launch.bat" "%CURRENT_DIR%" "Quick build and launch SAGE OS" "%SystemRoot%\System32\shell32.dll,137"
+if %errorlevel% neq 0 echo   ⚠️  Warning: Failed to create Quick Launch shortcut
 
 REM Build shortcut
 echo   🔨 Build SAGE OS...
 cscript //nologo create_shortcut.vbs "%DESKTOP_DIR%\🔨 Build SAGE OS.lnk" "%CURRENT_DIR%\scripts\windows\build-sage-os.bat" "%CURRENT_DIR%" "Build SAGE OS for Windows" "%SystemRoot%\System32\shell32.dll,21"
+if %errorlevel% neq 0 echo   ⚠️  Warning: Failed to create Build shortcut
 
 REM Graphics Mode shortcut
 echo   🖥️  SAGE OS Graphics...
 cscript //nologo create_shortcut.vbs "%DESKTOP_DIR%\🖥️ SAGE OS Graphics.lnk" "%CURRENT_DIR%\scripts\windows\launch-sage-os-graphics.bat" "%CURRENT_DIR%" "Launch SAGE OS in Graphics Mode" "%SystemRoot%\System32\shell32.dll,15"
+if %errorlevel% neq 0 echo   ⚠️  Warning: Failed to create Graphics shortcut
 
 REM Console Mode shortcut
 echo   💻 SAGE OS Console...
 cscript //nologo create_shortcut.vbs "%DESKTOP_DIR%\💻 SAGE OS Console.lnk" "%CURRENT_DIR%\scripts\windows\launch-sage-os-console.bat" "%CURRENT_DIR%" "Launch SAGE OS in Console Mode" "%SystemRoot%\System32\shell32.dll,3"
+if %errorlevel% neq 0 echo   ⚠️  Warning: Failed to create Console shortcut
 
 REM Install Dependencies shortcut
 echo   📦 Install Dependencies...
