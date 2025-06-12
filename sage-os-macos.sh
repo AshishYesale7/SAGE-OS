@@ -311,7 +311,7 @@ run_sage_os() {
         # Apple Silicon Mac
         echo "🍎 Launching on Apple Silicon Mac..."
         qemu-system-i386 \
-            -fda "build/macos/sage_os_macos.img" \
+            -drive file="build/macos/sage_os_macos.img",format=raw,if=floppy \
             -boot a \
             -m 128M \
             -display cocoa \
@@ -321,7 +321,7 @@ run_sage_os() {
             2>/dev/null || {
                 echo "⚠️  Cocoa display failed, trying VNC..."
                 qemu-system-i386 \
-                    -fda "build/macos/sage_os_macos.img" \
+                    -drive file="build/macos/sage_os_macos.img",format=raw,if=floppy \
                     -boot a \
                     -m 128M \
                     -vnc :1 \
@@ -336,7 +336,7 @@ run_sage_os() {
         # Intel Mac
         echo "💻 Launching on Intel Mac..."
         qemu-system-i386 \
-            -fda build/macos/sage_os_macos.img \
+            -drive file=build/macos/sage_os_macos.img,format=raw,if=floppy \
             -boot a \
             -m 128M \
             -display cocoa \
@@ -346,7 +346,7 @@ run_sage_os() {
             2>/dev/null || {
                 echo "⚠️  Cocoa display failed, trying SDL..."
                 qemu-system-i386 \
-                    -fda build/macos/sage_os_macos.img \
+                    -drive file=build/macos/sage_os_macos.img,format=raw,if=floppy \
                     -boot a \
                     -m 128M \
                     -display sdl \
@@ -356,7 +356,7 @@ run_sage_os() {
                     2>/dev/null || {
                         echo "⚠️  SDL display failed, trying VNC..."
                         qemu-system-i386 \
-                            -fda build/macos/sage_os_macos.img \
+                            -drive file=build/macos/sage_os_macos.img,format=raw,if=floppy \
                             -boot a \
                             -m 128M \
                             -vnc :1 \
@@ -408,7 +408,7 @@ main() {
         run_sage_os
     else
         echo "📝 To run SAGE OS later, use:"
-        echo "   qemu-system-i386 -fda build/macos/sage_os_macos.img -boot a -m 128M -display cocoa -no-fd-bootchk"
+        echo "   qemu-system-i386 -drive file=build/macos/sage_os_macos.img,format=raw,if=floppy -boot a -m 128M -display cocoa -no-fd-bootchk"
         echo ""
         echo "📁 Build output location:"
         echo "   $(pwd)/build/macos/sage_os_macos.img"
