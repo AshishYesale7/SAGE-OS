@@ -3,7 +3,9 @@
 echo "🚀 Quick SAGE OS Test"
 echo "===================="
 
-cd /workspace/SAGE-OS
+# Get the directory where this script is located
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR"
 
 # Check if image exists
 if [ ! -f "build/macos/sage_os_macos.img" ]; then
@@ -28,15 +30,15 @@ echo "🎮 Quick Launch Options:"
 echo "========================"
 echo ""
 echo "1. 🖥️  VNC (recommended for Apple Silicon):"
-echo "   qemu-system-i386 -drive file=build/macos/sage_os_macos.img,format=raw,if=floppy -boot a -m 128M -vnc :1 -no-fd-bootchk &"
+echo "   qemu-system-i386 -drive file=build/macos/sage_os_macos.img,format=raw,if=floppy,readonly=on -boot a -m 128M -vnc :1 -no-fd-bootchk &"
 echo "   Then connect to localhost:5901 with Screen Sharing"
 echo ""
 echo "2. 🍎 Cocoa (for Intel Macs):"
-echo "   qemu-system-i386 -drive file=build/macos/sage_os_macos.img,format=raw,if=floppy -boot a -m 128M -display cocoa -no-fd-bootchk"
+echo "   qemu-system-i386 -drive file=build/macos/sage_os_macos.img,format=raw,if=floppy,readonly=on -boot a -m 128M -display cocoa -no-fd-bootchk"
 echo ""
 echo "3. 🧪 Test with minimal bootloader:"
 if [ -f "sage_os_minimal.img" ]; then
-    echo "   qemu-system-i386 -drive file=sage_os_minimal.img,format=raw,if=floppy -boot a -m 128M -vnc :2 -no-fd-bootchk &"
+    echo "   qemu-system-i386 -drive file=sage_os_minimal.img,format=raw,if=floppy,readonly=on -boot a -m 128M -vnc :2 -no-fd-bootchk &"
     echo "   Then connect to localhost:5902"
 else
     echo "   (minimal bootloader not found - run create_minimal_bootloader.py first)"
@@ -55,7 +57,7 @@ echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
     echo "🎮 Starting SAGE OS with VNC..."
     qemu-system-i386 \
-        -drive file=build/macos/sage_os_macos.img,format=raw,if=floppy \
+        -drive file=build/macos/sage_os_macos.img,format=raw,if=floppy,readonly=on \
         -boot a \
         -m 128M \
         -vnc :1 \
