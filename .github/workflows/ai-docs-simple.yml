@@ -50,7 +50,7 @@ jobs:
     - name: 🤖 Generate AI Documentation
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        GITHUB_MODELS_API_KEY: ${{ secrets.GITHUB_MODELS_API_KEY }}
+        AI_API_KEY: ${{ secrets.AI_API_KEY }}
       run: |
         echo "🤖 Starting AI Documentation Generation..."
         

@@ -322,7 +322,7 @@ jobs:
     if: github.event_name == 'schedule' || inputs.security_level == 'comprehensive' || inputs.security_level == 'deep'
     timeout-minutes: 20
     env:
-      GITHUB_MODELS_API_KEY: ${{ secrets.GITHUB_MODELS_API_KEY }}
+      AI_API_KEY: ${{ secrets.AI_API_KEY }}
     
     steps:
     - name: 📥 Checkout Repository
@@ -331,7 +331,7 @@ jobs:
         fetch-depth: 0
         
     - name: 🤖 AI-Powered Security Analysis
-      if: env.GITHUB_MODELS_API_KEY != ''
+      if: env.AI_API_KEY != ''
       run: |
         echo "🤖 Performing AI-powered security analysis..."
         
@@ -343,7 +343,7 @@ jobs:
         
         def analyze_security_with_ai(code_content, file_path):
             """Analyze code security using GitHub Models API"""
-            api_key = os.environ.get('GITHUB_MODELS_API_KEY')
+            api_key = os.environ.get('AI_API_KEY')
             if not api_key:
                 return None
                 

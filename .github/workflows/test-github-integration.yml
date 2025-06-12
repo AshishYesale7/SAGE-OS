@@ -272,7 +272,7 @@ jobs:
     - name: 🤖 Test GitHub Models Integration
       id: test-api
       env:
-        GITHUB_MODELS_API_KEY: ${{ secrets.GITHUB_MODELS_API_KEY }}
+        AI_API_KEY: ${{ secrets.AI_API_KEY }}
       run: |
         echo "🤖 Testing GitHub Models API integration..."
         
@@ -284,7 +284,7 @@ jobs:
         
         def test_api_configuration():
             """Test API configuration and accessibility"""
-            api_key = os.environ.get('GITHUB_MODELS_API_KEY')
+            api_key = os.environ.get('AI_API_KEY')
             
             if not api_key:
                 print("⚠️  GitHub Models API key not configured")
@@ -347,7 +347,7 @@ jobs:
                         content = f.read()
                         
                     required_elements = [
-                        'GITHUB_MODELS_API_KEY',
+                        'AI_API_KEY',
                         'github-models',
                         'workflow_dispatch',
                         'analysis_type'

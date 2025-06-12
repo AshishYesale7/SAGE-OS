@@ -38,7 +38,7 @@ on:
         required: false
         type: string
     secrets:
-      GITHUB_MODELS_API_KEY:
+      AI_API_KEY:
         required: true
 
 permissions:
@@ -70,11 +70,11 @@ jobs:
     - name: 🔐 Validate GitHub Models API Access
       id: validate
       env:
-        GITHUB_MODELS_API_KEY: ${{ secrets.GITHUB_MODELS_API_KEY }}
+        AI_API_KEY: ${{ secrets.AI_API_KEY }}
       run: |
         echo "🔐 Validating GitHub Models API access..."
         
-        if [ -z "$GITHUB_MODELS_API_KEY" ]; then
+        if [ -z "$AI_API_KEY" ]; then
           echo "❌ GitHub Models API key not configured"
           echo "available=false" >> $GITHUB_OUTPUT
           echo "rate_limit=0" >> $GITHUB_OUTPUT
@@ -82,7 +82,7 @@ jobs:
         fi
         
         # Validate API key format
-        if [[ ! "$GITHUB_MODELS_API_KEY" =~ ^[a-zA-Z0-9_-]{20,}$ ]]; then
+        if [[ ! "$AI_API_KEY" =~ ^[a-zA-Z0-9_-]{20,}$ ]]; then
           echo "⚠️  API key format appears invalid"
           echo "available=false" >> $GITHUB_OUTPUT
           echo "rate_limit=0" >> $GITHUB_OUTPUT
@@ -169,7 +169,7 @@ jobs:
     - name: 🤖 Perform AI Analysis
       id: analysis
       env:
-        GITHUB_MODELS_API_KEY: ${{ secrets.GITHUB_MODELS_API_KEY }}
+        AI_API_KEY: ${{ secrets.AI_API_KEY }}
         ANALYSIS_TYPE: ${{ inputs.analysis_type }}
         MODEL_PREFERENCE: ${{ inputs.model_preference }}
       run: |
@@ -307,7 +307,7 @@ jobs:
                     return {'success': False, 'error': str(e)}
         
         # Initialize analyzer
-        api_key = os.environ.get('GITHUB_MODELS_API_KEY')
+        api_key = os.environ.get('AI_API_KEY')
         analysis_type = os.environ.get('ANALYSIS_TYPE', 'code-review')
         model = os.environ.get('MODEL_PREFERENCE', 'gpt-4')
         

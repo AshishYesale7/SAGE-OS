@@ -1,0 +1,396 @@
+name: 🤖 AI Issue Analysis & Auto-Response
+
+on:
+  issues:
+    types: [opened, edited]
+  issue_comment:
+    types: [created]
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: 'Issue number to analyze'
+        required: true
+        type: number
+      analysis_type:
+        description: 'Type of analysis'
+        required: false
+        default: 'comprehensive'
+        type: choice
+        options:
+          - 'comprehensive'
+          - 'bug-analysis'
+          - 'feature-request'
+          - 'build-issue'
+          - 'documentation'
+
+permissions:
+  issues: write
+  models: read
+  contents: read
+  pull-requests: write
+
+jobs:
+  ai-issue-analysis:
+    name: 🤖 AI Issue Analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+    - name: 📥 Checkout Repository
+      uses: actions/checkout@v4
+      
+    - name: 🤖 Analyze Issue with AI
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        ISSUE_NUMBER: ${{ github.event.issue.number || github.event.inputs.issue_number }}
+        ANALYSIS_TYPE: ${{ github.event.inputs.analysis_type || 'comprehensive' }}
+      run: |
+        echo "🤖 Analyzing issue #$ISSUE_NUMBER with AI..."
+        
+        # Get issue details
+        ISSUE_DATA=$(gh api repos/${{ github.repository }}/issues/$ISSUE_NUMBER)
+        ISSUE_TITLE=$(echo "$ISSUE_DATA" | jq -r '.title')
+        ISSUE_BODY=$(echo "$ISSUE_DATA" | jq -r '.body // ""')
+        ISSUE_LABELS=$(echo "$ISSUE_DATA" | jq -r '.labels[].name' | tr '\n' ',' | sed 's/,$//')
+        ISSUE_USER=$(echo "$ISSUE_DATA" | jq -r '.user.login')
+        
+        echo "📋 Issue: $ISSUE_TITLE"
+        echo "👤 Author: $ISSUE_USER"
+        echo "🏷️ Labels: $ISSUE_LABELS"
+        
+        # AI Analysis using GitHub Models
+        python3 << 'EOF'
+        import os
+        import json
+        import requests
+        import subprocess
+        
+        # Configuration
+        GITHUB_TOKEN = os.environ.get('GITHUB_TOKEN')
+        ISSUE_NUMBER = os.environ.get('ISSUE_NUMBER')
+        ANALYSIS_TYPE = os.environ.get('ANALYSIS_TYPE')
+        ISSUE_TITLE = os.environ.get('ISSUE_TITLE', '')
+        ISSUE_BODY = os.environ.get('ISSUE_BODY', '')
+        ISSUE_LABELS = os.environ.get('ISSUE_LABELS', '')
+        ISSUE_USER = os.environ.get('ISSUE_USER', '')
+        
+        def call_github_models_api(prompt, model_id='openai/gpt-4o-mini'):
+            """Call GitHub Models API for issue analysis"""
+            headers = {
+                'Authorization': f'Bearer {GITHUB_TOKEN}',
+                'Content-Type': 'application/json'
+            }
+            
+            data = {
+                'model': model_id,
+                'messages': [
+                    {
+                        'role': 'system',
+                        'content': 'You are an expert software engineer and project maintainer specializing in operating systems, particularly SAGE OS. You help analyze issues, provide solutions, and guide contributors.'
+                    },
+                    {
+                        'role': 'user',
+                        'content': prompt
+                    }
+                ],
+                'max_tokens': 2000,
+                'temperature': 0.3
+            }
+            
+            try:
+                response = requests.post('https://models.github.ai/chat/completions', 
+                                       headers=headers, 
+                                       json=data, 
+                                       timeout=30)
+                response.raise_for_status()
+                result = response.json()
+                return result['choices'][0]['message']['content']
+            except Exception as e:
+                return f"Error analyzing issue: {str(e)}"
+        
+        def analyze_issue():
+            """Analyze the issue using AI"""
+            
+            # Get project context
+            try:
+                with open('README.md', 'r') as f:
+                    readme_content = f.read()[:1000]
+            except:
+                readme_content = "SAGE OS - Self-Aware General Environment Operating System"
+            
+            # Build analysis prompt based on type
+            if ANALYSIS_TYPE == 'bug-analysis':
+                prompt = f"""
+                Analyze this bug report for SAGE OS and provide a comprehensive analysis:
+                
+                **Issue Title**: {ISSUE_TITLE}
+                **Reporter**: {ISSUE_USER}
+                **Labels**: {ISSUE_LABELS}
+                
+                **Issue Description**:
+                {ISSUE_BODY}
+                
+                **Project Context**:
+                {readme_content}
+                
+                Provide:
+                1. **Bug Classification**: Type of bug (kernel, driver, build, etc.)
+                2. **Severity Assessment**: Critical/High/Medium/Low with reasoning
+                3. **Root Cause Analysis**: Likely causes based on description
+                4. **Reproduction Steps**: How to reproduce if not provided
+                5. **Investigation Plan**: Step-by-step debugging approach
+                6. **Potential Solutions**: Possible fixes with implementation details
+                7. **Testing Strategy**: How to verify the fix
+                8. **Related Issues**: Potential connections to other problems
+                
+                Format as a structured analysis that can guide the development team.
+                """
+                
+            elif ANALYSIS_TYPE == 'feature-request':
+                prompt = f"""
+                Analyze this feature request for SAGE OS:
+                
+                **Feature Title**: {ISSUE_TITLE}
+                **Requester**: {ISSUE_USER}
+                **Labels**: {ISSUE_LABELS}
+                
+                **Feature Description**:
+                {ISSUE_BODY}
+                
+                **Project Context**:
+                {readme_content}
+                
+                Provide:
+                1. **Feature Analysis**: What the feature does and why it's needed
+                2. **Technical Feasibility**: Implementation complexity and challenges
+                3. **Architecture Impact**: How it affects existing system design
+                4. **Implementation Plan**: High-level development approach
+                5. **Resource Requirements**: Time, skills, and dependencies needed
+                6. **Testing Requirements**: How to validate the feature
+                7. **Documentation Needs**: What docs need to be updated
+                8. **Alternative Solutions**: Other ways to achieve the same goal
+                
+                Assess priority and provide implementation guidance.
+                """
+                
+            elif ANALYSIS_TYPE == 'build-issue':
+                prompt = f"""
+                Analyze this build/compilation issue for SAGE OS:
+                
+                **Issue Title**: {ISSUE_TITLE}
+                **Reporter**: {ISSUE_USER}
+                **Labels**: {ISSUE_LABELS}
+                
+                **Build Issue Description**:
+                {ISSUE_BODY}
+                
+                **Project Context**:
+                {readme_content}
+                
+                Provide:
+                1. **Build Environment Analysis**: Platform, compiler, dependencies
+                2. **Error Classification**: Compilation, linking, or runtime error
+                3. **Common Causes**: Typical reasons for this type of error
+                4. **Diagnostic Steps**: How to gather more information
+                5. **Solution Strategies**: Step-by-step fixes to try
+                6. **Platform-Specific Guidance**: macOS M1, Linux, Windows considerations
+                7. **Prevention Measures**: How to avoid this issue in the future
+                8. **Documentation Updates**: What needs to be clarified in build docs
+                
+                Focus on practical, actionable solutions.
+                """
+                
+            else:  # comprehensive analysis
+                prompt = f"""
+                Perform a comprehensive analysis of this SAGE OS issue:
+                
+                **Issue Title**: {ISSUE_TITLE}
+                **Reporter**: {ISSUE_USER}
+                **Current Labels**: {ISSUE_LABELS}
+                
+                **Issue Content**:
+                {ISSUE_BODY}
+                
+                **Project Context**:
+                {readme_content}
+                
+                Provide a complete analysis including:
+                
+                1. **Issue Classification**:
+                   - Type: Bug/Feature/Enhancement/Question/Documentation
+                   - Component: Kernel/Driver/Build/Documentation/Other
+                   - Priority: Critical/High/Medium/Low
+                   - Complexity: Simple/Medium/Complex
+                
+                2. **Technical Analysis**:
+                   - Root cause assessment
+                   - Impact on system functionality
+                   - Dependencies and related components
+                   - Risk assessment
+                
+                3. **Recommended Actions**:
+                   - Immediate steps to take
+                   - Investigation approach
+                   - Solution strategies
+                   - Testing requirements
+                
+                4. **Project Management**:
+                   - Suggested labels to add
+                   - Milestone assignment recommendation
+                   - Assignee suggestions based on expertise areas
+                   - Time estimation
+                
+                5. **Community Engagement**:
+                   - Response to the reporter
+                   - Additional information needed
+                   - How to guide contributor involvement
+                
+                Format as a structured report that helps maintainers triage and respond effectively.
+                """
+            
+            return call_github_models_api(prompt)
+        
+        def suggest_labels(analysis):
+            """Suggest appropriate labels based on AI analysis"""
+            prompt = f"""
+            Based on this issue analysis, suggest appropriate GitHub labels:
+            
+            {analysis}
+            
+            Available label categories for SAGE OS:
+            - Type: bug, enhancement, feature, documentation, question
+            - Priority: critical, high, medium, low
+            - Component: kernel, drivers, build, docs, testing
+            - Status: needs-investigation, needs-reproduction, ready-for-dev
+            - Difficulty: good-first-issue, help-wanted, expert-needed
+            - Platform: macos, linux, windows, cross-platform
+            
+            Suggest 3-5 most appropriate labels as a comma-separated list.
+            Only suggest labels that clearly apply based on the analysis.
+            """
+            
+            return call_github_models_api(prompt, 'openai/gpt-4o-mini')
+        
+        def generate_response(analysis):
+            """Generate a helpful response comment"""
+            prompt = f"""
+            Based on this issue analysis, write a helpful and professional response comment:
+            
+            {analysis}
+            
+            The response should:
+            1. Thank the reporter for the contribution
+            2. Summarize the key points from the analysis
+            3. Provide clear next steps or guidance
+            4. Be encouraging and supportive
+            5. Include specific technical details when helpful
+            6. Ask for additional information if needed
+            
+            Write in a friendly, professional tone suitable for an open-source project.
+            Keep it concise but comprehensive.
+            """
+            
+            return call_github_models_api(prompt, 'openai/gpt-4o-mini')
+        
+        # Perform analysis
+        print(f"🤖 Running {ANALYSIS_TYPE} analysis...")
+        analysis = analyze_issue()
+        
+        print("🏷️ Suggesting labels...")
+        suggested_labels = suggest_labels(analysis)
+        
+        print("💬 Generating response...")
+        response_comment = generate_response(analysis)
+        
+        # Save analysis to file
+        with open(f'/tmp/issue_analysis_{ISSUE_NUMBER}.md', 'w') as f:
+            f.write(f"# AI Analysis for Issue #{ISSUE_NUMBER}\n\n")
+            f.write(f"**Title**: {ISSUE_TITLE}\n")
+            f.write(f"**Reporter**: {ISSUE_USER}\n")
+            f.write(f"**Analysis Type**: {ANALYSIS_TYPE}\n")
+            f.write(f"**Current Labels**: {ISSUE_LABELS}\n\n")
+            f.write("## AI Analysis\n\n")
+            f.write(analysis)
+            f.write("\n\n## Suggested Labels\n\n")
+            f.write(suggested_labels)
+            f.write("\n\n## Suggested Response\n\n")
+            f.write(response_comment)
+        
+        # Set environment variables for next steps
+        with open(os.environ['GITHUB_ENV'], 'a') as f:
+            f.write(f"SUGGESTED_LABELS={suggested_labels}\n")
+            f.write(f"AI_RESPONSE<<EOF\n{response_comment}\nEOF\n")
+        
+        print("✅ AI analysis completed!")
+        EOF
+        
+    - name: 💬 Post AI Analysis Comment
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        ISSUE_NUMBER: ${{ github.event.issue.number || github.event.inputs.issue_number }}
+      run: |
+        echo "💬 Posting AI analysis comment..."
+        
+        # Create the comment with AI analysis
+        COMMENT_BODY="## 🤖 AI Analysis
+
+        Thank you for reporting this issue! I've analyzed it using AI and here's my assessment:
+
+        $AI_RESPONSE
+
+        ---
+
+        **🏷️ Suggested Labels**: \`$SUGGESTED_LABELS\`
+
+        **🤖 Analysis powered by**: GitHub Models (OpenAI GPT-4o-mini)
+        **📊 Analysis type**: ${{ env.ANALYSIS_TYPE }}
+
+        *This analysis was generated automatically. A human maintainer will review and respond soon.*"
+        
+        # Post the comment
+        gh issue comment $ISSUE_NUMBER --body "$COMMENT_BODY"
+        
+        echo "✅ AI analysis comment posted!"
+        
+    - name: 🏷️ Apply Suggested Labels (if authorized)
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        ISSUE_NUMBER: ${{ github.event.issue.number || github.event.inputs.issue_number }}
+      run: |
+        # Only apply labels if this is a workflow_dispatch (manual trigger)
+        # or if the issue was created by a maintainer
+        if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+          echo "🏷️ Applying suggested labels..."
+          
+          # Convert comma-separated labels to array and apply
+          IFS=',' read -ra LABELS <<< "$SUGGESTED_LABELS"
+          for label in "${LABELS[@]}"; do
+            label=$(echo "$label" | xargs)  # trim whitespace
+            if [[ -n "$label" ]]; then
+              echo "Adding label: $label"
+              gh issue edit $ISSUE_NUMBER --add-label "$label" || echo "Label '$label' not found, skipping"
+            fi
+          done
+          
+          echo "✅ Labels applied!"
+        else
+          echo "ℹ️ Skipping label application (automatic trigger)"
+        fi
+        
+    - name: 📊 Update Job Summary
+      run: |
+        echo "## 🤖 AI Issue Analysis Complete" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "✅ **Status**: Issue analyzed successfully" >> $GITHUB_STEP_SUMMARY
+        echo "🎯 **Issue**: #${{ env.ISSUE_NUMBER }}" >> $GITHUB_STEP_SUMMARY
+        echo "📋 **Analysis Type**: ${{ env.ANALYSIS_TYPE }}" >> $GITHUB_STEP_SUMMARY
+        echo "🏷️ **Suggested Labels**: \`${{ env.SUGGESTED_LABELS }}\`" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 🤖 AI Analysis Features" >> $GITHUB_STEP_SUMMARY
+        echo "- **Automatic Issue Classification**: Bug/Feature/Enhancement detection" >> $GITHUB_STEP_SUMMARY
+        echo "- **Severity Assessment**: Priority and complexity analysis" >> $GITHUB_STEP_SUMMARY
+        echo "- **Solution Guidance**: Step-by-step resolution approach" >> $GITHUB_STEP_SUMMARY
+        echo "- **Label Suggestions**: Intelligent labeling recommendations" >> $GITHUB_STEP_SUMMARY
+        echo "- **Response Generation**: Professional, helpful responses" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "🎉 **AI issue analysis is helping improve project management!**" >> $GITHUB_STEP_SUMMARY
