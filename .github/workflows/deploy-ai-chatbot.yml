@@ -55,8 +55,8 @@ jobs:
         cp docs/sage-ai-chatbot.html deployment/index.html
         
         # Update URLs and references for the target repository
-        sed -i "s|https://github.com/mullaasad5420c/newos|${{ env.REPO_URL }}|g" deployment/index.html
-        sed -i "s|mullaasad5420c/newos|AshishYesale7/SAGE-OS|g" deployment/index.html
+        sed -i "s|https://github.com/AshishYesale7/SAGE-OS|${{ env.REPO_URL }}|g" deployment/index.html
+        sed -i "s|AshishYesale7/SAGE-OS|AshishYesale7/SAGE-OS|g" deployment/index.html
         
         # Create a custom configuration for the target site
         cat > deployment/config.js << 'EOF'

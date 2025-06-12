@@ -4,7 +4,7 @@ This file is created to test the AI documentation workflow triggers.
 
 **Created**: $(date)
 **Purpose**: Trigger AI documentation workflows
-**Repository**: mullaasad5420c/newos
+**Repository**: AshishYesale7/SAGE-OS
 **Target**: Test workflow automation
 
 ## Test Details
@@ -24,7 +24,7 @@ This change should trigger the following workflows:
 ## Verification
 
 Check GitHub Actions tab to verify workflows are running:
-- https://github.com/mullaasad5420c/newos/actions
+- https://github.com/AshishYesale7/SAGE-OS/actions
 
 ---
 

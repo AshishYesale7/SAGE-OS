@@ -92,9 +92,9 @@ jobs:
         
         ## 🔗 Links
         
-        - [GitHub Repository](https://github.com/mullaasad5420c/newos)
-        - [Issues](https://github.com/mullaasad5420c/newos/issues)
-        - [Releases](https://github.com/mullaasad5420c/newos/releases)
+        - [GitHub Repository](https://github.com/AshishYesale7/SAGE-OS)
+        - [Issues](https://github.com/AshishYesale7/SAGE-OS/issues)
+        - [Releases](https://github.com/AshishYesale7/SAGE-OS/releases)
         
         ---
         
@@ -114,10 +114,10 @@ jobs:
         site_name: SAGE-OS Documentation
         site_description: Self-Aware General Environment Operating System
         site_author: SAGE-OS Team
-        site_url: https://mullaasad5420c.github.io/newos/
+        site_url: https://AshishYesale7.github.io/SAGE-OS/
         
-        repo_name: mullaasad5420c/newos
-        repo_url: https://github.com/mullaasad5420c/newos
+        repo_name: AshishYesale7/SAGE-OS
+        repo_url: https://github.com/AshishYesale7/SAGE-OS
         
         theme:
           name: material

@@ -25,7 +25,7 @@ qemu-system-x86_64 --version
 
 ```bash
 # Clone and build (assembly issues are now fixed)
-cd /path/to/newos
+cd /path/to/SAGE-OS
 make clean
 make ARCH=i386 TARGET=generic
 
