@@ -5,7 +5,7 @@ name: 🚀 Enhanced GitHub Pages Deploy
 
 on:
   push:
-    branches: [ main ]  # Deploy only from main branch for security
+    branches: [ main, dev ]  # Deploy from main and dev branches
     paths:
       - 'docs/**'
       - 'mkdocs.yml'
