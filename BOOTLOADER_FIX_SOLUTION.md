@@ -22,32 +22,32 @@ Instead of:
 qemu-system-i386 -fda build/macos/sage_os_macos.img -m 128M -display cocoa
 ```
 
-Use this:
+Use this (eliminates format warning):
 ```bash
-qemu-system-i386 -fda build/macos/sage_os_macos.img -boot a -m 128M -display cocoa -no-fd-bootchk
+qemu-system-i386 -drive file=build/macos/sage_os_macos.img,format=raw,if=floppy -boot a -m 128M -display cocoa -no-fd-bootchk
 ```
 
 ### 🔧 **Key parameters explained:**
 
+- `-drive file=...,format=raw,if=floppy` - Explicitly specifies raw format floppy (eliminates warnings)
 - `-boot a` - Forces boot from floppy drive A (bypasses hard disk)
 - `-no-fd-bootchk` - Disables floppy disk boot sector checking
-- `-fda` - Specifies floppy disk A image
 
 ### 🚀 **Alternative working commands:**
 
-1. **For macOS with Cocoa display:**
+1. **For macOS with Cocoa display (no warnings):**
 ```bash
-qemu-system-i386 -fda sage_os_minimal.img -boot a -m 128M -display cocoa -no-fd-bootchk
+qemu-system-i386 -drive file=sage_os_minimal.img,format=raw,if=floppy -boot a -m 128M -display cocoa -no-fd-bootchk
 ```
 
 2. **For VNC access (if Cocoa fails):**
 ```bash
-qemu-system-i386 -fda sage_os_minimal.img -boot a -m 128M -vnc :1 -no-fd-bootchk
+qemu-system-i386 -drive file=sage_os_minimal.img,format=raw,if=floppy -boot a -m 128M -vnc :1 -no-fd-bootchk
 ```
 
-3. **With explicit format (recommended):**
+3. **Legacy format (shows warnings but works):**
 ```bash
-qemu-system-i386 -drive file=sage_os_minimal.img,format=raw,if=floppy -boot a -m 128M -display cocoa
+qemu-system-i386 -fda sage_os_minimal.img -boot a -m 128M -display cocoa -no-fd-bootchk
 ```
 
 ## 📁 **Available bootloader images:**

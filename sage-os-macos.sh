@@ -308,65 +308,91 @@ run_sage_os() {
     
     # Launch QEMU with appropriate settings for macOS
     if [[ "$ARCH" == "arm64" ]]; then
-        # Apple Silicon Mac
+        # Apple Silicon Mac - VNC is more reliable
         echo "🍎 Launching on Apple Silicon Mac..."
+        echo "   Starting QEMU with VNC display (more reliable on Apple Silicon)..."
+        
+        # Start QEMU in background with VNC
         qemu-system-i386 \
-            -fda "build/macos/sage_os_macos.img" \
+            -drive file="build/macos/sage_os_macos.img",format=raw,if=floppy \
+            -boot a \
+            -m 128M \
+            -vnc :1 \
+            -no-fd-bootchk \
+            -no-reboot \
+            -name "SAGE OS - macOS Build" &
+        
+        QEMU_PID=$!
+        sleep 2
+        
+        if ps -p $QEMU_PID > /dev/null 2>&1; then
+            echo "✅ QEMU started successfully!"
+            echo "📺 VNC server running on localhost:5901"
+            echo ""
+            echo "🎮 To view SAGE OS:"
+            echo "   1. Open 'Screen Sharing' app on macOS"
+            echo "   2. Connect to: localhost:5901"
+            echo "   3. Or use any VNC viewer"
+            echo ""
+            echo "🎯 You should see:"
+            echo "   - SAGE OS bootloader message"
+            echo "   - Text display with system ready prompt"
+            echo ""
+            echo "Press Ctrl+C to stop QEMU when done"
+            echo ""
+            
+            # Wait for user to stop or QEMU to exit
+            wait $QEMU_PID
+        else
+            echo "❌ Failed to start QEMU"
+            echo "   Trying Cocoa display as fallback..."
+            qemu-system-i386 \
+                -drive file="build/macos/sage_os_macos.img",format=raw,if=floppy \
+                -boot a \
+                -m 128M \
+                -display cocoa \
+                -no-fd-bootchk \
+                -no-reboot \
+                -name "SAGE OS - macOS Build"
+        fi
+    else
+        # Intel Mac - try Cocoa first, then VNC
+        echo "💻 Launching on Intel Mac..."
+        echo "   Trying Cocoa display first..."
+        
+        # Try Cocoa with timeout
+        timeout 5s qemu-system-i386 \
+            -drive file=build/macos/sage_os_macos.img,format=raw,if=floppy \
             -boot a \
             -m 128M \
             -display cocoa \
             -no-fd-bootchk \
             -no-reboot \
-            -name "SAGE OS - macOS Build" \
-            2>/dev/null || {
-                echo "⚠️  Cocoa display failed, trying VNC..."
+            -name "SAGE OS - macOS Build" 2>/dev/null || {
+                echo "⚠️  Cocoa display timed out or failed, using VNC..."
+                
+                # Start QEMU with VNC in background
                 qemu-system-i386 \
-                    -fda "build/macos/sage_os_macos.img" \
+                    -drive file=build/macos/sage_os_macos.img,format=raw,if=floppy \
                     -boot a \
                     -m 128M \
                     -vnc :1 \
                     -no-fd-bootchk \
                     -no-reboot \
                     -name "SAGE OS - macOS Build" &
-                echo "📺 VNC server started on localhost:5901"
-                echo "   Connect with VNC viewer to see SAGE OS"
-                wait
-            }
-    else
-        # Intel Mac
-        echo "💻 Launching on Intel Mac..."
-        qemu-system-i386 \
-            -fda build/macos/sage_os_macos.img \
-            -boot a \
-            -m 128M \
-            -display cocoa \
-            -no-fd-bootchk \
-            -no-reboot \
-            -name "SAGE OS - macOS Build" \
-            2>/dev/null || {
-                echo "⚠️  Cocoa display failed, trying SDL..."
-                qemu-system-i386 \
-                    -fda build/macos/sage_os_macos.img \
-                    -boot a \
-                    -m 128M \
-                    -display sdl \
-                    -no-fd-bootchk \
-                    -no-reboot \
-                    -name "SAGE OS - macOS Build" \
-                    2>/dev/null || {
-                        echo "⚠️  SDL display failed, trying VNC..."
-                        qemu-system-i386 \
-                            -fda build/macos/sage_os_macos.img \
-                            -boot a \
-                            -m 128M \
-                            -vnc :1 \
-                            -no-fd-bootchk \
-                            -no-reboot \
-                            -name "SAGE OS - macOS Build" &
-                        echo "📺 VNC server started on localhost:5901"
-                        echo "   Connect with VNC viewer to see SAGE OS"
-                        wait
-                    }
+                
+                QEMU_PID=$!
+                sleep 2
+                
+                if ps -p $QEMU_PID > /dev/null 2>&1; then
+                    echo "✅ QEMU started with VNC!"
+                    echo "📺 VNC server running on localhost:5901"
+                    echo "   Connect with Screen Sharing app or VNC viewer"
+                    echo "   Press Ctrl+C to stop QEMU when done"
+                    wait $QEMU_PID
+                else
+                    echo "❌ Failed to start QEMU"
+                fi
             }
     fi
 }
@@ -407,8 +433,17 @@ main() {
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         run_sage_os
     else
-        echo "📝 To run SAGE OS later, use:"
-        echo "   qemu-system-i386 -fda build/macos/sage_os_macos.img -boot a -m 128M -display cocoa -no-fd-bootchk"
+        echo "📝 To run SAGE OS later:"
+        echo ""
+        echo "   🖥️  VNC (recommended for Apple Silicon):"
+        echo "   qemu-system-i386 -drive file=build/macos/sage_os_macos.img,format=raw,if=floppy -boot a -m 128M -vnc :1 -no-fd-bootchk &"
+        echo "   Then connect to localhost:5901 with Screen Sharing app"
+        echo ""
+        echo "   🍎 Cocoa (for Intel Macs):"
+        echo "   qemu-system-i386 -drive file=build/macos/sage_os_macos.img,format=raw,if=floppy -boot a -m 128M -display cocoa -no-fd-bootchk"
+        echo ""
+        echo "   🚀 Quick test script:"
+        echo "   ./quick_test_sage_os.sh"
         echo ""
         echo "📁 Build output location:"
         echo "   $(pwd)/build/macos/sage_os_macos.img"
