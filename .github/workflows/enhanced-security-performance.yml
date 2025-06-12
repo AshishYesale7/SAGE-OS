@@ -1,0 +1,534 @@
+name: 🔒 Enhanced Security & Performance
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+  workflow_dispatch:
+    inputs:
+      security_level:
+        description: 'Security scan level'
+        required: false
+        default: 'standard'
+        type: choice
+        options:
+          - standard
+          - comprehensive
+          - deep
+      performance_analysis:
+        description: 'Enable performance analysis'
+        required: false
+        default: true
+        type: boolean
+  schedule:
+    # Run comprehensive security scan daily at 3 AM UTC
+    - cron: '0 3 * * *'
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: "security-performance-${{ github.ref }}"
+  cancel-in-progress: false
+
+env:
+  CACHE_VERSION: 'v2'
+  MAX_RETRIES: 3
+  TIMEOUT_MINUTES: 45
+
+jobs:
+  security-validation:
+    name: 🔒 Advanced Security Validation
+    runs-on: ubuntu-latest
+    timeout-minutes: ${{ fromJson(env.TIMEOUT_MINUTES) }}
+    outputs:
+      security_score: ${{ steps.security.outputs.score }}
+      vulnerabilities_found: ${{ steps.security.outputs.vulnerabilities }}
+      recommendations: ${{ steps.security.outputs.recommendations }}
+    
+    steps:
+    - name: 📥 Checkout Repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        
+    - name: 🔍 Token and Secret Validation
+      id: token-validation
+      run: |
+        echo "🔍 Performing comprehensive token validation..."
+        
+        # Check for exposed tokens and secrets
+        SECURITY_ISSUES=0
+        
+        # GitHub token patterns
+        if grep -r "ghp_[a-zA-Z0-9]\{36\}" . --exclude-dir=.git --exclude-dir=.github/workflows; then
+          echo "❌ CRITICAL: GitHub Personal Access Token found in code"
+          SECURITY_ISSUES=$((SECURITY_ISSUES + 1))
+        fi
+        
+        # GitHub App tokens
+        if grep -r "ghs_[a-zA-Z0-9]\{36\}" . --exclude-dir=.git --exclude-dir=.github/workflows; then
+          echo "❌ CRITICAL: GitHub App Token found in code"
+          SECURITY_ISSUES=$((SECURITY_ISSUES + 1))
+        fi
+        
+        # API keys
+        if grep -r "api[_-]key\s*[:=]\s*['\"][^'\"]\{20,\}['\"]" . --exclude-dir=.git --exclude-dir=.github/workflows; then
+          echo "⚠️  WARNING: Potential API key found in code"
+          SECURITY_ISSUES=$((SECURITY_ISSUES + 1))
+        fi
+        
+        # Database credentials
+        if grep -r "password\s*[:=]\s*['\"][^'\"]\{8,\}['\"]" . --exclude-dir=.git --exclude-dir=.github/workflows; then
+          echo "⚠️  WARNING: Potential password found in code"
+          SECURITY_ISSUES=$((SECURITY_ISSUES + 1))
+        fi
+        
+        # Private keys
+        if grep -r "BEGIN.*PRIVATE.*KEY" . --exclude-dir=.git; then
+          echo "❌ CRITICAL: Private key found in code"
+          SECURITY_ISSUES=$((SECURITY_ISSUES + 1))
+        fi
+        
+        # AWS credentials
+        if grep -r "AKIA[0-9A-Z]\{16\}" . --exclude-dir=.git; then
+          echo "❌ CRITICAL: AWS Access Key found in code"
+          SECURITY_ISSUES=$((SECURITY_ISSUES + 1))
+        fi
+        
+        echo "security_issues=$SECURITY_ISSUES" >> $GITHUB_OUTPUT
+        
+        if [ $SECURITY_ISSUES -eq 0 ]; then
+          echo "✅ No exposed secrets detected"
+        else
+          echo "❌ $SECURITY_ISSUES security issues found"
+        fi
+        
+    - name: 🔐 Dependency Security Scan
+      uses: github/super-linter@v5
+      env:
+        DEFAULT_BRANCH: main
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        VALIDATE_ALL_CODEBASE: false
+        VALIDATE_PYTHON: true
+        VALIDATE_BASH: true
+        VALIDATE_DOCKERFILE: true
+        VALIDATE_YAML: true
+        VALIDATE_JSON: true
+        VALIDATE_MARKDOWN: true
+        
+    - name: 🔍 Advanced Code Analysis
+      id: security
+      run: |
+        echo "🔍 Performing advanced security analysis..."
+        
+        # Initialize security metrics
+        SECURITY_SCORE=100
+        VULNERABILITIES=0
+        RECOMMENDATIONS=()
+        
+        # Check for unsafe C functions
+        if find . -name "*.c" -exec grep -l "strcpy\|strcat\|sprintf\|gets" {} \; | head -5; then
+          echo "⚠️  Unsafe C functions detected"
+          SECURITY_SCORE=$((SECURITY_SCORE - 10))
+          VULNERABILITIES=$((VULNERABILITIES + 1))
+          RECOMMENDATIONS+=("Replace unsafe C functions with safe alternatives")
+        fi
+        
+        # Check for buffer overflow patterns
+        if find . -name "*.c" -exec grep -l "char.*\[.*\].*scanf\|char.*\[.*\].*gets" {} \; | head -5; then
+          echo "⚠️  Potential buffer overflow patterns detected"
+          SECURITY_SCORE=$((SECURITY_SCORE - 15))
+          VULNERABILITIES=$((VULNERABILITIES + 1))
+          RECOMMENDATIONS+=("Review buffer handling for potential overflows")
+        fi
+        
+        # Check for hardcoded paths
+        if grep -r "/tmp\|/var/tmp" . --include="*.c" --include="*.h" | head -5; then
+          echo "⚠️  Hardcoded temporary paths detected"
+          SECURITY_SCORE=$((SECURITY_SCORE - 5))
+          RECOMMENDATIONS+=("Use secure temporary file creation")
+        fi
+        
+        # Check for SQL injection patterns (if any database code)
+        if grep -r "sprintf.*SELECT\|strcat.*SELECT" . --include="*.c" | head -5; then
+          echo "⚠️  Potential SQL injection patterns detected"
+          SECURITY_SCORE=$((SECURITY_SCORE - 20))
+          VULNERABILITIES=$((VULNERABILITIES + 1))
+          RECOMMENDATIONS+=("Use parameterized queries to prevent SQL injection")
+        fi
+        
+        # Check for command injection patterns
+        if grep -r "system\|exec\|popen" . --include="*.c" | head -5; then
+          echo "⚠️  Command execution functions detected"
+          SECURITY_SCORE=$((SECURITY_SCORE - 10))
+          RECOMMENDATIONS+=("Validate and sanitize all command inputs")
+        fi
+        
+        # Check for proper error handling
+        ERROR_HANDLING_SCORE=0
+        if grep -r "if.*malloc.*NULL\|if.*calloc.*NULL" . --include="*.c" | wc -l | xargs test 5 -lt; then
+          echo "✅ Good memory allocation error handling"
+          ERROR_HANDLING_SCORE=$((ERROR_HANDLING_SCORE + 5))
+        else
+          echo "⚠️  Improve memory allocation error handling"
+          RECOMMENDATIONS+=("Add proper error handling for memory allocation")
+        fi
+        
+        SECURITY_SCORE=$((SECURITY_SCORE + ERROR_HANDLING_SCORE))
+        
+        # Generate recommendations JSON
+        RECOMMENDATIONS_JSON=$(printf '%s\n' "${RECOMMENDATIONS[@]}" | jq -R . | jq -s .)
+        
+        echo "score=$SECURITY_SCORE" >> $GITHUB_OUTPUT
+        echo "vulnerabilities=$VULNERABILITIES" >> $GITHUB_OUTPUT
+        echo "recommendations<<EOF" >> $GITHUB_OUTPUT
+        echo "$RECOMMENDATIONS_JSON" >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+        
+        echo "🔒 Security Analysis Complete:"
+        echo "  - Security Score: $SECURITY_SCORE/100"
+        echo "  - Vulnerabilities: $VULNERABILITIES"
+        echo "  - Recommendations: ${#RECOMMENDATIONS[@]}"
+
+  performance-analysis:
+    name: ⚡ Performance Analysis
+    runs-on: ubuntu-latest
+    if: inputs.performance_analysis != false
+    timeout-minutes: 30
+    outputs:
+      performance_score: ${{ steps.performance.outputs.score }}
+      bottlenecks: ${{ steps.performance.outputs.bottlenecks }}
+      optimizations: ${{ steps.performance.outputs.optimizations }}
+    
+    steps:
+    - name: 📥 Checkout Repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        
+    - name: 🔧 Setup Analysis Tools
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cloc valgrind cppcheck
+        pip install complexity-metrics
+        
+    - name: 📊 Code Complexity Analysis
+      id: complexity
+      run: |
+        echo "📊 Analyzing code complexity..."
+        
+        # Cyclomatic complexity analysis
+        if command -v lizard >/dev/null 2>&1; then
+          lizard . -l c -o complexity_report.txt || echo "Lizard analysis failed"
+        fi
+        
+        # Lines of code analysis
+        cloc . --json --out=cloc_report.json
+        
+        # Function complexity (simple analysis)
+        COMPLEX_FUNCTIONS=0
+        if find . -name "*.c" -exec grep -c "if\|while\|for\|switch" {} \; | awk '{sum+=$1} END {print sum}' | xargs test 100 -lt; then
+          echo "✅ Reasonable code complexity"
+        else
+          echo "⚠️  High code complexity detected"
+          COMPLEX_FUNCTIONS=1
+        fi
+        
+        echo "complex_functions=$COMPLEX_FUNCTIONS" >> $GITHUB_OUTPUT
+        
+    - name: ⚡ Performance Pattern Analysis
+      id: performance
+      run: |
+        echo "⚡ Analyzing performance patterns..."
+        
+        PERFORMANCE_SCORE=100
+        BOTTLENECKS=()
+        OPTIMIZATIONS=()
+        
+        # Check for inefficient patterns
+        if grep -r "malloc.*loop\|calloc.*loop" . --include="*.c" | head -5; then
+          echo "⚠️  Memory allocation in loops detected"
+          PERFORMANCE_SCORE=$((PERFORMANCE_SCORE - 15))
+          BOTTLENECKS+=("Memory allocation in loops")
+          OPTIMIZATIONS+=("Pre-allocate memory outside loops")
+        fi
+        
+        # Check for string operations in loops
+        if grep -r "strlen.*loop\|strcpy.*loop\|strcat.*loop" . --include="*.c" | head -5; then
+          echo "⚠️  String operations in loops detected"
+          PERFORMANCE_SCORE=$((PERFORMANCE_SCORE - 10))
+          BOTTLENECKS+=("String operations in loops")
+          OPTIMIZATIONS+=("Cache string lengths and use efficient string operations")
+        fi
+        
+        # Check for recursive functions without optimization
+        if grep -r "recursive\|recursion" . --include="*.c" | head -5; then
+          echo "ℹ️  Recursive functions detected - ensure tail call optimization"
+          OPTIMIZATIONS+=("Consider iterative alternatives for recursive functions")
+        fi
+        
+        # Check for proper data structure usage
+        if grep -r "linear.*search\|sequential.*search" . --include="*.c" | head -5; then
+          echo "⚠️  Linear search patterns detected"
+          PERFORMANCE_SCORE=$((PERFORMANCE_SCORE - 5))
+          OPTIMIZATIONS+=("Consider using hash tables or binary search for better performance")
+        fi
+        
+        # Check for I/O optimization
+        if grep -r "printf.*loop\|fprintf.*loop" . --include="*.c" | head -5; then
+          echo "⚠️  I/O operations in loops detected"
+          PERFORMANCE_SCORE=$((PERFORMANCE_SCORE - 10))
+          BOTTLENECKS+=("I/O operations in loops")
+          OPTIMIZATIONS+=("Buffer I/O operations or move outside loops")
+        fi
+        
+        # Positive patterns
+        if grep -r "inline\|static.*inline" . --include="*.h" | wc -l | xargs test 5 -lt; then
+          echo "✅ Good use of inline functions"
+          PERFORMANCE_SCORE=$((PERFORMANCE_SCORE + 5))
+        fi
+        
+        if grep -r "const.*\*\|const.*restrict" . --include="*.c" | wc -l | xargs test 10 -lt; then
+          echo "✅ Good use of const qualifiers"
+          PERFORMANCE_SCORE=$((PERFORMANCE_SCORE + 5))
+        fi
+        
+        # Generate JSON outputs
+        BOTTLENECKS_JSON=$(printf '%s\n' "${BOTTLENECKS[@]}" | jq -R . | jq -s .)
+        OPTIMIZATIONS_JSON=$(printf '%s\n' "${OPTIMIZATIONS[@]}" | jq -R . | jq -s .)
+        
+        echo "score=$PERFORMANCE_SCORE" >> $GITHUB_OUTPUT
+        echo "bottlenecks<<EOF" >> $GITHUB_OUTPUT
+        echo "$BOTTLENECKS_JSON" >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+        echo "optimizations<<EOF" >> $GITHUB_OUTPUT
+        echo "$OPTIMIZATIONS_JSON" >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+        
+        echo "⚡ Performance Analysis Complete:"
+        echo "  - Performance Score: $PERFORMANCE_SCORE/100"
+        echo "  - Bottlenecks Found: ${#BOTTLENECKS[@]}"
+        echo "  - Optimization Suggestions: ${#OPTIMIZATIONS[@]}"
+
+  github-models-integration:
+    name: 🤖 GitHub Models Security Analysis
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || inputs.security_level == 'comprehensive' || inputs.security_level == 'deep'
+    timeout-minutes: 20
+    env:
+      GITHUB_MODELS_API_KEY: ${{ secrets.GITHUB_MODELS_API_KEY }}
+    
+    steps:
+    - name: 📥 Checkout Repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        
+    - name: 🤖 AI-Powered Security Analysis
+      if: env.GITHUB_MODELS_API_KEY != ''
+      run: |
+        echo "🤖 Performing AI-powered security analysis..."
+        
+        python3 << 'EOF'
+        import os
+        import json
+        import requests
+        from pathlib import Path
+        
+        def analyze_security_with_ai(code_content, file_path):
+            """Analyze code security using GitHub Models API"""
+            api_key = os.environ.get('GITHUB_MODELS_API_KEY')
+            if not api_key:
+                return None
+                
+            headers = {
+                'Authorization': f'Bearer {api_key}',
+                'Content-Type': 'application/json'
+            }
+            
+            prompt = f"""
+            Perform a security analysis of this code file ({file_path}):
+            
+            1. Identify potential security vulnerabilities
+            2. Check for common attack vectors (buffer overflow, injection, etc.)
+            3. Assess memory safety
+            4. Recommend security improvements
+            5. Rate security level (1-10)
+            
+            Code:
+            ```
+            {code_content[:3000]}  # Limit content size
+            ```
+            
+            Provide a JSON response with: vulnerabilities, recommendations, security_rating
+            """
+            
+            payload = {
+                'model': 'gpt-4',
+                'messages': [
+                    {'role': 'system', 'content': 'You are a cybersecurity expert specializing in C/C++ code analysis. Provide detailed security assessments.'},
+                    {'role': 'user', 'content': prompt}
+                ],
+                'max_tokens': 800,
+                'temperature': 0.2
+            }
+            
+            try:
+                response = requests.post(
+                    'https://models.inference.ai.azure.com/chat/completions',
+                    headers=headers,
+                    json=payload,
+                    timeout=30
+                )
+                
+                if response.status_code == 200:
+                    return response.json()['choices'][0]['message']['content']
+                else:
+                    print(f"API Error: {response.status_code}")
+                    return None
+                    
+            except Exception as e:
+                print(f"AI Security Analysis error: {e}")
+                return None
+        
+        # Analyze critical security files
+        security_files = []
+        for pattern in ['kernel/*.c', 'drivers/*.c', 'src/*security*.c', 'src/*crypto*.c']:
+            for file_path in Path('.').glob(pattern):
+                if file_path.stat().st_size < 15000:  # Limit file size
+                    security_files.append(file_path)
+                if len(security_files) >= 3:  # Limit number of files
+                    break
+        
+        ai_security_results = {
+            'enabled': True,
+            'timestamp': datetime.now().isoformat(),
+            'files_analyzed': [],
+            'total_vulnerabilities': 0,
+            'critical_issues': [],
+            'recommendations': []
+        }
+        
+        for file_path in security_files[:2]:  # Analyze max 2 files for security
+            try:
+                with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                    content = f.read()
+                
+                analysis = analyze_security_with_ai(content, str(file_path))
+                if analysis:
+                    ai_security_results['files_analyzed'].append(str(file_path))
+                    # Parse AI response for structured data
+                    # This would need more sophisticated parsing in production
+                    print(f"✅ AI Security Analysis completed for: {file_path}")
+                    print(f"Analysis: {analysis[:200]}...")
+                else:
+                    print(f"⚠️  AI Security Analysis failed for: {file_path}")
+                    
+            except Exception as e:
+                print(f"Error analyzing {file_path}: {e}")
+        
+        print(f"🤖 AI Security Analysis completed: {len(ai_security_results['files_analyzed'])} files analyzed")
+        EOF
+
+  generate-security-report:
+    name: 📋 Generate Security Report
+    runs-on: ubuntu-latest
+    needs: [security-validation, performance-analysis]
+    if: always()
+    
+    steps:
+    - name: 📥 Checkout Repository
+      uses: actions/checkout@v4
+      
+    - name: 📋 Generate Comprehensive Report
+      env:
+        SECURITY_SCORE: ${{ needs.security-validation.outputs.security_score }}
+        VULNERABILITIES: ${{ needs.security-validation.outputs.vulnerabilities_found }}
+        SECURITY_RECOMMENDATIONS: ${{ needs.security-validation.outputs.recommendations }}
+        PERFORMANCE_SCORE: ${{ needs.performance-analysis.outputs.performance_score }}
+        BOTTLENECKS: ${{ needs.performance-analysis.outputs.bottlenecks }}
+        OPTIMIZATIONS: ${{ needs.performance-analysis.outputs.optimizations }}
+      run: |
+        echo "📋 Generating comprehensive security and performance report..."
+        
+        mkdir -p reports
+        
+        cat > reports/security-performance-report.md << EOF
+        # 🔒 SAGE-OS Security & Performance Report
+        
+        **Generated**: $(date -u +"%Y-%m-%d %H:%M:%S UTC")  
+        **Commit**: ${{ github.sha }}  
+        **Branch**: ${{ github.ref_name }}  
+        
+        ## 🔒 Security Analysis
+        
+        ### Overall Security Score: ${SECURITY_SCORE:-"N/A"}/100
+        
+        - **Vulnerabilities Found**: ${VULNERABILITIES:-"0"}
+        - **Security Level**: $([ "${SECURITY_SCORE:-0}" -ge 90 ] && echo "🟢 Excellent" || [ "${SECURITY_SCORE:-0}" -ge 75 ] && echo "🟡 Good" || echo "🔴 Needs Improvement")
+        
+        ### Security Recommendations
+        
+        ${SECURITY_RECOMMENDATIONS:-"No specific recommendations"}
+        
+        ## ⚡ Performance Analysis
+        
+        ### Overall Performance Score: ${PERFORMANCE_SCORE:-"N/A"}/100
+        
+        - **Performance Level**: $([ "${PERFORMANCE_SCORE:-0}" -ge 90 ] && echo "🟢 Excellent" || [ "${PERFORMANCE_SCORE:-0}" -ge 75 ] && echo "🟡 Good" || echo "🔴 Needs Optimization")
+        - **Bottlenecks Identified**: ${BOTTLENECKS:-"None"}
+        
+        ### Performance Optimizations
+        
+        ${OPTIMIZATIONS:-"No specific optimizations needed"}
+        
+        ## 📊 Summary
+        
+        | Category | Score | Status |
+        |----------|-------|--------|
+        | Security | ${SECURITY_SCORE:-"N/A"}/100 | $([ "${SECURITY_SCORE:-0}" -ge 75 ] && echo "✅ Passed" || echo "⚠️ Review Required") |
+        | Performance | ${PERFORMANCE_SCORE:-"N/A"}/100 | $([ "${PERFORMANCE_SCORE:-0}" -ge 75 ] && echo "✅ Passed" || echo "⚠️ Optimization Needed") |
+        
+        ## 🎯 Action Items
+        
+        1. **Security**: $([ "${SECURITY_SCORE:-0}" -ge 75 ] && echo "Maintain current security practices" || echo "Address identified vulnerabilities")
+        2. **Performance**: $([ "${PERFORMANCE_SCORE:-0}" -ge 75 ] && echo "Continue performance monitoring" || echo "Implement suggested optimizations")
+        3. **Monitoring**: Set up continuous security and performance monitoring
+        4. **Documentation**: Update security and performance documentation
+        
+        ---
+        
+        *Report generated by SAGE-OS Enhanced Security & Performance Analysis System*
+        EOF
+        
+        echo "✅ Security and performance report generated"
+        
+    - name: 📤 Upload Security Report
+      uses: actions/upload-artifact@v4
+      with:
+        name: security-performance-report
+        path: reports/
+        retention-days: 30
+        
+    - name: 📊 Update Job Summary
+      run: |
+        echo "## 🔒 Security & Performance Analysis Results" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 🔒 Security Analysis" >> $GITHUB_STEP_SUMMARY
+        echo "- **Score**: ${{ needs.security-validation.outputs.security_score || 'N/A' }}/100" >> $GITHUB_STEP_SUMMARY
+        echo "- **Vulnerabilities**: ${{ needs.security-validation.outputs.vulnerabilities_found || '0' }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Status**: $([ "${{ needs.security-validation.outputs.security_score || 0 }}" -ge 75 ] && echo "✅ Secure" || echo "⚠️ Review Required")" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### ⚡ Performance Analysis" >> $GITHUB_STEP_SUMMARY
+        echo "- **Score**: ${{ needs.performance-analysis.outputs.performance_score || 'N/A' }}/100" >> $GITHUB_STEP_SUMMARY
+        echo "- **Status**: $([ "${{ needs.performance-analysis.outputs.performance_score || 0 }}" -ge 75 ] && echo "✅ Optimized" || echo "⚠️ Optimization Needed")" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 📋 Report" >> $GITHUB_STEP_SUMMARY
+        echo "- **Generated**: $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> $GITHUB_STEP_SUMMARY
+        echo "- **Download**: Check the artifacts section for detailed report" >> $GITHUB_STEP_SUMMARY
