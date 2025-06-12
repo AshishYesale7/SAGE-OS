@@ -1,0 +1,485 @@
+name: 🔍 AI Pull Request Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, ready_for_review]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number to review'
+        required: true
+        type: number
+      review_type:
+        description: 'Type of review'
+        required: false
+        default: 'comprehensive'
+        type: choice
+        options:
+          - 'comprehensive'
+          - 'security-focused'
+          - 'performance-focused'
+          - 'code-quality'
+          - 'documentation'
+
+permissions:
+  contents: read
+  pull-requests: write
+  models: read
+  checks: write
+
+jobs:
+  ai-pr-review:
+    name: 🔍 AI Code Review
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    if: github.event.pull_request.draft == false
+    
+    steps:
+    - name: 📥 Checkout Repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        
+    - name: 📥 Checkout PR
+      if: github.event_name == 'pull_request'
+      run: |
+        gh pr checkout ${{ github.event.pull_request.number }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: 🔍 AI Code Review Analysis
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        PR_NUMBER: ${{ github.event.pull_request.number || github.event.inputs.pr_number }}
+        REVIEW_TYPE: ${{ github.event.inputs.review_type || 'comprehensive' }}
+      run: |
+        echo "🔍 Starting AI code review for PR #$PR_NUMBER"
+        echo "📋 Review type: $REVIEW_TYPE"
+        
+        # Get PR details
+        PR_DATA=$(gh api repos/${{ github.repository }}/pulls/$PR_NUMBER)
+        PR_TITLE=$(echo "$PR_DATA" | jq -r '.title')
+        PR_BODY=$(echo "$PR_DATA" | jq -r '.body // ""')
+        PR_AUTHOR=$(echo "$PR_DATA" | jq -r '.user.login')
+        BASE_SHA=$(echo "$PR_DATA" | jq -r '.base.sha')
+        HEAD_SHA=$(echo "$PR_DATA" | jq -r '.head.sha')
+        
+        echo "📋 PR: $PR_TITLE"
+        echo "👤 Author: $PR_AUTHOR"
+        
+        # Get changed files and their diff
+        CHANGED_FILES=$(gh api repos/${{ github.repository }}/pulls/$PR_NUMBER/files --paginate)
+        
+        python3 << 'EOF'
+        import os
+        import json
+        import requests
+        import subprocess
+        import base64
+        
+        # Configuration
+        GITHUB_TOKEN = os.environ.get('GITHUB_TOKEN')
+        PR_NUMBER = os.environ.get('PR_NUMBER')
+        REVIEW_TYPE = os.environ.get('REVIEW_TYPE')
+        PR_TITLE = os.environ.get('PR_TITLE', '')
+        PR_BODY = os.environ.get('PR_BODY', '')
+        PR_AUTHOR = os.environ.get('PR_AUTHOR', '')
+        
+        def call_github_models_api(prompt, model_id='openai/gpt-4o-mini'):
+            """Call GitHub Models API for code review"""
+            headers = {
+                'Authorization': f'Bearer {GITHUB_TOKEN}',
+                'Content-Type': 'application/json'
+            }
+            
+            data = {
+                'model': model_id,
+                'messages': [
+                    {
+                        'role': 'system',
+                        'content': 'You are an expert code reviewer specializing in operating systems, C/C++, and system programming. You provide thorough, constructive code reviews focusing on correctness, security, performance, and maintainability.'
+                    },
+                    {
+                        'role': 'user',
+                        'content': prompt
+                    }
+                ],
+                'max_tokens': 3000,
+                'temperature': 0.2
+            }
+            
+            try:
+                response = requests.post('https://models.github.ai/chat/completions', 
+                                       headers=headers, 
+                                       json=data, 
+                                       timeout=60)
+                response.raise_for_status()
+                result = response.json()
+                return result['choices'][0]['message']['content']
+            except Exception as e:
+                return f"Error in AI review: {str(e)}"
+        
+        def get_pr_files():
+            """Get changed files and their content"""
+            try:
+                result = subprocess.run(['gh', 'api', f'repos/{os.environ.get("GITHUB_REPOSITORY")}/pulls/{PR_NUMBER}/files', '--paginate'], 
+                                      capture_output=True, text=True, check=True)
+                return json.loads(result.stdout)
+            except:
+                return []
+        
+        def get_file_diff(filename):
+            """Get the diff for a specific file"""
+            try:
+                result = subprocess.run(['git', 'diff', 'HEAD~1', 'HEAD', '--', filename], 
+                                      capture_output=True, text=True)
+                return result.stdout
+            except:
+                return ""
+        
+        def review_code_changes():
+            """Perform AI code review on changed files"""
+            files = get_pr_files()
+            
+            if not files:
+                return "No files found for review."
+            
+            # Filter to code files
+            code_files = [f for f in files if f['filename'].endswith(('.c', '.h', '.cpp', '.hpp', '.py', '.rs', '.s', '.S'))]
+            
+            if not code_files:
+                return "No code files found for review."
+            
+            reviews = []
+            
+            for file_info in code_files[:10]:  # Limit to 10 files
+                filename = file_info['filename']
+                status = file_info['status']
+                additions = file_info.get('additions', 0)
+                deletions = file_info.get('deletions', 0)
+                patch = file_info.get('patch', '')
+                
+                if REVIEW_TYPE == 'security-focused':
+                    prompt = f"""
+                    Perform a security-focused code review of this file change:
+                    
+                    **File**: {filename}
+                    **Status**: {status}
+                    **Changes**: +{additions} -{deletions}
+                    
+                    **Diff**:
+                    ```diff
+                    {patch[:3000]}
+                    ```
+                    
+                    Focus on:
+                    1. **Security Vulnerabilities**: Buffer overflows, injection attacks, privilege escalation
+                    2. **Memory Safety**: Use-after-free, double-free, memory leaks
+                    3. **Input Validation**: Proper bounds checking and sanitization
+                    4. **Race Conditions**: Thread safety and synchronization issues
+                    5. **Cryptographic Issues**: Weak algorithms, key management
+                    6. **Access Control**: Proper permission checks
+                    
+                    For each issue found:
+                    - Severity: Critical/High/Medium/Low
+                    - Line numbers (if identifiable)
+                    - Exploitation scenario
+                    - Recommended fix
+                    
+                    If no security issues found, confirm the code is secure.
+                    """
+                    
+                elif REVIEW_TYPE == 'performance-focused':
+                    prompt = f"""
+                    Perform a performance-focused code review of this file change:
+                    
+                    **File**: {filename}
+                    **Status**: {status}
+                    **Changes**: +{additions} -{deletions}
+                    
+                    **Diff**:
+                    ```diff
+                    {patch[:3000]}
+                    ```
+                    
+                    Analyze:
+                    1. **Algorithm Complexity**: Time and space complexity analysis
+                    2. **Memory Usage**: Efficient memory allocation and deallocation
+                    3. **CPU Optimization**: Hot paths and computational efficiency
+                    4. **I/O Performance**: Efficient file and network operations
+                    5. **Cache Efficiency**: Data locality and cache-friendly patterns
+                    6. **Parallelization**: Opportunities for concurrent execution
+                    
+                    For each optimization opportunity:
+                    - Performance impact estimate
+                    - Implementation complexity
+                    - Specific code suggestions
+                    - Potential trade-offs
+                    """
+                    
+                elif REVIEW_TYPE == 'code-quality':
+                    prompt = f"""
+                    Perform a code quality review of this file change:
+                    
+                    **File**: {filename}
+                    **Status**: {status}
+                    **Changes**: +{additions} -{deletions}
+                    
+                    **Diff**:
+                    ```diff
+                    {patch[:3000]}
+                    ```
+                    
+                    Evaluate:
+                    1. **Code Style**: Consistency with project conventions
+                    2. **Readability**: Clear variable names, comments, structure
+                    3. **Maintainability**: Modularity, coupling, cohesion
+                    4. **Error Handling**: Proper exception and error management
+                    5. **Documentation**: Inline comments and function documentation
+                    6. **Testing**: Testability and test coverage considerations
+                    
+                    Provide specific suggestions for improvement with examples.
+                    """
+                    
+                else:  # comprehensive review
+                    prompt = f"""
+                    Perform a comprehensive code review of this file change:
+                    
+                    **File**: {filename}
+                    **Status**: {status}
+                    **Changes**: +{additions} -{deletions}
+                    
+                    **Diff**:
+                    ```diff
+                    {patch[:3000]}
+                    ```
+                    
+                    Provide a thorough review covering:
+                    
+                    1. **Correctness**: Logic errors, edge cases, algorithm correctness
+                    2. **Security**: Vulnerabilities, input validation, memory safety
+                    3. **Performance**: Efficiency, optimization opportunities
+                    4. **Code Quality**: Style, readability, maintainability
+                    5. **Best Practices**: Design patterns, conventions, standards
+                    6. **Testing**: Test coverage, edge cases, error scenarios
+                    
+                    For each issue or suggestion:
+                    - Category (Bug/Security/Performance/Style/etc.)
+                    - Severity (Critical/High/Medium/Low)
+                    - Specific location (line numbers if possible)
+                    - Detailed explanation
+                    - Recommended solution with code example
+                    
+                    End with an overall assessment and recommendation (Approve/Request Changes/Comment).
+                    """
+                
+                review = call_github_models_api(prompt)
+                reviews.append({
+                    'file': filename,
+                    'status': status,
+                    'changes': f"+{additions} -{deletions}",
+                    'review': review
+                })
+            
+            return reviews
+        
+        def generate_pr_summary(reviews):
+            """Generate overall PR review summary"""
+            reviews_text = "\n\n".join([f"**{r['file']}** ({r['status']}, {r['changes']}):\n{r['review']}" for r in reviews])
+            
+            prompt = f"""
+            Based on these individual file reviews, create a comprehensive PR review summary:
+            
+            **PR Title**: {PR_TITLE}
+            **Author**: {PR_AUTHOR}
+            **Description**: {PR_BODY}
+            
+            **Individual File Reviews**:
+            {reviews_text}
+            
+            Create a summary that includes:
+            1. **Overall Assessment**: Approve/Request Changes/Comment with reasoning
+            2. **Key Findings**: Most important issues discovered
+            3. **Security Assessment**: Any security concerns found
+            4. **Performance Impact**: Performance implications of changes
+            5. **Code Quality**: Overall code quality assessment
+            6. **Recommendations**: Priority-ordered list of improvements
+            7. **Positive Feedback**: What was done well
+            8. **Next Steps**: Clear actions for the author
+            
+            Format as a professional code review that's constructive and helpful.
+            Be specific about issues but also acknowledge good practices.
+            """
+            
+            return call_github_models_api(prompt, 'openai/gpt-4o-mini')
+        
+        def determine_review_decision(summary):
+            """Determine the review decision based on AI analysis"""
+            prompt = f"""
+            Based on this code review summary, determine the appropriate GitHub review decision:
+            
+            {summary}
+            
+            Choose one of:
+            - APPROVE: Code is ready to merge (no critical issues)
+            - REQUEST_CHANGES: Critical issues that must be fixed before merge
+            - COMMENT: Suggestions for improvement but not blocking
+            
+            Respond with only the decision word (APPROVE/REQUEST_CHANGES/COMMENT).
+            """
+            
+            decision = call_github_models_api(prompt, 'openai/gpt-4o-mini').strip()
+            
+            # Validate decision
+            if decision not in ['APPROVE', 'REQUEST_CHANGES', 'COMMENT']:
+                decision = 'COMMENT'  # Default to comment if unclear
+            
+            return decision
+        
+        # Perform the review
+        print(f"🔍 Performing {REVIEW_TYPE} review...")
+        reviews = review_code_changes()
+        
+        if isinstance(reviews, str):
+            # Error or no files case
+            summary = reviews
+            decision = 'COMMENT'
+        else:
+            print("📝 Generating PR summary...")
+            summary = generate_pr_summary(reviews)
+            
+            print("⚖️ Determining review decision...")
+            decision = determine_review_decision(summary)
+        
+        # Save results
+        with open('/tmp/pr_review.json', 'w') as f:
+            json.dump({
+                'summary': summary,
+                'decision': decision,
+                'reviews': reviews if isinstance(reviews, list) else [],
+                'review_type': REVIEW_TYPE
+            }, f, indent=2)
+        
+        # Set environment variables
+        with open(os.environ['GITHUB_ENV'], 'a') as f:
+            f.write(f"REVIEW_DECISION={decision}\n")
+            f.write(f"REVIEW_SUMMARY<<EOF\n{summary}\nEOF\n")
+        
+        print(f"✅ AI review completed! Decision: {decision}")
+        EOF
+        
+    - name: 📝 Submit AI Review
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        PR_NUMBER: ${{ github.event.pull_request.number || github.event.inputs.pr_number }}
+      run: |
+        echo "📝 Submitting AI review with decision: $REVIEW_DECISION"
+        
+        # Format the review body
+        REVIEW_BODY="## 🤖 AI Code Review
+
+        $REVIEW_SUMMARY
+
+        ---
+
+        **🔍 Review Type**: ${{ env.REVIEW_TYPE }}
+        **🤖 AI Model**: OpenAI GPT-4o-mini (GitHub Models)
+        **📊 Decision**: \`$REVIEW_DECISION\`
+
+        *This review was generated by AI. Please consider it as additional input alongside human review.*"
+        
+        # Submit the review
+        case "$REVIEW_DECISION" in
+          "APPROVE")
+            gh pr review $PR_NUMBER --approve --body "$REVIEW_BODY"
+            ;;
+          "REQUEST_CHANGES")
+            gh pr review $PR_NUMBER --request-changes --body "$REVIEW_BODY"
+            ;;
+          *)
+            gh pr review $PR_NUMBER --comment --body "$REVIEW_BODY"
+            ;;
+        esac
+        
+        echo "✅ AI review submitted!"
+        
+    - name: 🏷️ Add Review Labels
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        PR_NUMBER: ${{ github.event.pull_request.number || github.event.inputs.pr_number }}
+      run: |
+        echo "🏷️ Adding review labels..."
+        
+        # Add labels based on review decision and type
+        case "$REVIEW_DECISION" in
+          "APPROVE")
+            gh pr edit $PR_NUMBER --add-label "ai-approved" || true
+            ;;
+          "REQUEST_CHANGES")
+            gh pr edit $PR_NUMBER --add-label "ai-changes-requested" || true
+            ;;
+          *)
+            gh pr edit $PR_NUMBER --add-label "ai-reviewed" || true
+            ;;
+        esac
+        
+        # Add review type label
+        gh pr edit $PR_NUMBER --add-label "ai-review-${{ env.REVIEW_TYPE }}" || true
+        
+        echo "✅ Labels added!"
+        
+    - name: 📊 Create Review Check
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        echo "📊 Creating review check status..."
+        
+        # Determine check status
+        case "$REVIEW_DECISION" in
+          "APPROVE")
+            CHECK_STATUS="success"
+            CHECK_TITLE="AI Review: Approved"
+            CHECK_SUMMARY="AI code review completed successfully with approval"
+            ;;
+          "REQUEST_CHANGES")
+            CHECK_STATUS="failure"
+            CHECK_TITLE="AI Review: Changes Requested"
+            CHECK_SUMMARY="AI code review found issues that should be addressed"
+            ;;
+          *)
+            CHECK_STATUS="neutral"
+            CHECK_TITLE="AI Review: Comments"
+            CHECK_SUMMARY="AI code review completed with suggestions"
+            ;;
+        esac
+        
+        # Create check run
+        gh api repos/${{ github.repository }}/check-runs \
+          --method POST \
+          --field name="AI Code Review" \
+          --field head_sha="${{ github.event.pull_request.head.sha || github.sha }}" \
+          --field status="completed" \
+          --field conclusion="$CHECK_STATUS" \
+          --field output[title]="$CHECK_TITLE" \
+          --field output[summary]="$CHECK_SUMMARY" \
+          --field output[text]="Review type: ${{ env.REVIEW_TYPE }}" || true
+        
+        echo "✅ Check status created!"
+        
+    - name: 📊 Update Job Summary
+      run: |
+        echo "## 🔍 AI Code Review Complete" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "✅ **Status**: Code review completed" >> $GITHUB_STEP_SUMMARY
+        echo "🎯 **PR**: #${{ env.PR_NUMBER }}" >> $GITHUB_STEP_SUMMARY
+        echo "📋 **Review Type**: ${{ env.REVIEW_TYPE }}" >> $GITHUB_STEP_SUMMARY
+        echo "⚖️ **Decision**: \`${{ env.REVIEW_DECISION }}\`" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 🤖 AI Review Features" >> $GITHUB_STEP_SUMMARY
+        echo "- **Comprehensive Analysis**: Security, performance, code quality" >> $GITHUB_STEP_SUMMARY
+        echo "- **Intelligent Decisions**: Approve/Request Changes/Comment" >> $GITHUB_STEP_SUMMARY
+        echo "- **Detailed Feedback**: File-by-file analysis with specific suggestions" >> $GITHUB_STEP_SUMMARY
+        echo "- **Multiple Review Types**: Security, performance, quality, comprehensive" >> $GITHUB_STEP_SUMMARY
+        echo "- **Automated Labeling**: Smart label application based on review" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "🎉 **AI code review is helping maintain high code quality!**" >> $GITHUB_STEP_SUMMARY

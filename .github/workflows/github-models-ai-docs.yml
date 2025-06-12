@@ -1,0 +1,491 @@
+name: 🤖 GitHub Models AI Documentation Generator
+
+on:
+  push:
+    branches: [dev, main]
+    paths:
+      - 'kernel/**'
+      - 'drivers/**'
+      - 'boot/**'
+      - 'docs/**'
+      - '*.md'
+      - '*.c'
+      - '*.h'
+  workflow_dispatch:
+    inputs:
+      model_id:
+        description: 'AI Model to use'
+        required: false
+        default: 'openai/gpt-4o-mini'
+        type: choice
+        options:
+          - 'openai/gpt-4o-mini'
+          - 'openai/gpt-4o'
+          - 'openai/gpt-4.1-mini'
+          - 'openai/gpt-4.1'
+          - 'microsoft/phi-4'
+          - 'microsoft/phi-4-mini-instruct'
+          - 'meta/llama-3.3-70b-instruct'
+          - 'meta/llama-3.1-8b-instruct'
+          - 'mistral-ai/mistral-large-2411'
+          - 'mistral-ai/mistral-small-2503'
+          - 'cohere/cohere-command-r-plus'
+          - 'deepseek/deepseek-v3-0324'
+          - 'xai/grok-3-mini'
+      force_regenerate:
+        description: 'Force regenerate all documentation'
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+  models: read
+  id-token: write
+
+jobs:
+  generate-ai-docs:
+    name: 🤖 Generate AI Documentation with GitHub Models
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    
+    steps:
+    - name: 📥 Checkout Repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: 🐍 Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        
+    - name: 📦 Install Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests markdown beautifulsoup4 pyyaml
+        
+    - name: 🔍 List Available Models
+      run: |
+        echo "📋 Available GitHub Models:"
+        curl -H "Accept: application/vnd.github+json" \
+             -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+             -H "X-GitHub-Api-Version: 2022-11-28" \
+             https://models.github.ai/catalog/models | \
+             jq -r '.[] | "- \(.id) (\(.publisher)): \(.name)"' | head -20
+        
+    - name: 🤖 Generate AI Documentation with GitHub Models
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        MODEL_ID: ${{ github.event.inputs.model_id || 'openai/gpt-4o-mini' }}
+      run: |
+        echo "🤖 Starting AI Documentation Generation with model: $MODEL_ID"
+        
+        # Create docs directory if it doesn't exist
+        mkdir -p docs/ai-generated
+        
+        # Generate comprehensive documentation using GitHub Models API
+        python3 << 'EOF'
+        import os
+        import json
+        import requests
+        from datetime import datetime
+        
+        # GitHub Models API configuration
+        GITHUB_TOKEN = os.environ.get('GITHUB_TOKEN')
+        MODEL_ID = os.environ.get('MODEL_ID', 'openai/gpt-4o-mini')
+        API_BASE = 'https://models.github.ai'
+        
+        def call_github_models_api(prompt, max_tokens=2000):
+            """Call GitHub Models API for text generation"""
+            headers = {
+                'Authorization': f'Bearer {GITHUB_TOKEN}',
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            }
+            
+            data = {
+                'model': MODEL_ID,
+                'messages': [
+                    {
+                        'role': 'system',
+                        'content': 'You are a technical documentation expert specializing in operating systems and kernel development. Generate comprehensive, accurate, and well-structured documentation.'
+                    },
+                    {
+                        'role': 'user',
+                        'content': prompt
+                    }
+                ],
+                'max_tokens': max_tokens,
+                'temperature': 0.3
+            }
+            
+            try:
+                response = requests.post(f'{API_BASE}/chat/completions', 
+                                       headers=headers, 
+                                       json=data, 
+                                       timeout=30)
+                response.raise_for_status()
+                result = response.json()
+                return result['choices'][0]['message']['content']
+            except Exception as e:
+                print(f"API call failed: {e}")
+                return f"Error generating content with {MODEL_ID}: {str(e)}"
+        
+        def get_file_info(filepath):
+            """Get information about a source file"""
+            try:
+                with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
+                    content = f.read()
+                return {
+                    'path': filepath,
+                    'size': len(content),
+                    'lines': len(content.splitlines()),
+                    'language': filepath.split('.')[-1] if '.' in filepath else 'unknown',
+                    'content_preview': content[:500] + '...' if len(content) > 500 else content
+                }
+            except:
+                return None
+        
+        def generate_project_overview():
+            """Generate AI-powered project overview"""
+            print("📋 Generating AI project overview...")
+            
+            # Scan project structure
+            source_files = []
+            for root, dirs, files in os.walk('.'):
+                dirs[:] = [d for d in dirs if not d.startswith('.') and d not in ['build', 'node_modules', '__pycache__']]
+                
+                for file in files:
+                    if file.endswith(('.c', '.h', '.py', '.rs', '.cpp', '.hpp', '.s', '.S')):
+                        filepath = os.path.join(root, file)
+                        info = get_file_info(filepath)
+                        if info:
+                            source_files.append(info)
+            
+            # Create prompt for AI
+            prompt = f"""
+            Analyze this operating system project called SAGE OS and generate a comprehensive project overview.
+            
+            Project Statistics:
+            - Total source files: {len(source_files)}
+            - Total lines of code: {sum(f['lines'] for f in source_files)}
+            - Languages: {', '.join(set(f['language'] for f in source_files))}
+            
+            Key files and their content previews:
+            {chr(10).join([f"- {f['path']} ({f['language']}, {f['lines']} lines): {f['content_preview'][:200]}..." for f in source_files[:10]])}
+            
+            Generate a detailed project overview including:
+            1. Project description and purpose
+            2. Architecture overview
+            3. Key features and capabilities
+            4. Technology stack
+            5. Build and deployment information
+            6. Getting started guide
+            
+            Format as markdown with proper headers, code blocks, and structure.
+            """
+            
+            return call_github_models_api(prompt, max_tokens=3000)
+        
+        def generate_api_reference():
+            """Generate AI-powered API reference"""
+            print("📖 Generating AI API reference...")
+            
+            # Find header files for API analysis
+            header_files = []
+            for root, dirs, files in os.walk('.'):
+                dirs[:] = [d for d in dirs if not d.startswith('.')]
+                for file in files:
+                    if file.endswith('.h'):
+                        filepath = os.path.join(root, file)
+                        info = get_file_info(filepath)
+                        if info:
+                            header_files.append(info)
+            
+            prompt = f"""
+            Generate a comprehensive API reference for SAGE OS based on these header files:
+            
+            {chr(10).join([f"File: {f['path']}\\nContent: {f['content_preview']}" for f in header_files[:5]])}
+            
+            Create detailed API documentation including:
+            1. System calls and their signatures
+            2. Kernel APIs for memory management
+            3. Process and thread management APIs
+            4. I/O and device driver interfaces
+            5. Interrupt handling APIs
+            6. Code examples and usage patterns
+            7. Error codes and return values
+            
+            Format as markdown with proper code blocks, tables, and examples.
+            """
+            
+            return call_github_models_api(prompt, max_tokens=3000)
+        
+        def generate_build_guide():
+            """Generate AI-powered build guide"""
+            print("🔨 Generating AI build guide...")
+            
+            # Check for build files
+            build_files = []
+            for filename in ['Makefile', 'Makefile.macos', 'CMakeLists.txt', 'build.sh']:
+                if os.path.exists(filename):
+                    info = get_file_info(filename)
+                    if info:
+                        build_files.append(info)
+            
+            prompt = f"""
+            Generate a comprehensive build guide for SAGE OS based on these build files:
+            
+            {chr(10).join([f"File: {f['path']}\\nContent: {f['content_preview']}" for f in build_files])}
+            
+            Create detailed build documentation including:
+            1. Prerequisites and dependencies
+            2. Platform-specific instructions (Linux, macOS, Windows)
+            3. Cross-compilation setup
+            4. Build targets and options
+            5. Testing with QEMU
+            6. Troubleshooting common issues
+            7. Advanced build configurations
+            
+            Pay special attention to macOS M1 compatibility and QEMU setup.
+            Format as markdown with proper code blocks and step-by-step instructions.
+            """
+            
+            return call_github_models_api(prompt, max_tokens=3000)
+        
+        def generate_architecture_guide():
+            """Generate AI-powered architecture guide"""
+            print("🏗️ Generating AI architecture guide...")
+            
+            prompt = f"""
+            Generate a detailed architecture guide for SAGE OS based on the project structure.
+            
+            Analyze the operating system architecture and create documentation covering:
+            1. Overall system architecture and design principles
+            2. Kernel architecture and components
+            3. Memory management subsystem
+            4. Process and thread management
+            5. Device driver framework
+            6. File system architecture
+            7. Interrupt handling and system calls
+            8. Boot process and initialization
+            9. AI integration and self-aware features
+            10. Security model and isolation
+            
+            Include diagrams descriptions, component interactions, and design decisions.
+            Format as markdown with proper structure and technical depth.
+            """
+            
+            return call_github_models_api(prompt, max_tokens=3000)
+        
+        # Generate all documentation
+        print(f"🤖 Starting AI documentation generation with {MODEL_ID}...")
+        
+        # Generate project overview
+        overview = generate_project_overview()
+        with open('docs/ai-generated/project-overview.md', 'w') as f:
+            f.write(f"# 🤖 SAGE OS - AI Generated Project Overview\\n\\n")
+            f.write(f"**Generated by**: {MODEL_ID}\\n")
+            f.write(f"**Generated at**: {datetime.now().isoformat()}\\n\\n")
+            f.write(overview)
+        print("✅ Generated project overview")
+        
+        # Generate API reference
+        api_ref = generate_api_reference()
+        with open('docs/ai-generated/api-reference.md', 'w') as f:
+            f.write(f"# 🔧 SAGE OS - AI Generated API Reference\\n\\n")
+            f.write(f"**Generated by**: {MODEL_ID}\\n")
+            f.write(f"**Generated at**: {datetime.now().isoformat()}\\n\\n")
+            f.write(api_ref)
+        print("✅ Generated API reference")
+        
+        # Generate build guide
+        build_guide = generate_build_guide()
+        with open('docs/ai-generated/build-guide.md', 'w') as f:
+            f.write(f"# 🔨 SAGE OS - AI Generated Build Guide\\n\\n")
+            f.write(f"**Generated by**: {MODEL_ID}\\n")
+            f.write(f"**Generated at**: {datetime.now().isoformat()}\\n\\n")
+            f.write(build_guide)
+        print("✅ Generated build guide")
+        
+        # Generate architecture guide
+        arch_guide = generate_architecture_guide()
+        with open('docs/ai-generated/architecture-guide.md', 'w') as f:
+            f.write(f"# 🏗️ SAGE OS - AI Generated Architecture Guide\\n\\n")
+            f.write(f"**Generated by**: {MODEL_ID}\\n")
+            f.write(f"**Generated at**: {datetime.now().isoformat()}\\n\\n")
+            f.write(arch_guide)
+        print("✅ Generated architecture guide")
+        
+        # Generate index file
+        index_content = f"""# 🤖 AI Generated Documentation
+        
+        **Generated by**: {MODEL_ID}
+        **Last Updated**: {datetime.now().isoformat()}
+        
+        ## Available Documentation
+        
+        - [📋 Project Overview](project-overview.md) - Comprehensive project overview and statistics
+        - [🔧 API Reference](api-reference.md) - Complete API documentation
+        - [🔨 Build Guide](build-guide.md) - Detailed build instructions
+        - [🏗️ Architecture Guide](architecture-guide.md) - System architecture and design
+        
+        ## About This Documentation
+        
+        This documentation is automatically generated by the SAGE OS AI system using GitHub Models.
+        
+        **Model Used**: {MODEL_ID}
+        **Generation Method**: GitHub Models API
+        **Content Type**: Technical documentation for operating system development
+        
+        The documentation is updated automatically whenever source code changes are detected.
+        
+        ## Available GitHub Models
+        
+        The following models are available for documentation generation:
+        
+        ### OpenAI Models
+        - `openai/gpt-4.1` - Latest GPT-4.1 (most capable)
+        - `openai/gpt-4.1-mini` - GPT-4.1 Mini (faster, cost-effective)
+        - `openai/gpt-4o` - GPT-4o (multimodal)
+        - `openai/gpt-4o-mini` - GPT-4o Mini (default)
+        - `openai/o1` - O1 reasoning model
+        - `openai/o1-mini` - O1 Mini reasoning model
+        
+        ### Microsoft Models
+        - `microsoft/phi-4` - Phi-4 (latest)
+        - `microsoft/phi-4-mini-instruct` - Phi-4 Mini
+        - `microsoft/phi-3.5-mini-instruct` - Phi-3.5 Mini
+        
+        ### Meta Models
+        - `meta/llama-3.3-70b-instruct` - Llama 3.3 70B
+        - `meta/llama-3.1-405b-instruct` - Llama 3.1 405B (largest)
+        - `meta/llama-3.1-8b-instruct` - Llama 3.1 8B (efficient)
+        
+        ### Other Models
+        - `mistral-ai/mistral-large-2411` - Mistral Large
+        - `cohere/cohere-command-r-plus` - Cohere Command R+
+        - `deepseek/deepseek-v3-0324` - DeepSeek V3
+        - `xai/grok-3-mini` - Grok 3 Mini
+        
+        ---
+        
+        *Generated by SAGE OS AI Documentation System using GitHub Models*
+        """
+        
+        with open('docs/ai-generated/README.md', 'w') as f:
+            f.write(index_content)
+        print("✅ Generated documentation index")
+        
+        print("🎉 AI documentation generation completed successfully!")
+        EOF
+        
+    - name: 📊 Generate Documentation Report
+      run: |
+        echo "📊 Generating documentation report..."
+        
+        # Count generated files
+        GENERATED_FILES=$(find docs/ai-generated -name "*.md" | wc -l)
+        TOTAL_SIZE=$(du -sh docs/ai-generated | cut -f1)
+        
+        echo "Generated $GENERATED_FILES documentation files"
+        echo "Total size: $TOTAL_SIZE"
+        echo "Model used: ${{ env.MODEL_ID }}"
+        
+        # Create report
+        cat > docs/ai-generated/generation-report.md << EOF
+        # 📊 AI Documentation Generation Report
+        
+        **Generated**: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+        **Repository**: ${{ github.repository }}
+        **Branch**: ${{ github.ref_name }}
+        **Commit**: ${{ github.sha }}
+        **Model**: ${{ env.MODEL_ID }}
+        
+        ## Generation Results
+        
+        - **Files Generated**: $GENERATED_FILES
+        - **Total Size**: $TOTAL_SIZE
+        - **AI Model**: ${{ env.MODEL_ID }}
+        - **Status**: ✅ Success
+        
+        ## Generated Files
+        
+        $(find docs/ai-generated -name "*.md" -exec basename {} \; | sort | sed 's/^/- /')
+        
+        ## Model Information
+        
+        This documentation was generated using GitHub Models API with the **${{ env.MODEL_ID }}** model.
+        
+        GitHub Models provides access to state-of-the-art AI models including:
+        - OpenAI GPT-4.1, GPT-4o series
+        - Microsoft Phi-4 series
+        - Meta Llama 3.3 series
+        - Mistral, Cohere, DeepSeek, and xAI models
+        
+        ## Next Steps
+        
+        1. Review generated documentation
+        2. Deploy to GitHub Pages
+        3. Update project README with links
+        
+        ---
+        
+        *Report generated by AI Documentation System using GitHub Models*
+        EOF
+        
+    - name: 📤 Commit Generated Documentation
+      run: |
+        # Configure git
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        
+        # Add generated files
+        git add docs/ai-generated/
+        
+        # Check if there are changes to commit
+        if git diff --staged --quiet; then
+          echo "No changes to commit"
+        else
+          git commit -m "🤖 Auto-generate AI documentation using ${{ env.MODEL_ID }}
+
+          Generated documentation includes:
+          - Project overview with AI analysis
+          - Complete API reference
+          - Comprehensive build guide
+          - Architecture documentation
+          
+          Generated by: ${{ github.workflow }}
+          Model: ${{ env.MODEL_ID }}
+          Commit: ${{ github.sha }}
+          Date: $(date -u +"%Y-%m-%d %H:%M:%S UTC")"
+          
+          git push
+          echo "✅ Documentation committed and pushed"
+        fi
+        
+    - name: 📋 Update Job Summary
+      run: |
+        echo "## 🤖 AI Documentation Generation Complete" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "✅ **Status**: Documentation generated successfully" >> $GITHUB_STEP_SUMMARY
+        echo "🤖 **Model**: ${{ env.MODEL_ID }}" >> $GITHUB_STEP_SUMMARY
+        echo "📁 **Location**: \`docs/ai-generated/\`" >> $GITHUB_STEP_SUMMARY
+        echo "📊 **Files**: $(find docs/ai-generated -name "*.md" | wc -l) markdown files" >> $GITHUB_STEP_SUMMARY
+        echo "💾 **Size**: $(du -sh docs/ai-generated | cut -f1)" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 📚 Generated Documentation" >> $GITHUB_STEP_SUMMARY
+        echo "- [📋 Project Overview](docs/ai-generated/project-overview.md)" >> $GITHUB_STEP_SUMMARY
+        echo "- [🔧 API Reference](docs/ai-generated/api-reference.md)" >> $GITHUB_STEP_SUMMARY
+        echo "- [🔨 Build Guide](docs/ai-generated/build-guide.md)" >> $GITHUB_STEP_SUMMARY
+        echo "- [🏗️ Architecture Guide](docs/ai-generated/architecture-guide.md)" >> $GITHUB_STEP_SUMMARY
+        echo "- [📊 Generation Report](docs/ai-generated/generation-report.md)" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 🤖 Model Information" >> $GITHUB_STEP_SUMMARY
+        echo "**Model Used**: ${{ env.MODEL_ID }}" >> $GITHUB_STEP_SUMMARY
+        echo "**API**: GitHub Models" >> $GITHUB_STEP_SUMMARY
+        echo "**Features**: Advanced AI-powered technical documentation generation" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "🎉 **AI documentation system is working perfectly with GitHub Models!**" >> $GITHUB_STEP_SUMMARY

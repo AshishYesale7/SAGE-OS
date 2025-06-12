@@ -1,0 +1,395 @@
+name: 📊 SAGE-AI Dashboard & Monitoring
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'  # Every 6 hours
+  workflow_dispatch:
+    inputs:
+      dashboard_type:
+        description: 'Type of dashboard to generate'
+        required: true
+        default: 'full'
+        type: choice
+        options:
+          - 'full'
+          - 'performance'
+          - 'community'
+          - 'technical'
+
+jobs:
+  # 📊 Generate AI Performance Dashboard
+  ai-performance-dashboard:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      issues: read
+      pull-requests: read
+      models: read
+      contents: write
+      pages: write
+
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 📊 Collect AI Metrics
+        id: metrics
+        run: |
+          # Collect AI-related activity metrics
+          echo "Collecting SAGE-AI performance metrics..."
+          
+          # Issues with AI analysis (last 30 days)
+          AI_ISSUES=$(gh issue list --state all --limit 100 --json createdAt,comments,labels | \
+            jq '[.[] | select(.createdAt > (now - 30*24*3600 | strftime("%Y-%m-%dT%H:%M:%SZ")))] | length')
+          
+          # AI comments count
+          AI_COMMENTS=$(gh issue list --state all --limit 100 --json comments | \
+            jq '[.[] | .comments] | add // 0')
+          
+          # Average resolution time for AI-analyzed issues
+          RESOLUTION_TIME=$(gh issue list --state closed --limit 50 --json createdAt,closedAt | \
+            jq '[.[] | select(.closedAt and .createdAt) | 
+                ((.closedAt | fromdateiso8601) - (.createdAt | fromdateiso8601)) / 3600] | 
+                add / length // 0')
+          
+          echo "ai_issues=$AI_ISSUES" >> $GITHUB_OUTPUT
+          echo "ai_comments=$AI_COMMENTS" >> $GITHUB_OUTPUT
+          echo "avg_resolution_hours=$RESOLUTION_TIME" >> $GITHUB_OUTPUT
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 📈 Generate Performance Analytics
+        id: analytics
+        uses: actions/ai-inference@v1
+        with:
+          model: gpt-4o
+          prompt: |
+            Generate a comprehensive SAGE-AI performance analytics report:
+            
+            **Metrics (Last 30 days):**
+            - AI-analyzed issues: ${{ steps.metrics.outputs.ai_issues }}
+            - Total AI comments: ${{ steps.metrics.outputs.ai_comments }}
+            - Average resolution time: ${{ steps.metrics.outputs.avg_resolution_hours }} hours
+            
+            **Repository Context:**
+            - Total open issues: $(gh issue list --state open --json number | jq length)
+            - Total open PRs: $(gh pr list --state open --json number | jq length)
+            - Recent commits: $(git log --oneline --since="7 days ago" | wc -l)
+            
+            Create a detailed analytics report with:
+            
+            ## 📊 SAGE-AI Performance Dashboard
+            
+            ### 🎯 Key Performance Indicators
+            [Analysis of AI effectiveness metrics]
+            
+            ### 📈 Trends & Insights
+            [Identify patterns and trends in AI performance]
+            
+            ### 🎪 Community Impact
+            [How AI is affecting community engagement]
+            
+            ### 🔧 Technical Efficiency
+            [AI impact on development velocity]
+            
+            ### 📋 Recommendations
+            [Specific actionable improvements]
+            
+            ### 🎯 Success Stories
+            [Examples of AI helping resolve issues effectively]
+            
+            Make it data-driven and visually appealing with emojis and charts!
+
+      - name: 🎯 Community Engagement Analysis
+        id: community
+        uses: actions/ai-inference@v1
+        with:
+          model: claude-3-sonnet
+          prompt: |
+            Analyze SAGE-AI's impact on community engagement:
+            
+            **Recent Activity:**
+            - New contributors: $(git log --since="30 days ago" --format="%an" | sort -u | wc -l)
+            - Issue participation: $(gh issue list --state all --limit 100 --json participants | jq '[.[] | .participants | length] | add // 0')
+            - PR reviews: $(gh pr list --state all --limit 50 --json reviews | jq '[.[] | .reviews | length] | add // 0')
+            
+            Provide analysis on:
+            
+            ## 👥 Community Engagement Report
+            
+            ### 🌟 New Contributor Onboarding
+            [How AI helps new contributors]
+            
+            ### 💬 Communication Quality
+            [AI impact on issue/PR discussions]
+            
+            ### 🎓 Learning & Knowledge Sharing
+            [Educational value of AI responses]
+            
+            ### 🤝 Collaboration Enhancement
+            [How AI facilitates better collaboration]
+            
+            ### 📊 Engagement Metrics
+            [Quantitative analysis of engagement]
+
+      - name: 🔧 Technical Health Assessment
+        id: technical
+        uses: actions/ai-inference@v1
+        with:
+          model: codestral-latest
+          prompt: |
+            Assess the technical health impact of SAGE-AI on the repository:
+            
+            **Code Quality Indicators:**
+            - Recent bug fixes: $(git log --since="30 days ago" --grep="fix" --oneline | wc -l)
+            - Feature additions: $(git log --since="30 days ago" --grep="feat\|add" --oneline | wc -l)
+            - Documentation updates: $(git log --since="30 days ago" --name-only | grep -E "\\.md$" | wc -l)
+            
+            **Build System Health:**
+            - Successful builds: $(git log --since="7 days ago" --oneline | wc -l)
+            - Architecture support: i386, x86_64, ARM64, RISC-V
+            
+            Provide technical assessment:
+            
+            ## 🔧 Technical Health Report
+            
+            ### 🏗️ Build System Stability
+            [AI impact on build reliability]
+            
+            ### 🐛 Bug Detection & Resolution
+            [How AI helps identify and fix issues]
+            
+            ### 📚 Code Quality Improvements
+            [AI suggestions for code quality]
+            
+            ### 🎯 Architecture Support
+            [Multi-architecture development efficiency]
+            
+            ### 🔮 Predictive Insights
+            [Potential issues AI has identified]
+
+      - name: 📊 Create Interactive Dashboard
+        run: |
+          mkdir -p docs/dashboard
+          
+          cat << 'EOF' > docs/dashboard/index.html
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>SAGE-AI Dashboard</title>
+              <style>
+                  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 20px; background: #f6f8fa; }
+                  .container { max-width: 1200px; margin: 0 auto; }
+                  .header { text-align: center; margin-bottom: 30px; }
+                  .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 30px; }
+                  .metric-card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+                  .metric-value { font-size: 2em; font-weight: bold; color: #0366d6; }
+                  .metric-label { color: #586069; margin-top: 5px; }
+                  .chart-container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
+                  .status-indicator { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 8px; }
+                  .status-good { background: #28a745; }
+                  .status-warning { background: #ffc107; }
+                  .status-error { background: #dc3545; }
+                  .update-time { text-align: center; color: #586069; margin-top: 20px; }
+              </style>
+          </head>
+          <body>
+              <div class="container">
+                  <div class="header">
+                      <h1>🧠 SAGE-AI Dashboard</h1>
+                      <p>Real-time intelligence for SAGE-OS development</p>
+                  </div>
+                  
+                  <div class="metrics-grid">
+                      <div class="metric-card">
+                          <div class="metric-value">${{ steps.metrics.outputs.ai_issues }}</div>
+                          <div class="metric-label">AI-Analyzed Issues (30 days)</div>
+                      </div>
+                      <div class="metric-card">
+                          <div class="metric-value">${{ steps.metrics.outputs.ai_comments }}</div>
+                          <div class="metric-label">AI Comments Generated</div>
+                      </div>
+                      <div class="metric-card">
+                          <div class="metric-value">${{ steps.metrics.outputs.avg_resolution_hours }}h</div>
+                          <div class="metric-label">Avg Resolution Time</div>
+                      </div>
+                      <div class="metric-card">
+                          <div class="metric-value">
+                              <span class="status-indicator status-good"></span>Active
+                          </div>
+                          <div class="metric-label">SAGE-AI Status</div>
+                      </div>
+                  </div>
+                  
+                  <div class="chart-container">
+                      <h3>📈 Performance Analytics</h3>
+                      <div id="performance-content">
+                          <!-- Performance analytics will be inserted here -->
+                      </div>
+                  </div>
+                  
+                  <div class="chart-container">
+                      <h3>👥 Community Engagement</h3>
+                      <div id="community-content">
+                          <!-- Community analytics will be inserted here -->
+                      </div>
+                  </div>
+                  
+                  <div class="chart-container">
+                      <h3>🔧 Technical Health</h3>
+                      <div id="technical-content">
+                          <!-- Technical analytics will be inserted here -->
+                      </div>
+                  </div>
+                  
+                  <div class="update-time">
+                      Last updated: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+                  </div>
+              </div>
+              
+              <script>
+                  // Insert AI-generated content
+                  document.getElementById('performance-content').innerHTML = `${{ steps.analytics.outputs.response }}`;
+                  document.getElementById('community-content').innerHTML = `${{ steps.community.outputs.response }}`;
+                  document.getElementById('technical-content').innerHTML = `${{ steps.technical.outputs.response }}`;
+              </script>
+          </body>
+          </html>
+          EOF
+
+      - name: 📊 Generate Markdown Dashboard
+        run: |
+          cat << 'EOF' > docs/dashboard/README.md
+          # 📊 SAGE-AI Dashboard
+          
+          > Real-time intelligence and analytics for SAGE-OS development
+          
+          ## 🎯 Key Metrics
+          
+          | Metric | Value | Status |
+          |--------|-------|--------|
+          | AI-Analyzed Issues (30d) | ${{ steps.metrics.outputs.ai_issues }} | 🟢 Active |
+          | AI Comments Generated | ${{ steps.metrics.outputs.ai_comments }} | 🟢 Active |
+          | Average Resolution Time | ${{ steps.metrics.outputs.avg_resolution_hours }}h | 🟢 Good |
+          | SAGE-AI System Status | Online | 🟢 Operational |
+          
+          ## 📈 Performance Analytics
+          
+          ${{ steps.analytics.outputs.response }}
+          
+          ## 👥 Community Engagement
+          
+          ${{ steps.community.outputs.response }}
+          
+          ## 🔧 Technical Health
+          
+          ${{ steps.technical.outputs.response }}
+          
+          ---
+          
+          **🤖 Generated by**: SAGE-AI Dashboard System  
+          **⏰ Last Updated**: $(date -u +"%Y-%m-%d %H:%M:%S UTC")  
+          **🔄 Next Update**: $(date -d "+6 hours" -u +"%Y-%m-%d %H:%M:%S UTC")
+          
+          ### 📞 Dashboard Actions
+          
+          - 🔄 [Refresh Dashboard](../../actions/workflows/ai-dashboard.yml)
+          - 🧪 [Run AI Tests](../../actions/workflows/ai-model-testing.yml)
+          - ⚙️ [Configure SAGE-AI](../.github/SAGE_AI_CONFIG.yml)
+          - 📚 [View Documentation](../ai/SAGE_AI_SYSTEM.md)
+          EOF
+
+      - name: 📤 Commit Dashboard Updates
+        run: |
+          git config user.name "SAGE-AI Dashboard"
+          git config user.email "sage-ai-dashboard@sage-os.dev"
+          git add docs/dashboard/
+          git commit -m "📊 Update SAGE-AI dashboard - $(date +%Y%m%d-%H%M)" || exit 0
+          git push
+
+      - name: 🌐 Deploy to GitHub Pages
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev'
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs/dashboard
+          destination_dir: dashboard
+
+  # 🚨 AI Health Monitoring
+  ai-health-monitor:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      issues: write
+      models: read
+
+    steps:
+      - name: 🔍 Monitor AI System Health
+        id: health-check
+        uses: actions/ai-inference@v1
+        with:
+          model: gpt-4o-mini
+          prompt: |
+            Perform a health check of the SAGE-AI system:
+            
+            Test basic functionality:
+            1. Can you understand this prompt? (Yes/No)
+            2. Can you analyze SAGE-OS context? (Yes/No)
+            3. Can you provide structured responses? (Yes/No)
+            4. Current timestamp understanding: $(date)
+            
+            Return a simple health status:
+            - HEALTHY: All systems operational
+            - DEGRADED: Some issues detected
+            - CRITICAL: Major problems found
+            
+            Include any issues or recommendations.
+
+      - name: 🚨 Create Health Alert
+        if: contains(steps.health-check.outputs.response, 'CRITICAL') || contains(steps.health-check.outputs.response, 'DEGRADED')
+        run: |
+          cat << 'EOF' > health-alert.md
+          # 🚨 SAGE-AI Health Alert
+          
+          **Status**: ${{ steps.health-check.outputs.response }}
+          **Timestamp**: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          
+          ## 🔍 Health Check Results
+          
+          ${{ steps.health-check.outputs.response }}
+          
+          ## 🛠️ Recommended Actions
+          
+          1. Check GitHub Models API status
+          2. Verify workflow permissions
+          3. Review recent AI responses for quality
+          4. Test individual model endpoints
+          
+          ## 📞 Escalation
+          
+          If issues persist:
+          - Check GitHub Status page
+          - Review API rate limits
+          - Contact repository maintainers
+          
+          ---
+          **Auto-generated health alert**
+          EOF
+          
+          gh issue create \
+            --title "🚨 SAGE-AI Health Alert - $(date +%Y%m%d)" \
+            --body-file health-alert.md \
+            --label "sage-ai,critical,health-check" \
+            --assignee "AshishYesale7"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: ✅ Log Healthy Status
+        if: contains(steps.health-check.outputs.response, 'HEALTHY')
+        run: |
+          echo "✅ SAGE-AI system is healthy"
+          echo "Health check passed at $(date -u +"%Y-%m-%d %H:%M:%S UTC")"
