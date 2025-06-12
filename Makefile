@@ -270,6 +270,43 @@ test-graphics-legacy:
 	@echo "🖥️ Testing $(ARCH) build in QEMU graphics mode (legacy)..."
 	@./scripts/testing/test-qemu.sh $(ARCH) $(TARGET) graphics
 
+# Windows-specific targets
+windows-setup:
+	@echo "🪟 Setting up Windows development environment..."
+	@echo "💡 Run this in Windows Command Prompt as Administrator:"
+	@echo "   scripts\\windows\\sage-os-installer.bat"
+
+windows-build:
+	@echo "🪟 Building SAGE OS on Windows..."
+	@echo "💡 Run this in Windows Command Prompt:"
+	@echo "   scripts\\windows\\build-sage-os.bat $(ARCH) $(TARGET)"
+
+windows-launch:
+	@echo "🪟 Launching SAGE OS on Windows..."
+	@echo "💡 Run this in Windows Command Prompt:"
+	@echo "   scripts\\windows\\quick-launch.bat"
+
+windows-help:
+	@echo "🪟 SAGE OS Windows Commands"
+	@echo "=========================="
+	@echo ""
+	@echo "📦 Setup:"
+	@echo "  scripts\\windows\\sage-os-installer.bat   - Complete setup"
+	@echo "  scripts\\windows\\install-dependencies.bat - Dependencies only"
+	@echo "  scripts\\windows\\create-shortcuts.bat    - Desktop shortcuts"
+	@echo ""
+	@echo "🔨 Building:"
+	@echo "  scripts\\windows\\build-sage-os.bat       - Build kernel"
+	@echo "  scripts\\windows\\build-sage-os.bat i386  - Build for i386"
+	@echo ""
+	@echo "🚀 Launching:"
+	@echo "  scripts\\windows\\quick-launch.bat        - One-click launch"
+	@echo "  scripts\\windows\\launch-sage-os-graphics.bat - Graphics mode"
+	@echo "  scripts\\windows\\launch-sage-os-console.bat  - Console mode"
+	@echo ""
+	@echo "💡 All scripts should be run in Windows Command Prompt"
+	@echo "⚠️  Some scripts require Administrator privileges"
+
 # Help target
 help:
 	@echo "🚀 SAGE-OS Build System"
@@ -308,6 +345,12 @@ help:
 	@echo "  ./scripts/testing/test-graphics-mode.sh <arch> - Enhanced graphics mode"
 	@echo "  ./scripts/setup-cross-compilation.sh     - Setup cross-compilation tools"
 	@echo ""
+	@echo "🪟 Windows Scripts:"
+	@echo "  scripts\\windows\\quick-launch.bat       - One-click build and launch"
+	@echo "  scripts\\windows\\build-sage-os.bat      - Windows build script"
+	@echo "  scripts\\windows\\launch-sage-os-graphics.bat - Graphics mode launcher"
+	@echo "  scripts\\windows\\setup-windows-environment.ps1 - Windows setup"
+	@echo ""
 	@echo "📝 Examples:"
 	@echo "  make ARCH=aarch64 TARGET=rpi5     - Build for Raspberry Pi 5"
 	@echo "  make ARCH=i386 TARGET=generic     - Build for generic i386"
@@ -322,4 +365,4 @@ help:
 kernel: $(BUILD_DIR)/kernel.elf
 image: $(BUILD_DIR)/kernel.img
 
-.PHONY: all clean clean-output clean-all all-arch info version list-arch help kernel image iso test test-i386 test-aarch64 test-x86_64 test-riscv64 test-graphics test-i386-graphics test-x86_64-graphics test-graphics-legacy
+.PHONY: all clean clean-output clean-all all-arch info version list-arch help kernel image iso test test-i386 test-aarch64 test-x86_64 test-riscv64 test-graphics test-i386-graphics test-x86_64-graphics test-graphics-legacy windows-setup windows-build windows-launch windows-help
