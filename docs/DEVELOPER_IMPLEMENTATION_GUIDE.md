@@ -25,7 +25,7 @@
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/SAGE-OS/SAGE-OS.git
+git clone //github.com/AshishYesale7/SAGE-OS.git
 cd SAGE-OS
 
 # 2. Switch to development branch
@@ -522,7 +522,7 @@ docker build --target production -t sage-os:prod .
 
 ```bash
 # Setup development environment
-git clone https://github.com/SAGE-OS/SAGE-OS.git
+git clone //github.com/AshishYesale7/SAGE-OS.git
 cd SAGE-OS
 git checkout dev
 
@@ -837,9 +837,9 @@ chmod +x setup-dev-env.sh
 - [Architecture Overview](docs/architecture/)
 
 ### Community Resources
-- **GitHub Issues:** [Report bugs and request features](https://github.com/SAGE-OS/SAGE-OS/issues)
-- **Discussions:** [Community discussions](https://github.com/SAGE-OS/SAGE-OS/discussions)
-- **Wiki:** [Additional documentation](https://github.com/SAGE-OS/SAGE-OS/wiki)
+- **GitHub Issues:** [Report bugs and request features](//github.com/AshishYesale7/SAGE-OS/issues)
+- **Discussions:** [Community discussions](//github.com/AshishYesale7/SAGE-OS/discussions)
+- **Wiki:** [Additional documentation](//github.com/AshishYesale7/SAGE-OS/wiki)
 
 ### Getting Help
 

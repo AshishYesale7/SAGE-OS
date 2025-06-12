@@ -349,7 +349,7 @@ docker run -it sage-os:0.1.0-x86_64-generic
 
 ```bash
 # 1. Clone repository
-git clone https://github.com/SAGE-OS/SAGE-OS.git
+git clone //github.com/AshishYesale7/SAGE-OS.git
 cd SAGE-OS
 
 # 2. Switch to development branch
@@ -470,4 +470,4 @@ make -f Makefile.multi-arch qemu-test ARCH=x86_64 PLATFORM=generic
 **Version:** 1.0.0  
 **Maintainer:** Ashish Vasant Yesale <ashishyesale007@gmail.com>
 
-For the latest updates and detailed technical information, visit the [SAGE OS Documentation](docs/) directory or the [GitHub repository](https://github.com/SAGE-OS/SAGE-OS).
+For the latest updates and detailed technical information, visit the [SAGE OS Documentation](docs/) directory or the [GitHub repository](//github.com/AshishYesale7/SAGE-OS).

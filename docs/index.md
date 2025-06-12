@@ -78,7 +78,7 @@
   
   [![Build Status](https://github.com/AshishYesale7/SAGE-OS/workflows/CI/badge.svg)](https://github.com/AshishYesale7/SAGE-OS/actions)
   [![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](LICENSE)
-  [![Documentation](https://img.shields.io/badge/docs-latest-brightgreen.svg)](https://nmc-techclub.github.io/SAGE-OS/)
+  [![Documentation](https://img.shields.io/badge/docs-latest-brightgreen.svg)](//github.com/AshishYesale7.github.io/SAGE-OS/)
   [![Security](https://img.shields.io/badge/security-CVE%20scanned-green.svg)](security/cve-scanning.md)
 </div>
 

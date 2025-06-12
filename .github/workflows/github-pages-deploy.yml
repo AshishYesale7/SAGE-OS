@@ -133,7 +133,7 @@ jobs:
         site_name: SAGE-OS Documentation
         site_description: Self-Aware General Environment Operating System - Comprehensive Documentation
         site_author: SAGE-OS Development Team
-        site_url: https://ashishyesale7.github.io/SAGE-OS/
+        site_url: //github.com/AshishYesale7.github.io/SAGE-OS/
         
         repo_name: ashishyesale7/SAGE-OS
         repo_url: https://github.com/AshishYesale7/SAGE-OS
@@ -436,7 +436,7 @@ jobs:
         User-agent: *
         Allow: /
         
-        Sitemap: https://ashishyesale7.github.io/SAGE-OS/sitemap.xml
+        Sitemap: //github.com/AshishYesale7.github.io/SAGE-OS/sitemap.xml
         EOF
 
     - name: Upload Pages Artifact

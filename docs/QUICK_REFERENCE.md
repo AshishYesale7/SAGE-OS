@@ -5,7 +5,7 @@
 ### 1. Initial Setup
 ```bash
 # Clone and setup
-git clone https://github.com/SAGE-OS/SAGE-OS.git
+git clone //github.com/AshishYesale7/SAGE-OS.git
 cd SAGE-OS
 git checkout dev
 

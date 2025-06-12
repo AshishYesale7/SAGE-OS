@@ -11,7 +11,7 @@ Welcome to the comprehensive macOS M1 development documentation for SAGE OS. Thi
 ### **One-Command Setup**
 ```bash
 # Clone and setup everything
-git clone https://github.com/MullaMahammadasad/SAGE-OS.git
+git clone https://github.com/AshishYesale7/SAGE-OS.git
 cd SAGE-OS
 
 # Install all dependencies

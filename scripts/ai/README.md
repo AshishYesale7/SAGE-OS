@@ -140,7 +140,7 @@ python3 scripts/ai/github-models-integration.py
 
 - [GitHub Models Marketplace](https://github.com/marketplace/models/)
 - [GitHub Models Documentation](https://docs.github.com/en/github-models)
-- [SAGE-OS Documentation](https://ashishyesale7.github.io/SAGE-OS/)
+- [SAGE-OS Documentation](//github.com/AshishYesale7.github.io/SAGE-OS/)
 - [Issue Tracker](https://github.com/AshishYesale7/SAGE-OS/issues)
 
 ---

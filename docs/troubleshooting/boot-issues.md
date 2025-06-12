@@ -466,7 +466,7 @@ qemu-system-x86_64 -netdev user,id=net0,tftp=build/,bootfile=kernel.bin
 If you're still experiencing issues:
 
 1. **Check the FAQ**: [docs/FAQ.md](../FAQ.md)
-2. **Search Issues**: [GitHub Issues](https://github.com/NMC-TechClub/SAGE-OS/issues)
+2. **Search Issues**: [GitHub Issues](https://github.com/AshishYesale7/SAGE-OS/issues)
 3. **Join Community**: [Discord/Slack channels]
 4. **Submit Bug Report**: Include logs, configuration, and steps to reproduce
 

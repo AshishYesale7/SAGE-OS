@@ -22,7 +22,7 @@ echo "- GitHub Pages: ⚠️ Needs manual activation"
 echo ""
 
 echo "🔗 After enabling GitHub Pages, your documentation will be available at:"
-echo "   https://ashishyesale7.github.io/SAGE-OS/"
+echo "   //github.com/AshishYesale7.github.io/SAGE-OS/"
 echo ""
 
 echo "🤖 GitHub Models API Setup:"

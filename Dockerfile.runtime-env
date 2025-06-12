@@ -1,0 +1,171 @@
+# OpenHands Runtime Environment Replica
+# Matches: Debian GNU/Linux 12 (bookworm) x86_64
+# Kernel: Linux 5.15.0-1078-gke (simulated)
+# CPU: AMD EPYC 9B14 (4 cores)
+# Memory: 16GB (configurable)
+
+FROM debian:12-slim
+
+# Set environment to match OpenHands runtime
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=UTC
+ENV LANG=C.UTF-8
+ENV LC_ALL=C.UTF-8
+ENV PYTHONPATH=/openhands/poetry/openhands-ai-5O4_aCHf-py3.12/bin/python
+ENV SHELL=/bin/bash
+
+# Create the exact directory structure
+RUN mkdir -p /workspace /openhands/poetry/openhands-ai-5O4_aCHf-py3.12/bin /tmp /var/tmp
+
+# Install packages to match the runtime environment
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    # Core system packages
+    ca-certificates \
+    curl \
+    wget \
+    git \
+    vim \
+    nano \
+    tree \
+    htop \
+    procps \
+    psmisc \
+    lsof \
+    file \
+    # Build tools (matching the environment)
+    build-essential \
+    gcc \
+    make \
+    nasm \
+    binutils \
+    gdb \
+    strace \
+    # QEMU and virtualization
+    qemu-system-x86 \
+    qemu-system-arm \
+    qemu-system-misc \
+    qemu-utils \
+    # VNC and graphics
+    tigervnc-standalone-server \
+    tigervnc-common \
+    tigervnc-viewer \
+    xvfb \
+    x11vnc \
+    fluxbox \
+    xterm \
+    # Network tools
+    socat \
+    netcat-openbsd \
+    telnet \
+    net-tools \
+    iproute2 \
+    # Python environment (matching OpenHands)
+    python3 \
+    python3-pip \
+    python3-venv \
+    python3-dev \
+    # Additional development tools
+    nodejs \
+    npm \
+    # Container tools
+    docker.io \
+    # System info tools
+    lscpu \
+    dmidecode \
+    # Cleanup
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# Create Python symlink to match OpenHands path
+RUN ln -sf /usr/bin/python3 /openhands/poetry/openhands-ai-5O4_aCHf-py3.12/bin/python
+
+# Create user matching typical container setup
+RUN groupadd -g 1000 openhands && \
+    useradd -u 1000 -g 1000 -m -s /bin/bash openhands && \
+    mkdir -p /home/openhands/.vnc && \
+    chown -R openhands:openhands /home/openhands /workspace
+
+# Set VNC password
+RUN echo "sageos" | vncpasswd -f > /home/openhands/.vnc/passwd && \
+    chmod 600 /home/openhands/.vnc/passwd && \
+    chown openhands:openhands /home/openhands/.vnc/passwd
+
+# Create VNC startup script
+RUN echo '#!/bin/bash' > /home/openhands/.vnc/xstartup && \
+    echo 'unset SESSION_MANAGER' >> /home/openhands/.vnc/xstartup && \
+    echo 'unset DBUS_SESSION_BUS_ADDRESS' >> /home/openhands/.vnc/xstartup && \
+    echo 'exec fluxbox' >> /home/openhands/.vnc/xstartup
+
+RUN chmod +x /home/openhands/.vnc/xstartup && \
+    chown openhands:openhands /home/openhands/.vnc/xstartup
+
+# Create system info script that matches the original environment
+RUN cat > /usr/local/bin/show-runtime-info << 'SYSINFO'
+#!/bin/bash
+
+echo "=== OpenHands Runtime Environment Replica ==="
+echo
+echo "System Information:"
+echo "PRETTY_NAME=\"Debian GNU/Linux 12 (bookworm)\""
+echo "NAME=\"Debian GNU/Linux\""
+echo "VERSION_ID=\"12\""
+echo "VERSION=\"12 (bookworm)\""
+echo "VERSION_CODENAME=bookworm"
+echo "ID=debian"
+echo
+echo "Architecture Information:"
+echo "Architecture:             x86_64"
+echo "CPU op-mode(s):          32-bit, 64-bit"
+echo "Address sizes:           52 bits physical, 57 bits virtual"
+echo "Byte Order:              Little Endian"
+echo "CPU(s):                  $(nproc)"
+echo "Vendor ID:               AuthenticAMD (simulated)"
+echo "Model name:              AMD EPYC 9B14 (simulated)"
+echo "CPU family:              25"
+echo "Model:                   17"
+echo "Stepping:                1"
+echo
+echo "Kernel Information:"
+echo "Kernel: $(uname -r) (containerized)"
+echo "Original target: Linux 5.15.0-1078-gke"
+echo
+echo "Memory Information:"
+echo "$(free -h)"
+echo
+echo "Storage Information:"
+echo "$(df -h)"
+echo
+echo "Network Information:"
+echo "$(ip addr show | grep -E '^[0-9]+:' | head -5)"
+echo
+echo "Python Environment:"
+echo "Python: $(python3 --version)"
+echo "Python Path: $PYTHONPATH"
+echo
+echo "Available QEMU Systems:"
+ls /usr/bin/qemu-system-* 2>/dev/null | sed 's/.*qemu-system-//' | sort
+echo
+echo "=== Environment Ready for SAGE OS ==="
+SYSINFO
+
+RUN chmod +x /usr/local/bin/show-runtime-info
+
+# Copy SAGE OS runner script template
+COPY runtime-startup-template.sh /usr/local/bin/run-sage-os
+
+
+RUN chmod +x /usr/local/bin/run-sage-os
+
+# Switch to openhands user
+USER openhands
+WORKDIR /workspace
+
+# Expose ports
+EXPOSE 5901 5700 1234
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD pgrep -f "vncserver\|qemu-system" || exit 1
+
+# Default command
+CMD ["/usr/local/bin/run-sage-os", "i386", "128M", "vnc"]

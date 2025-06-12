@@ -75,7 +75,7 @@ yay -S \
 
 ```bash
 # Clone repository
-git clone https://github.com/SAGE-OS/SAGE-OS.git
+git clone //github.com/AshishYesale7/SAGE-OS.git
 cd SAGE-OS
 
 # Switch to development branch
@@ -220,11 +220,11 @@ pkgver=0.1.0
 pkgrel=1
 pkgdesc="SAGE OS - Self-Aware General Evolution Operating System"
 arch=('x86_64' 'i686' 'aarch64')
-url="https://github.com/SAGE-OS/SAGE-OS"
+url="//github.com/AshishYesale7/SAGE-OS"
 license=('MIT')
 depends=('qemu' 'grub' 'xorriso')
 makedepends=('gcc' 'make' 'git')
-source=("git+https://github.com/SAGE-OS/SAGE-OS.git")
+source=("git+//github.com/AshishYesale7/SAGE-OS.git")
 sha256sums=('SKIP')
 
 build() {

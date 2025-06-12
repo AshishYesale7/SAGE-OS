@@ -73,7 +73,7 @@ docs/
 
 **Live Documentation URL:**
 ```
-https://ashishyesale7.github.io/SAGE-OS/
+//github.com/AshishYesale7.github.io/SAGE-OS/
 ```
 
 ## ⚡ Performance Optimizations
@@ -230,7 +230,7 @@ Success Rate: 98%+
 
 ## 🔗 Quick Links
 
-- **Live Documentation**: https://ashishyesale7.github.io/SAGE-OS/
+- **Live Documentation**: //github.com/AshishYesale7.github.io/SAGE-OS/
 - **Security Reports**: Available in workflow artifacts
 - **AI Analysis**: Generated with each codebase change
 - **Workflow Status**: Visible in GitHub Actions tab

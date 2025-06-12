@@ -74,7 +74,7 @@
 
 # SAGE OS 🌱🧠
 
-[![Documentation](https://img.shields.io/badge/docs-auto--generated-blue?style=for-the-badge&logo=github)](https://ashishyesale7.github.io/SAGE-OS/) [![AI-Enhanced](https://img.shields.io/badge/AI-enhanced-green?style=for-the-badge&logo=openai)](https://github.com/marketplace/models/)
+[![Documentation](https://img.shields.io/badge/docs-auto--generated-blue?style=for-the-badge&logo=github)](//github.com/AshishYesale7.github.io/SAGE-OS/) [![AI-Enhanced](https://img.shields.io/badge/AI-enhanced-green?style=for-the-badge&logo=openai)](https://github.com/marketplace/models/)
 
 
 <img src="https://github.com/user-attachments/assets/e9f364ed-df0e-4f65-8557-c6c783848907" width="400" height="400" />
@@ -182,7 +182,7 @@ SAGE-OS/
 
 ```bash
 # Clone repository
-git clone https://github.com/SAGE-OS/SAGE-OS.git
+git clone //github.com/AshishYesale7/SAGE-OS.git
 cd SAGE-OS
 git checkout dev
 

@@ -1,36 +1,31 @@
-FROM ubuntu:22.04
-
-# Set environment variables to avoid interactive prompts
-ENV DEBIAN_FRONTEND=noninteractive
-ENV TZ=UTC
+FROM alpine:latest
 
 # Install dependencies for QEMU with graphics support
-RUN apt-get update --fix-missing && \
-    apt-get install -y --no-install-recommends \
-    qemu-system-x86 \
+RUN apk update && apk add --no-cache \
+    qemu-system-i386 \
     qemu-system-arm \
-    qemu-system-misc \
-    qemu-utils \
-    tigervnc-standalone-server \
-    tigervnc-common \
+    qemu-system-aarch64 \
+    qemu-system-x86_64 \
+    qemu-system-riscv64 \
+    qemu-img \
+    tigervnc \
     xvfb \
-    x11vnc \
     fluxbox \
     xterm \
     curl \
     wget \
     socat \
     netcat-openbsd \
-    build-essential \
+    build-base \
     gcc \
     make \
     nasm \
-    ca-certificates \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+    bash \
+    shadow \
+    ca-certificates
 
 # Create sage user
-RUN useradd -m -s /bin/bash sage && \
+RUN adduser -D -s /bin/bash sage && \
     mkdir -p /home/sage/.vnc /home/sage/sage-os
 
 # Set VNC password (default: sageos)
@@ -43,6 +38,7 @@ RUN mkdir -p /home/sage/.vnc && \
 COPY . /home/sage/sage-os/
 RUN chown -R sage:sage /home/sage/sage-os
 
+# Create startup script (same as Ubuntu version but with escaped variables)
 # Copy startup script template
 COPY start-sage-os-template.sh /home/sage/start-sage-os.sh
 

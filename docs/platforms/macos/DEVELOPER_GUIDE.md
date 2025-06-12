@@ -7,7 +7,7 @@
 ### **One-Command Setup**
 ```bash
 # Clone and setup everything
-git clone https://github.com/MullaMahammadasad/SAGE-OS.git
+git clone https://github.com/AshishYesale7/SAGE-OS.git
 cd SAGE-OS
 
 # Install all dependencies
@@ -63,7 +63,7 @@ make --version
 ### **Method 1: Automated Setup (Recommended)**
 ```bash
 # Clone SAGE OS
-git clone https://github.com/MullaMahammadasad/SAGE-OS.git
+git clone https://github.com/AshishYesale7/SAGE-OS.git
 cd SAGE-OS
 
 # One command installs everything
@@ -308,7 +308,7 @@ spi_status_t spi_read(uint8_t cs_pin, uint8_t* data, uint32_t len);
 ### **1. Initial Setup**
 ```bash
 # Clone and setup
-git clone https://github.com/MullaMahammadasad/SAGE-OS.git
+git clone https://github.com/AshishYesale7/SAGE-OS.git
 cd SAGE-OS
 ./setup-macos.sh
 ```

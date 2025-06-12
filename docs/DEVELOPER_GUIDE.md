@@ -27,7 +27,7 @@
 
 ### 1. Clone Repository
 ```bash
-git clone https://github.com/SAGE-OS/SAGE-OS.git
+git clone //github.com/AshishYesale7/SAGE-OS.git
 cd SAGE-OS
 git checkout dev
 ```
@@ -638,9 +638,9 @@ sudo mount -t tmpfs -o size=2G tmpfs /tmp/sage-build
 - [Cross-compilation Guide](https://wiki.osdev.org/Cross-Compiler)
 
 ### Support
-- GitHub Issues: https://github.com/SAGE-OS/SAGE-OS/issues
-- Discussions: https://github.com/SAGE-OS/SAGE-OS/discussions
-- Wiki: https://github.com/SAGE-OS/SAGE-OS/wiki
+- GitHub Issues: //github.com/AshishYesale7/SAGE-OS/issues
+- Discussions: //github.com/AshishYesale7/SAGE-OS/discussions
+- Wiki: //github.com/AshishYesale7/SAGE-OS/wiki
 
 ---
 **Last Updated**: 2025-05-28
