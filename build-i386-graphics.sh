@@ -88,9 +88,14 @@ build_graphics_kernel() {
     print_info "Compiler: $CC"
     print_info "CFLAGS: $CFLAGS"
     
-    # Compile boot loader
-    print_info "Compiling boot loader..."
-    $CC $CFLAGS -c boot/boot_i386.S -o "$BUILD_DIR/boot/boot_i386.o"
+    # Compile improved boot loader
+    print_info "Compiling improved boot loader..."
+    local boot_source="boot/boot_i386_improved.S"
+    if [[ ! -f "$boot_source" ]]; then
+        print_info "Using standard boot loader as fallback..."
+        boot_source="boot/boot_i386.S"
+    fi
+    $CC $CFLAGS -c "$boot_source" -o "$BUILD_DIR/boot/boot_i386.o"
     
     # Compile graphics kernel (self-contained, no external dependencies)
     print_info "Compiling graphics kernel..."
@@ -99,7 +104,12 @@ build_graphics_kernel() {
     # Link everything
     print_info "Linking kernel..."
     local LD="ld"
-    local LDFLAGS="-T linker_x86.ld -m elf_i386"
+    local linker_script="linker_i386_graphics.ld"
+    if [[ ! -f "$linker_script" ]]; then
+        print_info "Using standard x86 linker as fallback..."
+        linker_script="linker_x86.ld"
+    fi
+    local LDFLAGS="-T $linker_script -m elf_i386"
     
     # Collect object files (just boot and kernel)
     local objects=()
