@@ -72,7 +72,7 @@ jobs:
         curl -H "Accept: application/vnd.github+json" \
              -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
              -H "X-GitHub-Api-Version: 2022-11-28" \
-             https://models.github.ai/catalog/models | \
+             https://models.inference.ai.azure.com/catalog/models | \
              jq -r '.[] | "- \(.id) (\(.publisher)): \(.name)"' | head -20
         
     - name: 🤖 Generate AI Documentation with GitHub Models
@@ -95,13 +95,14 @@ jobs:
         # GitHub Models API configuration
         GITHUB_TOKEN = os.environ.get('GITHUB_TOKEN')
         MODEL_ID = os.environ.get('MODEL_ID', 'openai/gpt-4o-mini')
-        API_BASE = 'https://models.github.ai'
+        API_BASE = 'https://models.inference.ai.azure.com'
         
         def call_github_models_api(prompt, max_tokens=2000):
             """Call GitHub Models API for text generation"""
             headers = {
                 'Authorization': f'Bearer {GITHUB_TOKEN}',
                 'Content-Type': 'application/json',
+                'api-version': '2024-08-01-preview',
                 'Accept': 'application/json'
             }
             

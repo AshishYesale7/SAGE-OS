@@ -28,6 +28,7 @@ on:
     - cron: '0 2 * * *'
 
 permissions:
+  models: read
   contents: write
   pages: write
   id-token: write

@@ -474,6 +474,7 @@ jobs:
                 headers = {
                     'Authorization': f'Bearer {github_token}',
                     'Content-Type': 'application/json',
+                'api-version': '2024-08-01-preview',
                     'User-Agent': 'SAGE-OS/1.0'
                 }
                 

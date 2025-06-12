@@ -190,7 +190,8 @@ jobs:
                 self.base_url = "https://models.inference.ai.azure.com"
                 self.headers = {
                     'Authorization': f'Bearer {api_key}',
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                'api-version': '2024-08-01-preview'
                 }
                 self.rate_limit_delay = 2  # seconds between requests
                 

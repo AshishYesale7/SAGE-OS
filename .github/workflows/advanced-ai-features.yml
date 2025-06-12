@@ -104,13 +104,14 @@ jobs:
         FEATURE_TYPE = os.environ.get('FEATURE_TYPE')
         PRIMARY_MODEL = os.environ.get('PRIMARY_MODEL')
         COMPARISON_MODEL = os.environ.get('COMPARISON_MODEL')
-        API_BASE = 'https://models.github.ai'
+        API_BASE = 'https://models.inference.ai.azure.com'
         
         def call_ai_model(prompt, model_id, max_tokens=3000):
             """Call GitHub Models API"""
             headers = {
                 'Authorization': f'Bearer {GITHUB_TOKEN}',
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'api-version': '2024-08-01-preview'
             }
             
             data = {
