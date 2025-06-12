@@ -89,7 +89,8 @@ jobs:
             """Call GitHub Models API for code review"""
             headers = {
                 'Authorization': f'Bearer {GITHUB_TOKEN}',
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'api-version': '2024-08-01-preview'
             }
             
             data = {
@@ -109,7 +110,7 @@ jobs:
             }
             
             try:
-                response = requests.post('https://models.github.ai/chat/completions', 
+                response = requests.post('https://models.inference.ai.azure.com/chat/completions', 
                                        headers=headers, 
                                        json=data, 
                                        timeout=60)

@@ -246,7 +246,7 @@ jobs:
         echo "🤖 Testing API integration configuration..."
         
         # Test API endpoint reachability
-        API_ENDPOINT="https://models.github.ai"
+        API_ENDPOINT="https://models.inference.ai.azure.com"
         
         if curl -s --head "$API_ENDPOINT" | head -n 1 | grep -q "200\|404\|403"; then
           echo "✅ API endpoint is reachable"
