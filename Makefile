@@ -378,3 +378,20 @@ kernel: $(BUILD_DIR)/kernel.elf
 image: $(BUILD_DIR)/kernel.img
 
 .PHONY: all clean clean-output clean-all all-arch info version list-arch help kernel image iso test test-i386 test-aarch64 test-x86_64 test-riscv64 test-graphics test-i386-graphics test-x86_64-graphics test-graphics-legacy windows-setup windows-build windows-launch windows-help
+# i386 Graphics Mode Target
+.PHONY: graphics-i386
+graphics-i386:
+	@echo "Building i386 graphics kernel..."
+	./build-i386-graphics.sh
+	@echo "i386 graphics kernel ready!"
+	@echo "Run with: ./run-i386-graphics.sh cocoa"
+
+.PHONY: test-i386
+test-i386: graphics-i386
+	@echo "Testing i386 graphics build..."
+	./test-i386-build.sh
+
+.PHONY: run-i386
+run-i386: graphics-i386
+	@echo "Running i386 graphics mode..."
+	./run-i386-graphics.sh cocoa
