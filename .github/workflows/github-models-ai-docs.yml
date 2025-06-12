@@ -1,16 +1,16 @@
 name: 🤖 GitHub Models AI Documentation Generator
 
 on:
-  push:
-    branches: [dev, main]
-    paths:
-      - 'kernel/**'
-      - 'drivers/**'
-      - 'boot/**'
-      - 'docs/**'
-      - '*.md'
-      - '*.c'
-      - '*.h'
+  # push:
+  #   branches: [dev, main]  # Temporarily disabled due to protected branch rules
+  #   paths:
+  #     - 'kernel/**'
+  #     - 'drivers/**'
+  #     - 'boot/**'
+  #     - 'docs/**'
+  #     - '*.md'
+  #     - '*.c'
+  #     - '*.h'
   workflow_dispatch:
     inputs:
       model_id:

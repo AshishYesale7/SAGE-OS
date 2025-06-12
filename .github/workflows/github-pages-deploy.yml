@@ -4,13 +4,13 @@
 name: 🚀 Enhanced GitHub Pages Deploy
 
 on:
-  push:
-    branches: [ main, dev ]  # Deploy from main and dev branches
-    paths:
-      - 'docs/**'
-      - 'mkdocs.yml'
-      - '.github/workflows/github-pages-deploy.yml'
-      - 'README*.md'
+  # push:
+  #   branches: [ main, dev ]  # Deploy from main and dev branches - Temporarily disabled due to protected branch rules
+  #   paths:
+  #     - 'docs/**'
+  #     - 'mkdocs.yml'
+  #     - '.github/workflows/github-pages-deploy.yml'
+  #     - 'README*.md'
   workflow_dispatch:
     inputs:
       force_deploy:

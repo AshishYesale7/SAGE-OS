@@ -17,12 +17,12 @@ on:
         required: false
         default: true
         type: boolean
-  push:
-    branches: [main, dev]
-    paths:
-      - '.github/workflows/integration-test-ai-workflow.yml'
-      - '.github/workflows/ai-file-management.yml'
-      - 'docs/sage-os-ai-assistant.html'
+  # push:
+  #   branches: [main, dev]  # Temporarily disabled due to protected branch rules
+  #   paths:
+  #     - '.github/workflows/integration-test-ai-workflow.yml'
+  #     - '.github/workflows/ai-file-management.yml'
+  #     - 'docs/sage-os-ai-assistant.html'
 
 permissions:
   contents: read
@@ -219,8 +219,9 @@ jobs:
         score, violations = test_path_security()
         
         # Set outputs
-        print(f"score={score}" >> os.environ.get('GITHUB_OUTPUT', '/dev/null'))
-        print(f"violations={violations}" >> os.environ.get('GITHUB_OUTPUT', '/dev/null'))
+        with open(os.environ.get('GITHUB_OUTPUT', '/dev/null'), 'a') as f:
+            f.write(f"score={score}\n")
+            f.write(f"violations={violations}\n")
         EOF
 
   test-api-integration:
@@ -245,7 +246,7 @@ jobs:
         echo "🤖 Testing API integration configuration..."
         
         # Test API endpoint reachability
-        API_ENDPOINT="https://models.inference.ai.azure.com"
+        API_ENDPOINT="https://models.github.ai"
         
         if curl -s --head "$API_ENDPOINT" | head -n 1 | grep -q "200\|404\|403"; then
           echo "✅ API endpoint is reachable"
