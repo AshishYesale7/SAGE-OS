@@ -1,36 +1,58 @@
-# GitHub Pages Deployment for SAGE-OS Documentation
-# Deploys documentation to GitHub Pages with custom domain support
+# Enhanced GitHub Pages Deployment for SAGE-OS Documentation
+# Secure, robust deployment with comprehensive error handling and optimization
 
-name: Deploy to GitHub Pages
+name: 🚀 Enhanced GitHub Pages Deploy
 
 on:
   push:
-    branches: [ main, dev ]  # Deploy from both main and dev branches
+    branches: [ main ]  # Deploy only from main branch for security
     paths:
       - 'docs/**'
       - 'mkdocs.yml'
       - '.github/workflows/github-pages-deploy.yml'
+      - 'README*.md'
   workflow_dispatch:
     inputs:
       force_deploy:
         description: 'Force deployment even if no changes'
         required: false
-        default: 'false'
+        default: false
         type: boolean
+      environment:
+        description: 'Deployment environment'
+        required: false
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - staging
+  workflow_call:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: false
+        default: 'production'
+        type: string
 
-# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+# Enhanced permissions with security considerations
 permissions:
   contents: read
   pages: write
   id-token: write
+  actions: read
+  security-events: write
 
-# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
+# Improved concurrency control
 concurrency:
-  group: "pages"
-  cancel-in-progress: false
+  group: "pages-deploy-${{ github.ref }}"
+  cancel-in-progress: true
 
 env:
   PYTHON_VERSION: '3.11'
+  NODE_VERSION: '18'
+  CACHE_VERSION: 'v3'
+  MAX_RETRIES: 3
+  DEPLOYMENT_TIMEOUT: 600
 
 jobs:
   # Build documentation

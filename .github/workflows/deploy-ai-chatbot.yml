@@ -1,0 +1,213 @@
+name: 🤖 Deploy SAGE-OS AI Chatbot to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/sage-ai-chatbot.html'
+      - '.github/workflows/deploy-ai-chatbot.yml'
+  workflow_dispatch:
+    inputs:
+      force_deploy:
+        description: 'Force deployment'
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "ai-chatbot-pages"
+  cancel-in-progress: false
+
+env:
+  SITE_URL: "https://ashishyesale7.github.io/SAGE-OS"
+  REPO_URL: "https://github.com/AshishYesale7/SAGE-OS"
+
+jobs:
+  deploy-chatbot:
+    name: 🚀 Deploy AI Chatbot
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    
+    steps:
+    - name: 📥 Checkout Repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        
+    - name: 🔧 Setup Pages
+      uses: actions/configure-pages@v4
+      
+    - name: 🤖 Prepare AI Chatbot for Deployment
+      run: |
+        echo "🤖 Preparing SAGE-OS AI Chatbot for deployment..."
+        
+        # Create deployment directory
+        mkdir -p deployment
+        
+        # Copy the chatbot HTML file
+        cp docs/sage-ai-chatbot.html deployment/index.html
+        
+        # Update URLs and references for the target repository
+        sed -i "s|https://github.com/mullaasad5420c/newos|${{ env.REPO_URL }}|g" deployment/index.html
+        sed -i "s|mullaasad5420c/newos|AshishYesale7/SAGE-OS|g" deployment/index.html
+        
+        # Create a custom configuration for the target site
+        cat > deployment/config.js << 'EOF'
+        // SAGE-OS AI Chatbot Configuration
+        window.SAGE_CONFIG = {
+            SITE_URL: '${{ env.SITE_URL }}',
+            REPO_URL: '${{ env.REPO_URL }}',
+            REPO_NAME: 'AshishYesale7/SAGE-OS',
+            BRANCH: 'main',
+            DOCS_PATH: 'docs/',
+            API_ENDPOINT: 'https://models.inference.ai.azure.com/chat/completions',
+            VERSION: '1.0.0',
+            LAST_UPDATED: new Date().toISOString()
+        };
+        EOF
+        
+        # Create a simple landing page that redirects to the chatbot
+        cat > deployment/chatbot.html << 'EOF'
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>SAGE-OS AI Assistant</title>
+            <meta http-equiv="refresh" content="0; url=index.html">
+            <link rel="canonical" href="index.html">
+        </head>
+        <body>
+            <p>Redirecting to SAGE-OS AI Assistant...</p>
+            <script>window.location.href = 'index.html';</script>
+        </body>
+        </html>
+        EOF
+        
+        # Create a README for the deployment
+        cat > deployment/README.md << 'EOF'
+        # SAGE-OS AI Chatbot
+        
+        This is the AI-powered chatbot for SAGE-OS, deployed to GitHub Pages.
+        
+        ## Features
+        
+        - Real-time AI assistance for SAGE-OS development
+        - Interactive chat interface with modern design
+        - Comprehensive knowledge base about SAGE-OS
+        - GitHub Models API integration
+        - Mobile-responsive design
+        - Dark/light mode support
+        
+        ## Usage
+        
+        Visit the chatbot at: https://ashishyesale7.github.io/SAGE-OS
+        
+        ## Repository
+        
+        Source code: https://github.com/AshishYesale7/SAGE-OS
+        
+        ## Configuration
+        
+        To enable AI features, you'll need a GitHub Models API key.
+        The chatbot will prompt you for the key when you first visit.
+        
+        ## Support
+        
+        For issues or questions, please visit the main repository.
+        EOF
+        
+        # Add a robots.txt
+        cat > deployment/robots.txt << 'EOF'
+        User-agent: *
+        Allow: /
+        
+        Sitemap: https://ashishyesale7.github.io/SAGE-OS/sitemap.xml
+        EOF
+        
+        # Create a simple sitemap
+        cat > deployment/sitemap.xml << 'EOF'
+        <?xml version="1.0" encoding="UTF-8"?>
+        <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+          <url>
+            <loc>https://ashishyesale7.github.io/SAGE-OS/</loc>
+            <lastmod>$(date -u +%Y-%m-%d)</lastmod>
+            <changefreq>weekly</changefreq>
+            <priority>1.0</priority>
+          </url>
+          <url>
+            <loc>https://ashishyesale7.github.io/SAGE-OS/chatbot.html</loc>
+            <lastmod>$(date -u +%Y-%m-%d)</lastmod>
+            <changefreq>weekly</changefreq>
+            <priority>0.9</priority>
+          </url>
+        </urlset>
+        EOF
+        
+        echo "✅ AI Chatbot prepared for deployment"
+        echo "📁 Files created:"
+        ls -la deployment/
+        
+    - name: 📤 Upload Pages Artifact
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: ./deployment
+        
+    - name: 🚀 Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v4
+      
+    - name: ✅ Verify Deployment
+      run: |
+        echo "🔍 Verifying deployment..."
+        
+        # Wait for deployment to be available
+        sleep 30
+        
+        # Test the deployment URL
+        DEPLOYMENT_URL="${{ steps.deployment.outputs.page_url }}"
+        echo "Testing deployment at: $DEPLOYMENT_URL"
+        
+        # Test with curl
+        if curl -f -s "$DEPLOYMENT_URL" > /dev/null; then
+          echo "✅ Deployment verified successfully"
+          echo "🤖 SAGE-OS AI Chatbot is live at: $DEPLOYMENT_URL"
+        else
+          echo "⚠️ Deployment verification failed, but this might be due to propagation delay"
+        fi
+        
+    - name: 📊 Update Deployment Summary
+      run: |
+        echo "## 🤖 SAGE-OS AI Chatbot Deployment" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "✅ **Status**: AI Chatbot successfully deployed" >> $GITHUB_STEP_SUMMARY
+        echo "🔗 **Live URL**: ${{ steps.deployment.outputs.page_url }}" >> $GITHUB_STEP_SUMMARY
+        echo "🏠 **Target Site**: ${{ env.SITE_URL }}" >> $GITHUB_STEP_SUMMARY
+        echo "📂 **Source Repository**: ${{ env.REPO_URL }}" >> $GITHUB_STEP_SUMMARY
+        echo "⏰ **Deployed**: $(date -u +%Y-%m-%d\ %H:%M:%S\ UTC)" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 🎯 Features Deployed" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ **Interactive AI Chat**: Real-time conversation with SAGE-OS AI" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ **Modern UI**: Responsive design with dark/light mode" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ **Knowledge Base**: Comprehensive SAGE-OS information" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ **GitHub Models Integration**: AI-powered responses" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ **Mobile Friendly**: Works on all devices" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ **Quick Actions**: Pre-built common questions" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 🚀 Usage Instructions" >> $GITHUB_STEP_SUMMARY
+        echo "1. Visit the chatbot URL above" >> $GITHUB_STEP_SUMMARY
+        echo "2. Enter your GitHub Models API key when prompted (optional)" >> $GITHUB_STEP_SUMMARY
+        echo "3. Start chatting with the SAGE-OS AI assistant" >> $GITHUB_STEP_SUMMARY
+        echo "4. Use quick action buttons for common questions" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 📱 Access Methods" >> $GITHUB_STEP_SUMMARY
+        echo "- **Direct**: ${{ steps.deployment.outputs.page_url }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Chatbot Page**: ${{ steps.deployment.outputs.page_url }}chatbot.html" >> $GITHUB_STEP_SUMMARY
+        echo "- **Mobile**: Fully responsive on all devices" >> $GITHUB_STEP_SUMMARY

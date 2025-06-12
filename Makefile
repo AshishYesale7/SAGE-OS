@@ -27,7 +27,12 @@ ARCH_OUTPUT_DIR := $(OUTPUT_DIR)/$(ARCH)
 ifeq ($(ARCH),x86_64)
     CROSS_COMPILE=x86_64-linux-gnu-
 else ifeq ($(ARCH),i386)
-    CROSS_COMPILE=
+    # Use proper cross-compiler for i386 on non-x86 hosts
+    ifeq ($(shell uname -m),x86_64)
+        CROSS_COMPILE=
+    else
+        CROSS_COMPILE=i686-linux-gnu-
+    endif
     CFLAGS += -m32
     LDFLAGS += -m elf_i386
 else ifeq ($(ARCH),arm64)
@@ -85,6 +90,9 @@ DRIVER_SOURCES = $(wildcard drivers/*.c) $(wildcard drivers/*/*.c)
 ifeq ($(ARCH),x86_64)
     BOOT_SOURCES = boot/boot_no_multiboot.S
     BOOT_OBJECTS = $(BUILD_DIR)/boot/boot_no_multiboot.o
+else ifeq ($(ARCH),i386)
+    BOOT_SOURCES = boot/boot_i386.S
+    BOOT_OBJECTS = $(BUILD_DIR)/boot/boot_i386.o
 else
     BOOT_SOURCES = boot/boot.S
     BOOT_OBJECTS = $(BUILD_DIR)/boot/boot.o
@@ -249,13 +257,55 @@ test-riscv64:
 # Graphics mode testing (x86 only)
 test-graphics:
 	@echo "🖥️ Testing $(ARCH) build in QEMU graphics mode..."
-	@./scripts/testing/test-qemu.sh $(ARCH) $(TARGET) graphics
+	@./scripts/testing/test-graphics-mode.sh $(ARCH) $(TARGET)
 
 test-i386-graphics:
-	@./scripts/testing/test-qemu.sh i386 generic graphics
+	@./scripts/testing/test-graphics-mode.sh i386 generic
 
 test-x86_64-graphics:
-	@./scripts/testing/test-qemu.sh x86_64 generic graphics
+	@./scripts/testing/test-graphics-mode.sh x86_64 generic
+
+# Legacy graphics testing (using old script)
+test-graphics-legacy:
+	@echo "🖥️ Testing $(ARCH) build in QEMU graphics mode (legacy)..."
+	@./scripts/testing/test-qemu.sh $(ARCH) $(TARGET) graphics
+
+# Windows-specific targets
+windows-setup:
+	@echo "🪟 Setting up Windows development environment..."
+	@echo "💡 Run this in Windows Command Prompt as Administrator:"
+	@echo "   scripts\\windows\\sage-os-installer.bat"
+
+windows-build:
+	@echo "🪟 Building SAGE OS on Windows..."
+	@echo "💡 Run this in Windows Command Prompt:"
+	@echo "   scripts\\windows\\build-sage-os.bat $(ARCH) $(TARGET)"
+
+windows-launch:
+	@echo "🪟 Launching SAGE OS on Windows..."
+	@echo "💡 Run this in Windows Command Prompt:"
+	@echo "   scripts\\windows\\quick-launch.bat"
+
+windows-help:
+	@echo "🪟 SAGE OS Windows Commands"
+	@echo "=========================="
+	@echo ""
+	@echo "📦 Setup:"
+	@echo "  scripts\\windows\\sage-os-installer.bat   - Complete setup"
+	@echo "  scripts\\windows\\install-dependencies.bat - Dependencies only"
+	@echo "  scripts\\windows\\create-shortcuts.bat    - Desktop shortcuts"
+	@echo ""
+	@echo "🔨 Building:"
+	@echo "  scripts\\windows\\build-sage-os.bat       - Build kernel"
+	@echo "  scripts\\windows\\build-sage-os.bat i386  - Build for i386"
+	@echo ""
+	@echo "🚀 Launching:"
+	@echo "  scripts\\windows\\quick-launch.bat        - One-click launch"
+	@echo "  scripts\\windows\\launch-sage-os-graphics.bat - Graphics mode"
+	@echo "  scripts\\windows\\launch-sage-os-console.bat  - Console mode"
+	@echo ""
+	@echo "💡 All scripts should be run in Windows Command Prompt"
+	@echo "⚠️  Some scripts require Administrator privileges"
 
 # Help target
 help:
@@ -292,6 +342,14 @@ help:
 	@echo "🔧 Direct Script Usage:"
 	@echo "  ./scripts/testing/test-qemu.sh <arch>     - Serial console mode"
 	@echo "  ./scripts/testing/test-qemu.sh <arch> <target> graphics - Graphics mode"
+	@echo "  ./scripts/testing/test-graphics-mode.sh <arch> - Enhanced graphics mode"
+	@echo "  ./scripts/setup-cross-compilation.sh     - Setup cross-compilation tools"
+	@echo ""
+	@echo "🪟 Windows Scripts:"
+	@echo "  scripts\\windows\\quick-launch.bat       - One-click build and launch"
+	@echo "  scripts\\windows\\build-sage-os.bat      - Windows build script"
+	@echo "  scripts\\windows\\launch-sage-os-graphics.bat - Graphics mode launcher"
+	@echo "  scripts\\windows\\setup-windows-environment.ps1 - Windows setup"
 	@echo ""
 	@echo "📝 Examples:"
 	@echo "  make ARCH=aarch64 TARGET=rpi5     - Build for Raspberry Pi 5"
@@ -307,4 +365,4 @@ help:
 kernel: $(BUILD_DIR)/kernel.elf
 image: $(BUILD_DIR)/kernel.img
 
-.PHONY: all clean clean-output clean-all all-arch info version list-arch help kernel image iso test test-i386 test-aarch64 test-x86_64 test-riscv64 test-graphics test-i386-graphics test-x86_64-graphics
+.PHONY: all clean clean-output clean-all all-arch info version list-arch help kernel image iso test test-i386 test-aarch64 test-x86_64 test-riscv64 test-graphics test-i386-graphics test-x86_64-graphics test-graphics-legacy windows-setup windows-build windows-launch windows-help
