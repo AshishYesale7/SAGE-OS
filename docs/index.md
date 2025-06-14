@@ -1,7 +1,32 @@
 <!--
 SAGE-OS Documentation Index
-Copyright (c) 2025 Ashish Vasant Yesale
-Licensed under BSD-3-Clause OR Commercial License
+Copyright (c) 2025 Ashish Vasant Yesale (ashishyesale007@gmail.com)
+SPDX-License-Identifier: BSD-3-Clause OR Proprietary
+
+SAGE-OS is dual-licensed under the BSD 3-Clause License and a Commercial License.
+
+Licensed under the BSD 3-Clause License or a Commercial License.
+You may use this file under the terms of either license as specified in:
+  - BSD 3-Clause License (see ./LICENSE)
+  - Commercial License (see ./COMMERCIAL_TERMS.md)
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted under the BSD license provided that the
+following conditions are met:
+
+  * Redistributions of source code must retain the above copyright
+    notice, this list of conditions and the following disclaimer.
+  * Redistributions in binary form must reproduce the above copyright
+    notice, this list of conditions and the following disclaimer in the
+    documentation and/or other materials provided with the distribution.
+  * Neither the name of the project nor the names of its contributors
+    may be used to endorse or promote products derived from this
+    software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
+IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+PARTICULAR PURPOSE ARE DISCLAIMED.
 -->
 
 
