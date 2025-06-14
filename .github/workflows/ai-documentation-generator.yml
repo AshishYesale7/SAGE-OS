@@ -84,6 +84,9 @@ jobs:
       run: |
         echo "🔍 Starting comprehensive code analysis..."
         
+        # Set up error handling
+        set -e
+        
         python3 << 'EOF'
         import os
         import json
@@ -109,12 +112,18 @@ jobs:
                     'complexity': 0
                 }
                 
-                # Extract functions
-                func_pattern = r'^\s*(\w+\s+\**\w+\s*\([^)]*\))\s*\{'
-                for match in re.finditer(func_pattern, content, re.MULTILINE):
-                    func_def = match.group(1).strip()
-                    if not any(keyword in func_def.lower() for keyword in ['if', 'while', 'for', 'switch']):
-                        analysis['functions'].append(func_def)
+                # Extract functions with improved regex
+                # Handles optional qualifiers, pointer return types, and multiline signatures
+                func_pattern = r'^[ \t]*(?:static|inline|extern)?[ \t]*(?:[\w\*\s]+)[ \t]+\**[ \t]*\w+[ \t]*\([^)]*\)[ \t\n]*\{'
+                for match in re.finditer(func_pattern, content, re.MULTILINE | re.DOTALL):
+                    # Extract the function signature up to the opening brace
+                    func_signature = match.group(0)
+                    # Remove the opening brace and trailing whitespace/newlines
+                    func_signature = func_signature[:func_signature.rfind('{')].strip()
+                    # Filter out control structures and ensure it's a valid function
+                    if (not any(keyword in func_signature.lower() for keyword in ['if', 'while', 'for', 'switch', 'else']) 
+                        and '(' in func_signature and ')' in func_signature):
+                        analysis['functions'].append(func_signature)
                 
                 # Extract structures
                 struct_pattern = r'typedef\s+struct\s*\{[^}]*\}\s*(\w+);'
@@ -302,6 +311,9 @@ jobs:
         
         def generate_api_reference():
             """Generate API reference documentation"""
+            # Allow function limit to be set via environment variable, default to 15 if not set
+            FUNCTION_LIMIT = int(os.environ.get("API_FUNCTION_LIMIT", "15"))
+            
             api_content = """# API Reference
         
         Comprehensive API documentation for SAGE-OS kernel and system functions.
@@ -314,15 +326,35 @@ jobs:
         
         """.format(timestamp=datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC'))
             
+            total_functions = 0
             for filename, functions in analysis['api_documentation'].items():
                 if functions:
                     api_content += f"\n## {filename}\n\n"
-                    for func in functions[:10]:  # Limit to first 10 functions
+                    displayed_functions = functions[:FUNCTION_LIMIT]
+                    
+                    for func in displayed_functions:
                         api_content += f"### `{func}`\n\n"
                         api_content += "**Description:** System function for core operations.\n\n"
                         api_content += "**Parameters:** See source code for detailed parameter information.\n\n"
                         api_content += "**Returns:** Function-specific return value.\n\n"
                         api_content += "**Example:**\n```c\n// Example usage\n" + func + ";\n```\n\n"
+                    
+                    # If there are more functions than the limit, add a note about pagination
+                    if len(functions) > FUNCTION_LIMIT:
+                        remaining = len(functions) - FUNCTION_LIMIT
+                        api_content += f"\n!!! info \"More Functions Available\"\n"
+                        api_content += f"    This file contains {remaining} additional functions. "
+                        api_content += f"Set the `API_FUNCTION_LIMIT` environment variable to increase this limit "
+                        api_content += f"or view the source code for complete function listings.\n\n"
+                    
+                    total_functions += len(functions)
+            
+            # Add summary statistics
+            api_content += f"\n## API Statistics\n\n"
+            api_content += f"- **Total API Functions**: {total_functions}\n"
+            api_content += f"- **Files Documented**: {len([f for f, funcs in analysis['api_documentation'].items() if funcs])}\n"
+            api_content += f"- **Functions Displayed**: {min(FUNCTION_LIMIT, total_functions)} per file\n"
+            api_content += f"- **Documentation Coverage**: Comprehensive\n\n"
             
             return api_content
         

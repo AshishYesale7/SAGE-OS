@@ -84,46 +84,33 @@ jobs:
     - name: Setup Pages
       uses: actions/configure-pages@v4
 
-    - name: Create Documentation Structure
+    - name: Verify Documentation Structure
       run: |
-        # Ensure all required directories exist
-        mkdir -p docs/{getting-started,architecture,development,platforms,api,security,tutorials}
-        mkdir -p docs/platforms/{linux,macos,windows,raspberry-pi}
+        # Check if documentation exists
+        if [ -f "docs/index.md" ]; then
+          echo "✅ Documentation structure exists"
+          ls -la docs/
+        else
+          echo "❌ Documentation missing, creating minimal structure"
+          mkdir -p docs
+          echo "# SAGE-OS Documentation" > docs/index.md
+          echo "Documentation is being generated..." >> docs/index.md
+        fi
         
-        # Create index page if it doesn't exist
-        if [ ! -f docs/index.md ]; then
-          cat > docs/index.md << 'EOF'
-        # SAGE-OS Documentation
+        # Ensure mkdocs.yml exists
+        if [ ! -f "mkdocs.yml" ]; then
+          echo "❌ mkdocs.yml missing, creating minimal config"
+          cat > mkdocs.yml << 'EOF'
+        site_name: SAGE-OS Documentation
+        site_url: https://ashishyesale7.github.io/SAGE-OS/
+        repo_name: AshishYesale7/SAGE-OS
+        repo_url: https://github.com/AshishYesale7/SAGE-OS
         
-        Welcome to **SAGE-OS** (Self-Aware General Environment Operating System) - a revolutionary embedded operating system designed for modern hardware platforms.
-        
-        ## 🚀 Features
-        
-        - **🧠 AI Integration**: Built-in AI subsystem with up to 26 TOPS processing
-        - **🔧 Multi-Architecture**: Support for i386, x86_64, ARM64, RISC-V
-        - **🖥️ Dual-Mode**: Serial console and VGA graphics modes
-        - **🛡️ Security-First**: Advanced cryptographic features
-        - **🍓 Raspberry Pi 5**: Optimized for latest hardware
-        
-        ## 📚 Quick Navigation
-        
-        - [Getting Started](getting-started/overview.md) - Begin your SAGE-OS journey
-        - [Architecture](architecture/overview.md) - System design and components
-        - [Development](development/build-system.md) - Build and development guides
-        - [Platforms](platforms/linux/DEVELOPER_GUIDE.md) - Platform-specific information
-        - [API Reference](api/kernel.md) - Complete API documentation
-        - [Security](security/model.md) - Security model and guidelines
-        
-        ## 🔗 Links
-        
-        - [GitHub Repository](https://github.com/AshishYesale7/SAGE-OS)
-        - [Latest Release](https://github.com/AshishYesale7/SAGE-OS/releases)
-        - [Issue Tracker](https://github.com/AshishYesale7/SAGE-OS/issues)
-        - [Discussions](https://github.com/AshishYesale7/SAGE-OS/discussions)
-        
-        ---
-        
-        *Documentation automatically generated from the SAGE-OS repository.*
+        theme:
+          name: material
+          
+        nav:
+          - Home: index.md
         EOF
         fi
         
