@@ -1,0 +1,166 @@
+site_name: SAGE-OS Documentation
+site_description: Self-Aware General Environment Operating System - Comprehensive Documentation
+site_author: Ashish Vasant Yesale
+site_url: https://ashishyesale7.github.io/SAGE-OS/
+
+repo_name: AshishYesale7/SAGE-OS
+repo_url: https://github.com/AshishYesale7/SAGE-OS
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  custom_dir: docs/overrides
+  palette:
+    - scheme: default
+      primary: blue
+      accent: cyan
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: blue
+      accent: cyan
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - navigation.tracking
+    - search.highlight
+    - search.share
+    - search.suggest
+    - content.code.copy
+    - content.code.annotate
+    - content.action.edit
+    - content.action.view
+    - content.tabs.link
+  icon:
+    repo: fontawesome/brands/github
+    edit: material/pencil
+    view: material/eye
+  logo: Images/Sage OS logo.png
+  favicon: Images/Sage OS 96x96.png
+
+plugins:
+  - search:
+      lang: en
+  - mermaid2
+  - git-revision-date-localized:
+      type: date
+      enable_creation_date: true
+  - minify:
+      minify_html: true
+      minify_js: true
+      minify_css: true
+      htmlmin_opts:
+        remove_comments: true
+  - macros:
+      module_name: docs/macros
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets:
+      base_path: docs
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:materialx.emoji.twemoji
+      emoji_generator: !!python/name:materialx.emoji.to_svg
+  - admonition
+  - pymdownx.details
+  - attr_list
+  - md_in_html
+  - def_list
+  - footnotes
+  - meta
+  - toc:
+      permalink: true
+      title: On this page
+
+nav:
+  - Home: index.md
+  - Getting Started:
+    - Overview: getting-started/overview.md
+    - Quick Start: getting-started/quick-start.md
+    - Installation: getting-started/installation.md
+    - First Boot: getting-started/first-boot.md
+  - Build Guide:
+    - Overview: build-guide/overview.md
+    - Build System: build-guide/build-system.md
+    - Cross Compilation: build-guide/cross-compilation.md
+    - Platform Specific: build-guide/platform-specific.md
+  - Architecture:
+    - System Overview: architecture/overview.md
+    - Kernel Design: architecture/kernel.md
+    - Memory Management: architecture/memory.md
+    - Device Drivers: architecture/drivers.md
+    - AI Subsystem: architecture/ai-subsystem.md
+    - Graphics System: architecture/graphics.md
+    - System Diagrams: architecture/diagrams.md
+  - API Reference:
+    - Kernel API: api/kernel.md
+    - Driver API: api/drivers.md
+    - Memory API: api/memory.md
+    - AI API: api/ai.md
+    - Graphics API: api/graphics.md
+    - System Calls: api/syscalls.md
+  - Development:
+    - Setup Guide: development/setup.md
+    - Build System: development/build-system.md
+    - Debugging: development/debugging.md
+    - Testing: development/testing.md
+    - Contributing: development/contributing.md
+  - Platforms:
+    - Linux: platforms/linux/DEVELOPER_GUIDE.md
+    - macOS: platforms/macos/DEVELOPER_GUIDE.md
+    - Windows: platforms/windows/DEVELOPER_GUIDE.md
+    - Raspberry Pi: platforms/raspberry-pi/DEVELOPER_GUIDE.md
+  - Security:
+    - Security Model: security/security-overview.md
+    - Best Practices: security/best-practices.md
+    - Vulnerability Analysis: security/vulnerability-analysis.md
+    - CVE Scanning: security/cve-scanning.md
+  - Troubleshooting:
+    - Common Issues: troubleshooting/common-issues.md
+    - Boot Issues: troubleshooting/boot-issues.md
+    - Build Fixes: troubleshooting/build-fixes-june-2025.md
+    - FAQ: troubleshooting/faq.md
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/AshishYesale7/SAGE-OS
+      name: GitHub Repository
+    - icon: fontawesome/solid/bug
+      link: https://github.com/AshishYesale7/SAGE-OS/issues
+      name: Report Issues
+    - icon: fontawesome/solid/comments
+      link: https://github.com/AshishYesale7/SAGE-OS/discussions
+      name: Discussions
+  version:
+    provider: mike
+    default: latest
+  analytics:
+    provider: google
+    property: !ENV GOOGLE_ANALYTICS_KEY
+  generator: false
+
+extra_css:
+  - stylesheets/extra.css
+
+extra_javascript:
+  - javascripts/extra.js

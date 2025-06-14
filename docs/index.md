@@ -1,118 +1,105 @@
-<!-- ─────────────────────────────────────────────────────────────────────────────
-     SAGE OS — Copyright (c) 2025 Ashish Vasant Yesale (ashishyesale007@gmail.com)
-     SPDX-License-Identifier: BSD-3-Clause OR Proprietary
-     SAGE OS is dual-licensed under the BSD 3-Clause License and a Commercial License.
-     
-     This file is part of the SAGE OS Project.
-     
-     ─────────────────────────────────────────────────────────────────────────────
-     Licensing:
-     -----------
-     
-     Licensed under the BSD 3-Clause License or a Commercial License.
-     You may use this file under the terms of either license as specified in:
-     
-        - BSD 3-Clause License (see ./LICENSE)
-        - Commercial License (see ./COMMERCIAL_TERMS.md or contact legal@your.org)
-     
-     Redistribution and use in source and binary forms, with or without
-     modification, are permitted under the BSD license provided that the
-     following conditions are met:
-     
-       * Redistributions of source code must retain the above copyright
-         notice, this list of conditions and the following disclaimer.
-       * Redistributions in binary form must reproduce the above copyright
-         notice, this list of conditions and the following disclaimer in the
-         documentation and/or other materials provided with the distribution.
-       * Neither the name of the project nor the names of its contributors
-         may be used to endorse or promote products derived from this
-         software without specific prior written permission.
-     
-     THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
-     IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
-     TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
-     PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER
-     OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-     EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-     PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-     PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-     LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-     NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-     
-     By using this software, you agree to be bound by the terms of either license.
-     
-     Alternatively, commercial use with extended rights is available — contact the author for commercial licensing.
-     
-     ─────────────────────────────────────────────────────────────────────────────
-     Contributor Guidelines:
-     ------------------------
-     Contributions are welcome under the terms of the Developer Certificate of Origin (DCO).
-     All contributors must certify that they have the right to submit the code and agree to
-     release it under the above license terms.
-     
-     Contributions must:
-       - Be original or appropriately attributed
-       - Include clear documentation and test cases where applicable
-       - Respect the coding and security guidelines defined in CONTRIBUTING.md
-     
-     ─────────────────────────────────────────────────────────────────────────────
-     Terms of Use and Disclaimer:
-     -----------------------------
-     This software is provided "as is", without any express or implied warranty.
-     In no event shall the authors, contributors, or copyright holders
-     be held liable for any damages arising from the use of this software.
-     
-     Use of this software in critical systems (e.g., medical, nuclear, safety)
-     is entirely at your own risk unless specifically licensed for such purposes.
-     
-     ─────────────────────────────────────────────────────────────────────────────
- -->
+<!--
+SAGE-OS Documentation Index
+Copyright (c) 2025 Ashish Vasant Yesale
+Licensed under BSD-3-Clause OR Commercial License
+-->
 
 
-# SAGE OS Documentation
+# SAGE-OS Documentation
 
-<div align="center">
-  <h1>🚀 SAGE OS</h1>
-  <p><strong>A Modern, Secure, Multi-Architecture Operating System</strong></p>
-  
-  [![Build Status](https://github.com/AshishYesale7/SAGE-OS/workflows/CI/badge.svg)](https://github.com/AshishYesale7/SAGE-OS/actions)
-  [![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](LICENSE)
-  [![Documentation](https://img.shields.io/badge/docs-latest-brightgreen.svg)](//github.com/AshishYesale7.github.io/SAGE-OS/)
-  [![Security](https://img.shields.io/badge/security-CVE%20scanned-green.svg)](security/cve-scanning.md)
+**Self-Aware General Environment Operating System**
+
+Welcome to the comprehensive documentation for SAGE-OS, a revolutionary embedded operating system with integrated AI capabilities.
+
+*Documentation last updated: 2025-06-14*
+
+## 🚀 Quick Navigation
+
+<div class="grid cards" markdown>
+
+-   :material-rocket-launch:{ .lg .middle } **Getting Started**
+
+    ---
+
+    Get SAGE-OS running in minutes
+
+    [:octicons-arrow-right-24: Quick Start](getting-started/quick-start.md)
+
+-   :material-hammer-wrench:{ .lg .middle } **Build Guide**
+
+    ---
+
+    Complete build instructions for all platforms
+
+    [:octicons-arrow-right-24: Build System](build-guide/build-system.md)
+
+-   :material-sitemap:{ .lg .middle } **Architecture**
+
+    ---
+
+    System design and component overview
+
+    [:octicons-arrow-right-24: Architecture](architecture/system-overview.md)
+
+-   :material-api:{ .lg .middle } **API Reference**
+
+    ---
+
+    Complete API documentation
+
+    [:octicons-arrow-right-24: API Docs](api/kernel.md)
+
 </div>
 
----
+## ✨ Key Features
 
-## 🌟 Welcome to SAGE OS
+<div class="grid cards" markdown>
 
-SAGE OS is a cutting-edge operating system designed from the ground up with modern computing principles. Built for the future of computing, it combines security, performance, and multi-architecture support in a clean, modular design.
+-   **🧠 AI Integration**
+    
+    Built-in AI subsystem with GitHub Models API and local processing
 
-### 🎯 Key Features
+-   **🏗️ Multi-Architecture**
+    
+    Support for i386, AArch64, RISC-V, and x86_64 architectures
 
-=== "🔒 Security First"
-    - **Memory Safety**: Built with Rust for memory-safe system programming
-    - **CVE Scanning**: Automated vulnerability detection and management
-    - **Secure Boot**: Hardware-backed boot chain verification
-    - **Isolation**: Strong process and memory isolation
+-   **🖥️ Graphics Support**
+    
+    VGA graphics with text and graphics modes
 
-=== "🏗️ Multi-Architecture"
-    - **x86_64**: Full support for Intel/AMD 64-bit processors
-    - **ARM64**: Native support for ARM64/AArch64 platforms
-    - **RISC-V**: Cutting-edge RISC-V 64-bit support
-    - **Cross-Compilation**: Unified build system for all architectures
+-   **🔧 Modern Build System**
+    
+    CMake and Makefile-based build system with cross-compilation
 
-=== "⚡ Performance"
-    - **Zero-Copy I/O**: Efficient data handling
-    - **NUMA Awareness**: Optimized for modern multi-core systems
-    - **Real-Time Capabilities**: Low-latency scheduling
-    - **Hardware Acceleration**: GPU and specialized processor support
+-   **🧪 Comprehensive Testing**
+    
+    QEMU integration for all supported architectures
 
-=== "🔧 Developer Friendly"
-    - **Modern Toolchain**: Rust-based development with C interop
-    - **Comprehensive Testing**: Automated testing across all platforms
-    - **Documentation**: Extensive documentation with examples
-    - **CI/CD**: Robust continuous integration and deployment
+-   **📚 Auto-Generated Docs**
+    
+    AI-powered documentation generation and updates
+
+</div>
+
+## 🎯 Architecture Support Matrix
+
+| Architecture | Build Status | QEMU Support | Hardware Support | Notes |
+|-------------|-------------|--------------|------------------|-------|
+| **i386** | ✅ Perfect | ✅ Excellent | ✅ Full | Primary development target |
+| **AArch64** | ✅ Perfect | ✅ Excellent | ✅ Full | ARM 64-bit, Raspberry Pi 4/5 |
+| **RISC-V** | ⚠️ Partial | ✅ Good | 🔄 Limited | Needs kernel entry point fix |
+| **x86_64** | 🔄 WIP | ⚠️ Limited | 🔄 Planned | Requires multiboot2 support |
+| **ARM** | 🔄 Planned | 🔄 Planned | 🔄 Planned | Future release target |
+
+## 📊 Project Statistics
+
+| Metric | Value |
+|--------|-------|
+| **Documentation Pages** | 25+ |
+| **Supported Architectures** | 4 |
+| **Build Targets** | 10+ |
+| **Test Configurations** | 15+ |
+| **Last Updated** | 2025-06-14 |
 
 ---
 

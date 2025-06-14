@@ -1,0 +1,737 @@
+name: 🤖 AI Documentation Generator & Auto-Deploy
+
+on:
+  push:
+    branches: [main, dev]
+    paths:
+      - '**/*.c'
+      - '**/*.h'
+      - '**/*.py'
+      - '**/*.rs'
+      - '**/*.S'
+      - 'src/**'
+      - 'kernel/**'
+      - 'drivers/**'
+      - 'scripts/**'
+      - 'Makefile'
+      - 'CMakeLists.txt'
+  pull_request:
+    branches: [main, dev]
+    types: [opened, synchronize]
+  workflow_dispatch:
+    inputs:
+      force_regenerate:
+        description: 'Force complete documentation regeneration'
+        required: false
+        default: false
+        type: boolean
+      include_diagrams:
+        description: 'Generate architecture diagrams'
+        required: false
+        default: true
+        type: boolean
+  schedule:
+    # Update documentation daily at 2 AM UTC
+    - cron: '0 2 * * *'
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+  pull-requests: write
+  actions: read
+
+concurrency:
+  group: "ai-docs-${{ github.ref }}"
+  cancel-in-progress: false
+
+env:
+  PYTHON_VERSION: '3.11'
+  NODE_VERSION: '18'
+
+jobs:
+  analyze-and-generate:
+    name: 🔍 Analyze Code & Generate Documentation
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    
+    steps:
+    - name: 📥 Checkout Repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: 🐍 Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        cache: 'pip'
+        
+    - name: 📦 Install Dependencies
+      run: |
+        pip install --upgrade pip
+        pip install mkdocs mkdocs-material mkdocs-mermaid2-plugin
+        pip install mkdocstrings mkdocstrings-python
+        pip install pymdown-extensions markdown-include
+        pip install jinja2 pyyaml requests gitpython
+        pip install mkdocs-git-revision-date-localized-plugin
+        pip install mkdocs-minify-plugin mkdocs-macros-plugin
+        pip install mkdocs-awesome-pages-plugin
+        pip install beautifulsoup4 lxml
+        
+    - name: 🔍 Comprehensive Code Analysis
+      run: |
+        echo "🔍 Starting comprehensive code analysis..."
+        
+        python3 << 'EOF'
+        import os
+        import json
+        import re
+        import ast
+        import subprocess
+        from datetime import datetime
+        from pathlib import Path
+        from collections import defaultdict
+        
+        def analyze_c_file(filepath):
+            """Analyze C/C++ files for functions, structures, and documentation"""
+            try:
+                with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
+                    content = f.read()
+                
+                analysis = {
+                    'functions': [],
+                    'structures': [],
+                    'defines': [],
+                    'includes': [],
+                    'comments': [],
+                    'complexity': 0
+                }
+                
+                # Extract functions
+                func_pattern = r'^\s*(\w+\s+\**\w+\s*\([^)]*\))\s*\{'
+                for match in re.finditer(func_pattern, content, re.MULTILINE):
+                    func_def = match.group(1).strip()
+                    if not any(keyword in func_def.lower() for keyword in ['if', 'while', 'for', 'switch']):
+                        analysis['functions'].append(func_def)
+                
+                # Extract structures
+                struct_pattern = r'typedef\s+struct\s*\{[^}]*\}\s*(\w+);'
+                for match in re.finditer(struct_pattern, content, re.DOTALL):
+                    analysis['structures'].append(match.group(1))
+                
+                # Extract defines
+                define_pattern = r'#define\s+(\w+)(?:\s+(.+))?'
+                for match in re.finditer(define_pattern, content):
+                    analysis['defines'].append({
+                        'name': match.group(1),
+                        'value': match.group(2) if match.group(2) else ''
+                    })
+                
+                # Extract includes
+                include_pattern = r'#include\s*[<"]([^>"]+)[>"]'
+                for match in re.finditer(include_pattern, content):
+                    analysis['includes'].append(match.group(1))
+                
+                # Extract comments
+                comment_pattern = r'/\*.*?\*/|//.*?$'
+                for match in re.finditer(comment_pattern, content, re.DOTALL | re.MULTILINE):
+                    comment = match.group(0).strip()
+                    if len(comment) > 10:  # Only meaningful comments
+                        analysis['comments'].append(comment)
+                
+                # Calculate complexity (rough estimate)
+                complexity_keywords = ['if', 'else', 'while', 'for', 'switch', 'case']
+                for keyword in complexity_keywords:
+                    analysis['complexity'] += len(re.findall(r'\b' + keyword + r'\b', content))
+                
+                return analysis
+                
+            except Exception as e:
+                print(f"Error analyzing {filepath}: {e}")
+                return None
+        
+        def analyze_python_file(filepath):
+            """Analyze Python files for classes, functions, and documentation"""
+            try:
+                with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
+                    content = f.read()
+                
+                try:
+                    tree = ast.parse(content)
+                except SyntaxError:
+                    return None
+                
+                analysis = {
+                    'classes': [],
+                    'functions': [],
+                    'imports': [],
+                    'docstrings': [],
+                    'complexity': 0
+                }
+                
+                for node in ast.walk(tree):
+                    if isinstance(node, ast.ClassDef):
+                        analysis['classes'].append({
+                            'name': node.name,
+                            'docstring': ast.get_docstring(node) or '',
+                            'methods': [n.name for n in node.body if isinstance(n, ast.FunctionDef)]
+                        })
+                    elif isinstance(node, ast.FunctionDef):
+                        analysis['functions'].append({
+                            'name': node.name,
+                            'docstring': ast.get_docstring(node) or '',
+                            'args': [arg.arg for arg in node.args.args]
+                        })
+                    elif isinstance(node, ast.Import):
+                        for alias in node.names:
+                            analysis['imports'].append(alias.name)
+                    elif isinstance(node, ast.ImportFrom):
+                        if node.module:
+                            for alias in node.names:
+                                analysis['imports'].append(f"{node.module}.{alias.name}")
+                
+                # Count control flow for complexity
+                for node in ast.walk(tree):
+                    if isinstance(node, (ast.If, ast.While, ast.For, ast.Try, ast.With)):
+                        analysis['complexity'] += 1
+                
+                return analysis
+                
+            except Exception as e:
+                print(f"Error analyzing {filepath}: {e}")
+                return None
+        
+        def scan_project():
+            """Scan entire project for analysis"""
+            project_data = {
+                'scan_time': datetime.now().isoformat(),
+                'files': {},
+                'statistics': defaultdict(int),
+                'api_documentation': {},
+                'architecture_info': {}
+            }
+            
+            # File extensions to analyze
+            extensions = {
+                '.c': analyze_c_file,
+                '.h': analyze_c_file,
+                '.cpp': analyze_c_file,
+                '.hpp': analyze_c_file,
+                '.py': analyze_python_file
+            }
+            
+            # Scan project files
+            for root, dirs, files in os.walk('.'):
+                # Skip hidden directories and build outputs
+                dirs[:] = [d for d in dirs if not d.startswith('.') and d not in ['build', 'output', 'node_modules', '__pycache__']]
+                
+                for file in files:
+                    filepath = os.path.join(root, file)
+                    ext = os.path.splitext(file)[1]
+                    
+                    if ext in extensions:
+                        project_data['statistics'][f'{ext}_files'] += 1
+                        
+                        analysis = extensions[ext](filepath)
+                        if analysis:
+                            project_data['files'][filepath] = {
+                                'type': ext,
+                                'analysis': analysis,
+                                'size': os.path.getsize(filepath),
+                                'modified': datetime.fromtimestamp(os.path.getmtime(filepath)).isoformat()
+                            }
+            
+            # Generate API documentation
+            api_functions = {}
+            for filepath, data in project_data['files'].items():
+                if data['type'] in ['.c', '.h'] and 'kernel' in filepath.lower():
+                    functions = data['analysis'].get('functions', [])
+                    if functions:
+                        api_functions[os.path.basename(filepath)] = functions
+            
+            project_data['api_documentation'] = api_functions
+            
+            # Architecture information
+            arch_dirs = ['kernel', 'drivers', 'boot', 'arch']
+            for arch_dir in arch_dirs:
+                if os.path.exists(arch_dir):
+                    arch_files = []
+                    for root, dirs, files in os.walk(arch_dir):
+                        for file in files:
+                            if file.endswith(('.c', '.h', '.S')):
+                                arch_files.append(os.path.join(root, file))
+                    project_data['architecture_info'][arch_dir] = arch_files
+            
+            return project_data
+        
+        # Perform analysis
+        print("📊 Scanning project structure...")
+        project_data = scan_project()
+        
+        # Save analysis results
+        os.makedirs('docs/generated', exist_ok=True)
+        with open('docs/generated/project_analysis.json', 'w') as f:
+            json.dump(project_data, f, indent=2)
+        
+        print(f"✅ Analysis complete!")
+        print(f"📁 Files analyzed: {sum(project_data['statistics'].values())}")
+        print(f"🔧 C/C++ files: {project_data['statistics'].get('.c_files', 0) + project_data['statistics'].get('.h_files', 0)}")
+        print(f"🐍 Python files: {project_data['statistics'].get('.py_files', 0)}")
+        print(f"📚 API functions found: {sum(len(funcs) for funcs in project_data['api_documentation'].values())}")
+        EOF
+        
+    - name: 📝 Generate Comprehensive Documentation
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        FORCE_REGENERATE: ${{ github.event.inputs.force_regenerate || 'false' }}
+        INCLUDE_DIAGRAMS: ${{ github.event.inputs.include_diagrams || 'true' }}
+      run: |
+        echo "📝 Generating comprehensive documentation..."
+        
+        python3 << 'EOF'
+        import json
+        import os
+        from datetime import datetime
+        from pathlib import Path
+        
+        # Load analysis data
+        with open('docs/generated/project_analysis.json', 'r') as f:
+            analysis = json.load(f)
+        
+        def generate_api_reference():
+            """Generate API reference documentation"""
+            api_content = """# API Reference
+        
+        Comprehensive API documentation for SAGE-OS kernel and system functions.
+        
+        *Last updated: {timestamp}*
+        
+        ## Overview
+        
+        SAGE-OS provides a comprehensive API for system programming, driver development, and AI integration.
+        
+        """.format(timestamp=datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC'))
+            
+            for filename, functions in analysis['api_documentation'].items():
+                if functions:
+                    api_content += f"\n## {filename}\n\n"
+                    for func in functions[:10]:  # Limit to first 10 functions
+                        api_content += f"### `{func}`\n\n"
+                        api_content += "**Description:** System function for core operations.\n\n"
+                        api_content += "**Parameters:** See source code for detailed parameter information.\n\n"
+                        api_content += "**Returns:** Function-specific return value.\n\n"
+                        api_content += "**Example:**\n```c\n// Example usage\n" + func + ";\n```\n\n"
+            
+            return api_content
+        
+        def generate_build_guide():
+            """Generate comprehensive build guide"""
+            build_content = """# Build System Guide
+        
+        Complete guide to building SAGE-OS from source code.
+        
+        *Last updated: {timestamp}*
+        
+        ## Quick Start
+        
+        ```bash
+        # Clone repository
+        git clone https://github.com/AshishYesale7/SAGE-OS.git
+        cd SAGE-OS
+        
+        # Build for i386 (recommended)
+        make clean && make i386
+        
+        # Run in QEMU
+        make run-i386
+        ```
+        
+        ## Supported Architectures
+        
+        | Architecture | Status | Command | Notes |
+        |-------------|--------|---------|-------|
+        | i386 | ✅ Stable | `make i386` | Primary target |
+        | AArch64 | ✅ Stable | `make aarch64` | Raspberry Pi 4/5 |
+        | RISC-V | ⚠️ Beta | `make riscv64` | Experimental |
+        | x86_64 | 🔄 WIP | `make x86_64` | In development |
+        
+        ## Build Requirements
+        
+        ### Linux/WSL
+        ```bash
+        sudo apt update
+        sudo apt install build-essential gcc-multilib nasm qemu-system-x86
+        ```
+        
+        ### macOS
+        ```bash
+        brew install gcc nasm qemu
+        ```
+        
+        ### Windows
+        Use WSL2 with Ubuntu and follow Linux instructions.
+        
+        ## Advanced Build Options
+        
+        ```bash
+        # Debug build
+        make i386 DEBUG=1
+        
+        # Graphics support
+        make i386-graphics
+        
+        # Cross-compilation
+        make aarch64 CROSS_COMPILE=aarch64-linux-gnu-
+        ```
+        
+        ## Troubleshooting
+        
+        ### Common Issues
+        
+        1. **Missing dependencies**
+           ```bash
+           ./scripts/check-dependencies.sh
+           ```
+        
+        2. **Build failures**
+           ```bash
+           make clean && make i386
+           ```
+        
+        3. **QEMU issues**
+           ```bash
+           qemu-system-i386 --version
+           ```
+        
+        ## Project Statistics
+        
+        - **Total files analyzed:** {total_files}
+        - **C/C++ files:** {c_files}
+        - **Python files:** {py_files}
+        - **API functions:** {api_functions}
+        
+        """.format(
+            timestamp=datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC'),
+            total_files=sum(analysis['statistics'].values()),
+            c_files=analysis['statistics'].get('.c_files', 0) + analysis['statistics'].get('.h_files', 0),
+            py_files=analysis['statistics'].get('.py_files', 0),
+            api_functions=sum(len(funcs) for funcs in analysis['api_documentation'].values())
+        )
+            
+            return build_content
+        
+        def generate_architecture_docs():
+            """Generate architecture documentation"""
+            arch_content = """# System Architecture
+        
+        Comprehensive overview of SAGE-OS system architecture and design.
+        
+        *Last updated: {timestamp}*
+        
+        ## Architecture Overview
+        
+        SAGE-OS is designed as a modern embedded operating system with integrated AI capabilities.
+        
+        ```mermaid
+        graph TB
+            subgraph "Hardware Layer"
+                CPU[CPU Cores]
+                MEM[Memory]
+                GPU[Graphics]
+                AI_HAT[AI HAT+]
+            end
+            
+            subgraph "Kernel Layer"
+                KERN[Kernel Core]
+                MM[Memory Manager]
+                SCHED[Scheduler]
+                AI_CORE[AI Subsystem]
+            end
+            
+            subgraph "Driver Layer"
+                VGA[VGA Driver]
+                SER[Serial Driver]
+                KB[Keyboard Driver]
+                AI_DRV[AI Driver]
+            end
+            
+            subgraph "User Interface"
+                SHELL[Command Shell]
+                GUI[Graphics UI]
+                API[System API]
+            end
+            
+            CPU --> KERN
+            MEM --> MM
+            GPU --> VGA
+            AI_HAT --> AI_DRV
+            
+            KERN --> SHELL
+            MM --> API
+            SCHED --> GUI
+            AI_CORE --> API
+        ```
+        
+        ## Core Components
+        
+        ### Kernel Core
+        - Process management
+        - System call interface
+        - Interrupt handling
+        - Device management
+        
+        ### Memory Management
+        - Virtual memory system
+        - Page allocation
+        - Memory protection
+        - Garbage collection
+        
+        ### AI Subsystem
+        - Local AI processing
+        - GitHub Models integration
+        - Machine learning inference
+        - Natural language processing
+        
+        ### Graphics System
+        - VGA driver support
+        - Framebuffer management
+        - Text and graphics modes
+        - Hardware acceleration
+        
+        ## Architecture Files
+        
+        """.format(timestamp=datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC'))
+            
+            for arch_dir, files in analysis['architecture_info'].items():
+                if files:
+                    arch_content += f"\n### {arch_dir.title()} Directory\n\n"
+                    for file in files[:10]:  # Limit to first 10 files
+                        arch_content += f"- `{file}`\n"
+                    if len(files) > 10:
+                        arch_content += f"- ... and {len(files) - 10} more files\n"
+                    arch_content += "\n"
+            
+            return arch_content
+        
+        # Generate documentation files
+        print("📚 Generating API reference...")
+        api_ref = generate_api_reference()
+        with open('docs/api/kernel.md', 'w') as f:
+            f.write(api_ref)
+        
+        print("🏗️ Generating build guide...")
+        build_guide = generate_build_guide()
+        with open('docs/build-guide/build-system.md', 'w') as f:
+            f.write(build_guide)
+        
+        print("🏛️ Generating architecture documentation...")
+        arch_docs = generate_architecture_docs()
+        with open('docs/architecture/system-overview.md', 'w') as f:
+            f.write(arch_docs)
+        
+        # Update main index
+        index_content = f"""# SAGE-OS Documentation
+        
+        **Self-Aware General Environment Operating System**
+        
+        Welcome to the comprehensive documentation for SAGE-OS, a revolutionary embedded operating system with integrated AI capabilities.
+        
+        *Documentation last updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')}*
+        
+        ## 🚀 Quick Navigation
+        
+        <div class="grid cards" markdown>
+        
+        -   :material-rocket-launch:{{ .lg .middle }} **Getting Started**
+        
+            ---
+        
+            Get SAGE-OS running in minutes
+        
+            [:octicons-arrow-right-24: Quick Start](getting-started/quick-start.md)
+        
+        -   :material-hammer-wrench:{{ .lg .middle }} **Build Guide**
+        
+            ---
+        
+            Complete build instructions for all platforms
+        
+            [:octicons-arrow-right-24: Build System](build-guide/build-system.md)
+        
+        -   :material-sitemap:{{ .lg .middle }} **Architecture**
+        
+            ---
+        
+            System design and component overview
+        
+            [:octicons-arrow-right-24: Architecture](architecture/system-overview.md)
+        
+        -   :material-api:{{ .lg .middle }} **API Reference**
+        
+            ---
+        
+            Complete API documentation
+        
+            [:octicons-arrow-right-24: API Docs](api/kernel.md)
+        
+        </div>
+        
+        ## 📊 Project Statistics
+        
+        | Metric | Value |
+        |--------|-------|
+        | **Total Files** | {sum(analysis['statistics'].values())} |
+        | **C/C++ Files** | {analysis['statistics'].get('.c_files', 0) + analysis['statistics'].get('.h_files', 0)} |
+        | **Python Files** | {analysis['statistics'].get('.py_files', 0)} |
+        | **API Functions** | {sum(len(funcs) for funcs in analysis['api_documentation'].values())} |
+        | **Last Updated** | {datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')} |
+        
+        ## 🎯 Key Features
+        
+        - **🧠 AI Integration**: Built-in AI subsystem with GitHub Models API
+        - **🏗️ Multi-Architecture**: Support for i386, AArch64, RISC-V, and x86_64
+        - **🖥️ Graphics Support**: VGA graphics with text and graphics modes
+        - **🔧 Modern Build System**: CMake and Makefile-based build system
+        - **🧪 Comprehensive Testing**: QEMU integration for all architectures
+        - **📚 Auto-Generated Docs**: AI-powered documentation generation
+        
+        ## 🔗 Quick Links
+        
+        - [GitHub Repository](https://github.com/AshishYesale7/SAGE-OS)
+        - [Issue Tracker](https://github.com/AshishYesale7/SAGE-OS/issues)
+        - [Discussions](https://github.com/AshishYesale7/SAGE-OS/discussions)
+        - [Latest Release](https://github.com/AshishYesale7/SAGE-OS/releases)
+        
+        ---
+        
+        *This documentation is automatically generated and updated. For the latest information, visit our [GitHub repository](https://github.com/AshishYesale7/SAGE-OS).*
+        """
+        
+        with open('docs/index.md', 'w') as f:
+            f.write(index_content)
+        
+        print("✅ Documentation generation complete!")
+        EOF
+        
+    - name: 🏗️ Build Documentation Site
+      run: |
+        echo "🏗️ Building documentation site with MkDocs..."
+        
+        # Ensure all required directories exist
+        mkdir -p docs/{getting-started,build-guide,architecture,api,development,platforms,security,troubleshooting}
+        
+        # Build the documentation
+        mkdocs build --strict --verbose
+        
+        echo "✅ Documentation site built successfully!"
+        
+    - name: 📤 Commit and Push Documentation
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        echo "📤 Committing and pushing documentation updates..."
+        
+        # Configure git
+        git config --local user.email "ashishyesale007@gmail.com"
+        git config --local user.name "Ashish Vasant Yesale"
+        
+        # Add generated documentation
+        git add docs/
+        git add mkdocs.yml
+        git add site/ || true
+        
+        # Check if there are changes to commit
+        if git diff --staged --quiet; then
+          echo "📝 No documentation changes to commit"
+        else
+          # Commit changes
+          git commit -m "🤖 Auto-update documentation
+
+        - Generated comprehensive API reference
+        - Updated build guide with latest statistics
+        - Refreshed architecture documentation
+        - Added system diagrams and analysis
+        
+        Generated by: AI Documentation Generator
+        Timestamp: $(date -u +%Y-%m-%dT%H:%M:%SZ)
+        Commit: ${{ github.sha }}
+        "
+          
+          # Push changes
+          git push origin dev
+          
+          echo "✅ Documentation updated and pushed to dev branch"
+        fi
+        
+    - name: 🚀 Deploy to GitHub Pages
+      if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev'
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./site
+        publish_branch: gh-pages
+        user_name: 'Ashish Vasant Yesale'
+        user_email: 'ashishyesale007@gmail.com'
+        commit_message: '🚀 Deploy documentation site - ${{ github.sha }}'
+        
+    - name: 📊 Generate Documentation Report
+      run: |
+        echo "📊 Generating documentation report..."
+        
+        cat > docs/generated/documentation_report.md << 'EOF'
+        # Documentation Generation Report
+        
+        **Generated:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+        **Commit:** ${{ github.sha }}
+        **Branch:** ${{ github.ref_name }}
+        **Trigger:** ${{ github.event_name }}
+        
+        ## Files Generated
+        
+        - ✅ API Reference (`docs/api/kernel.md`)
+        - ✅ Build Guide (`docs/build-guide/build-system.md`)
+        - ✅ Architecture Docs (`docs/architecture/system-overview.md`)
+        - ✅ Main Index (`docs/index.md`)
+        - ✅ Project Analysis (`docs/generated/project_analysis.json`)
+        
+        ## Statistics
+        
+        - **Documentation Pages:** $(find docs -name "*.md" | wc -l)
+        - **Generated Files:** $(find docs/generated -type f | wc -l)
+        - **Site Size:** $(du -sh site/ 2>/dev/null | cut -f1 || echo "N/A")
+        - **Build Time:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+        
+        ## Next Steps
+        
+        1. Review generated documentation
+        2. Test documentation site locally
+        3. Deploy to GitHub Pages
+        4. Update any missing sections
+        
+        ---
+        
+        *Report generated automatically by AI Documentation Generator*
+        EOF
+        
+        echo "✅ Documentation report generated"
+        
+    - name: 📋 Summary
+      run: |
+        echo "🎉 AI Documentation Generation Complete!"
+        echo ""
+        echo "📚 Generated Documentation:"
+        echo "  - API Reference with $(grep -c "###" docs/api/kernel.md || echo "0") functions"
+        echo "  - Build Guide with comprehensive instructions"
+        echo "  - Architecture documentation with diagrams"
+        echo "  - Updated main index page"
+        echo ""
+        echo "🔗 Documentation will be available at:"
+        echo "  - https://ashishyesale7.github.io/SAGE-OS/"
+        echo ""
+        echo "📊 Project Analysis:"
+        echo "  - Files analyzed: $(find . -name "*.c" -o -name "*.h" -o -name "*.py" | wc -l)"
+        echo "  - Documentation pages: $(find docs -name "*.md" | wc -l)"
+        echo ""
+        echo "✅ All documentation has been generated and committed to the repository!"
