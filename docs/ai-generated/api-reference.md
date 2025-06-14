@@ -1,6 +1,6 @@
 # 🔧 SAGE OS API Reference
 
-**Generated**: 2025-06-14T11:30:49.454675
+**Generated**: 2025-06-14T11:32:13.024532
 
 ## Kernel APIs
 
