@@ -1,9 +1,9 @@
 # 📊 AI Documentation Generation Report
 
-**Generated**: 2025-06-12 23:08:34 UTC
-**Repository**: AshishYesale7/SAGE-OS
+**Generated**: 2025-06-14 11:12:47 UTC
+**Repository**: sagedock/SAGE-OS
 **Branch**: dev
-**Commit**: 8a652027443b7ecee6d37a739fa2b3525062247c
+**Commit**: 1112f0c2273ae0c311dbdeac2488d74056fcc6e6
 
 ## Generation Results
 
