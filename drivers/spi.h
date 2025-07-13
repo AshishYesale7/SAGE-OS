@@ -9,7 +9,7 @@
 #ifndef SPI_H
 #define SPI_H
 
-#include "types.h"
+#include "../kernel/types.h"
 
 // SPI status codes
 typedef enum {

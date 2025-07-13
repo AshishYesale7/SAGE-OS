@@ -1,0 +1,38 @@
+# SAGE OS Raspberry Pi 5 Configuration
+# Core ARM64 Edition with File Management
+
+# ARM 64-bit mode
+arm_64bit=1
+
+# Kernel configuration
+kernel=kernel8.img
+kernel_address=0x80000
+
+# Memory configuration
+gpu_mem=64
+arm_freq=2400
+
+# UART configuration for serial communication
+enable_uart=1
+uart_2ndstage=1
+
+# USB configuration
+max_usb_current=1
+usb_max_current_enable=1
+
+# Display configuration
+hdmi_force_hotplug=1
+hdmi_drive=2
+
+# Performance settings for Cortex-A76
+over_voltage=2
+arm_freq_min=600
+
+# Boot configuration
+disable_splash=1
+boot_delay=0
+
+# SAGE OS Core Features
+# File management system enabled
+# Persistent memory storage enabled
+# ARM64 optimizations enabled

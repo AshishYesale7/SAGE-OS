@@ -8,7 +8,7 @@
 
 # SAGE OS Boot Code for ARM64/AArch64
 
-.section ".text"
+.section ".text.boot"
 .global _start
 
 _start:

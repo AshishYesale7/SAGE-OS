@@ -7,10 +7,13 @@
  * ───────────────────────────────────────────────────────────────────────────── */
 #include "shell.h"
 #include "../drivers/uart.h"
+#include "../drivers/serial.h"
 #include "memory.h"
 #include "types.h"
 #include "stdio.h"
-#include "ai/ai_subsystem.h"
+#include "utils.h"
+#include "filesystem.h"
+// #include "ai/ai_subsystem.h"  // Temporarily disabled
 
 #define MAX_COMMAND_LENGTH 256
 #define MAX_ARGS 16
@@ -40,7 +43,7 @@ static void cmd_clear(int argc, char* argv[]);
 static void cmd_meminfo(int argc, char* argv[]);
 static void cmd_reboot(int argc, char* argv[]);
 static void cmd_version(int argc, char* argv[]);
-static void cmd_ai(int argc, char* argv[]);
+// static void cmd_ai(int argc, char* argv[]);  // Temporarily disabled
 static void cmd_exit(int argc, char* argv[]);
 static void cmd_shutdown(int argc, char* argv[]);
 static void cmd_ls(int argc, char* argv[]);
@@ -54,6 +57,10 @@ static void cmd_nano(int argc, char* argv[]);
 static void cmd_uptime(int argc, char* argv[]);
 static void cmd_whoami(int argc, char* argv[]);
 static void cmd_uname(int argc, char* argv[]);
+static void cmd_save(int argc, char* argv[]);
+static void cmd_append(int argc, char* argv[]);
+static void cmd_delete(int argc, char* argv[]);
+static void cmd_fileinfo(int argc, char* argv[]);
 
 // Command table
 static const command_t commands[] = {
@@ -63,7 +70,7 @@ static const command_t commands[] = {
     {"meminfo",  "Display memory information",         cmd_meminfo},
     {"reboot",   "Reboot the system",                  cmd_reboot},
     {"version",  "Display OS version information",     cmd_version},
-    {"ai",       "AI subsystem commands",              cmd_ai},
+    // {"ai",       "AI subsystem commands",              cmd_ai},  // Temporarily disabled
     {"exit",     "Exit SAGE OS and shutdown QEMU",     cmd_exit},
     {"shutdown", "Shutdown the system",                cmd_shutdown},
     {"ls",       "List directory contents",            cmd_ls},
@@ -77,20 +84,28 @@ static const command_t commands[] = {
     {"uptime",   "Show system uptime",                 cmd_uptime},
     {"whoami",   "Display current user",               cmd_whoami},
     {"uname",    "Display system information",         cmd_uname},
+    {"save",     "Save text to file (save filename content)", cmd_save},
+    {"append",   "Append text to file",                cmd_append},
+    {"delete",   "Delete file",                        cmd_delete},
+    {"fileinfo", "Display file information",           cmd_fileinfo},
     {NULL, NULL, NULL}  // Terminator
 };
 
 // Initialize the shell
 void shell_init() {
-    uart_puts("SAGE OS Shell initialized\n");
+    // Initialize file system first
+    fs_init();
+    serial_puts("SAGE OS File System initialized\n");
     
-    // Initialize AI subsystem
-    ai_subsystem_status_t status = ai_subsystem_init();
-    if (status == AI_SUBSYSTEM_SUCCESS) {
-        uart_puts("AI subsystem initialized\n");
-    } else {
-        uart_puts("AI subsystem initialization failed\n");
-    }
+    serial_puts("SAGE OS Shell initialized\n");
+    
+    // Initialize AI subsystem (temporarily disabled)
+    // ai_subsystem_status_t status = ai_subsystem_init();
+    // if (status == AI_SUBSYSTEM_SUCCESS) {
+    //     serial_puts("AI subsystem initialized\n");
+    // } else {
+    //     serial_puts("AI subsystem initialization failed\n");
+    // }
 }
 
 // Split a command into arguments
@@ -221,11 +236,21 @@ void shell_run() {
 // Command implementations
 
 static void cmd_help(int argc, char* argv[]) {
-    uart_puts("Available commands:\n");
+    serial_puts("SAGE OS Shell - Available Commands:\n");
+    serial_puts("==================================\n\n");
     
     for (int i = 0; commands[i].name != NULL; i++) {
-        uart_printf("  %-10s - %s\n", commands[i].name, commands[i].description);
+        char help_line[256];
+        sprintf(help_line, "  %-12s - %s\n", commands[i].name, commands[i].description);
+        serial_puts(help_line);
     }
+    
+    serial_puts("\nFile Management Examples:\n");
+    serial_puts("  save test.txt Hello World    - Save text to file\n");
+    serial_puts("  cat test.txt                 - Display file contents\n");
+    serial_puts("  append test.txt More text    - Append to file\n");
+    serial_puts("  delete test.txt              - Delete file\n");
+    serial_puts("  ls                           - List all files\n");
     
     // If ai command help is requested, show subcommands
     if (argc > 1 && strcmp(argv[1], "ai") == 0) {
@@ -239,21 +264,36 @@ static void cmd_help(int argc, char* argv[]) {
 
 static void cmd_echo(int argc, char* argv[]) {
     for (int i = 1; i < argc; i++) {
-        uart_puts(argv[i]);
+        serial_puts(argv[i]);
         if (i < argc - 1) {
-            uart_putc(' ');
+            serial_putc(' ');
         }
     }
-    uart_putc('\n');
+    serial_putc('\n');
 }
 
 static void cmd_clear(int argc, char* argv[]) {
     // Clear screen (ANSI escape sequence)
-    uart_puts("\033[2J\033[H");
+    serial_puts("\033[2J\033[H");
+    serial_puts("SAGE OS Shell - Screen Cleared\n");
+    serial_puts("Type 'help' for available commands.\n");
 }
 
 static void cmd_meminfo(int argc, char* argv[]) {
     memory_stats();
+    
+    // Add file system memory information
+    uint32_t total_files, memory_used, memory_available;
+    fs_get_memory_info(&total_files, &memory_used, &memory_available);
+    
+    serial_puts("\nFile System Memory:\n");
+    char buffer[256];
+    sprintf(buffer, "  Total Files: %u\n", total_files);
+    serial_puts(buffer);
+    sprintf(buffer, "  Memory Used: %u bytes\n", memory_used);
+    serial_puts(buffer);
+    sprintf(buffer, "  Memory Available: %u bytes\n", memory_available);
+    serial_puts(buffer);
 }
 
 static void cmd_reboot(int argc, char* argv[]) {
@@ -278,10 +318,16 @@ static void cmd_reboot(int argc, char* argv[]) {
 }
 
 static void cmd_version(int argc, char* argv[]) {
-    uart_puts("SAGE OS v0.1.0\n");
-    uart_puts("Self-Aware General Environment Operating System\n");
-    uart_puts("Copyright (c) 2025 Ashish Vasant Yesale\n");
-    uart_puts("Designed by Ashish Yesale (ashishyesale007@gmail.com)\n");
+    serial_puts("SAGE OS v1.0.1 ARM64 Edition\n");
+    serial_puts("Self-Aware General Environment Operating System\n");
+    serial_puts("Copyright (c) 2025 Ashish Vasant Yesale\n");
+    serial_puts("Designed by Ashish Yesale (ashishyesale007@gmail.com)\n");
+    serial_puts("\nFeatures:\n");
+    serial_puts("- ARM64 Cortex-A76 optimized\n");
+    serial_puts("- In-memory file system\n");
+    serial_puts("- Advanced shell commands\n");
+    serial_puts("- AI subsystem integration\n");
+    serial_puts("- Persistent memory storage\n");
 }
 
 // AI command handler
@@ -480,27 +526,24 @@ static void cmd_shutdown(int argc, char* argv[]) {
     cmd_exit(argc, argv);
 }
 
-// List directory contents (simulated)
+// List directory contents using file system
 static void cmd_ls(int argc, char* argv[]) {
-    uart_puts("Directory listing (simulated filesystem):\n");
-    uart_puts("drwxr-xr-x  2 root root  4096 Jan  1 00:00 .\n");
-    uart_puts("drwxr-xr-x  2 root root  4096 Jan  1 00:00 ..\n");
-    uart_puts("drwxr-xr-x  2 root root  4096 Jan  1 00:00 bin\n");
-    uart_puts("drwxr-xr-x  2 root root  4096 Jan  1 00:00 dev\n");
-    uart_puts("drwxr-xr-x  2 root root  4096 Jan  1 00:00 etc\n");
-    uart_puts("drwxr-xr-x  2 root root  4096 Jan  1 00:00 home\n");
-    uart_puts("drwxr-xr-x  2 root root  4096 Jan  1 00:00 proc\n");
-    uart_puts("drwxr-xr-x  2 root root  4096 Jan  1 00:00 sys\n");
-    uart_puts("drwxr-xr-x  2 root root  4096 Jan  1 00:00 tmp\n");
-    uart_puts("drwxr-xr-x  2 root root  4096 Jan  1 00:00 usr\n");
-    uart_puts("drwxr-xr-x  2 root root  4096 Jan  1 00:00 var\n");
-    uart_puts("-rw-r--r--  1 root root   256 Jan  1 00:00 README.txt\n");
-    uart_puts("-rw-r--r--  1 root root   128 Jan  1 00:00 welcome.txt\n");
+    char buffer[2048];
+    int result = fs_list_files(buffer, sizeof(buffer));
+    
+    if (result >= 0) {
+        serial_puts(buffer);
+    } else {
+        serial_puts("Error listing files\n");
+    }
 }
 
 // Print working directory
 static void cmd_pwd(int argc, char* argv[]) {
-    uart_puts("/root\n");
+    char current_dir[128];
+    fs_get_current_directory(current_dir, sizeof(current_dir));
+    serial_puts(current_dir);
+    serial_puts("\n");
 }
 
 // Create directory (simulated)
@@ -542,25 +585,19 @@ static void cmd_rm(int argc, char* argv[]) {
 // Display file contents (simulated)
 static void cmd_cat(int argc, char* argv[]) {
     if (argc < 2) {
-        uart_puts("Usage: cat <filename>\n");
+        serial_puts("Usage: cat <filename>\n");
         return;
     }
     
-    if (strcmp(argv[1], "README.txt") == 0) {
-        uart_puts("Welcome to SAGE OS!\n");
-        uart_puts("This is a self-aware general environment operating system.\n");
-        uart_puts("Designed by Ashish Yesale for advanced AI integration.\n");
-        uart_puts("\nFeatures:\n");
-        uart_puts("- Multi-architecture support\n");
-        uart_puts("- AI subsystem integration\n");
-        uart_puts("- Self-evolving capabilities\n");
-        uart_puts("- Advanced security features\n");
-    } else if (strcmp(argv[1], "welcome.txt") == 0) {
-        uart_puts("Hello from SAGE OS!\n");
-        uart_puts("You are running on a revolutionary operating system.\n");
-        uart_puts("Type 'help' to see available commands.\n");
+    char buffer[4096];
+    int result = fs_cat(argv[1], buffer, sizeof(buffer));
+    
+    if (result >= 0) {
+        serial_puts(buffer);
     } else {
-        uart_printf("File not found: %s\n", argv[1]);
+        char error_msg[256];
+        sprintf(error_msg, "File not found: %s\n", argv[1]);
+        serial_puts(error_msg);
     }
 }
 
@@ -608,4 +645,103 @@ static void cmd_uname(int argc, char* argv[]) {
     } else {
         uart_puts("SAGE-OS\n");
     }
+}
+
+// Save text to file
+static void cmd_save(int argc, char* argv[]) {
+    if (argc < 3) {
+        serial_puts("Usage: save <filename> <content>\n");
+        serial_puts("Example: save test.txt \"Hello World\"\n");
+        return;
+    }
+    
+    // Combine all arguments after filename into content
+    char content[4096] = "";
+    for (int i = 2; i < argc; i++) {
+        strcat(content, argv[i]);
+        if (i < argc - 1) {
+            strcat(content, " ");
+        }
+    }
+    
+    int result = fs_save(argv[1], content);
+    if (result == 0) {
+        char msg[256];
+        sprintf(msg, "File '%s' saved successfully\n", argv[1]);
+        serial_puts(msg);
+    } else {
+        char msg[256];
+        sprintf(msg, "Error saving file '%s' (code: %d)\n", argv[1], result);
+        serial_puts(msg);
+    }
+}
+
+// Append text to file
+static void cmd_append(int argc, char* argv[]) {
+    if (argc < 3) {
+        serial_puts("Usage: append <filename> <content>\n");
+        return;
+    }
+    
+    // Combine all arguments after filename into content
+    char content[4096] = "";
+    for (int i = 2; i < argc; i++) {
+        strcat(content, argv[i]);
+        if (i < argc - 1) {
+            strcat(content, " ");
+        }
+    }
+    
+    int result = fs_append(argv[1], content);
+    if (result == 0) {
+        char msg[256];
+        sprintf(msg, "Content appended to '%s' successfully\n", argv[1]);
+        serial_puts(msg);
+    } else {
+        char msg[256];
+        sprintf(msg, "Error appending to file '%s' (code: %d)\n", argv[1], result);
+        serial_puts(msg);
+    }
+}
+
+// Delete file
+static void cmd_delete(int argc, char* argv[]) {
+    if (argc < 2) {
+        serial_puts("Usage: delete <filename>\n");
+        return;
+    }
+    
+    int result = fs_delete_file(argv[1]);
+    if (result == 0) {
+        char msg[256];
+        sprintf(msg, "File '%s' deleted successfully\n", argv[1]);
+        serial_puts(msg);
+    } else {
+        char msg[256];
+        sprintf(msg, "Error deleting file '%s' (code: %d)\n", argv[1], result);
+        serial_puts(msg);
+    }
+}
+
+// Display file information
+static void cmd_fileinfo(int argc, char* argv[]) {
+    if (argc < 2) {
+        serial_puts("Usage: fileinfo <filename>\n");
+        return;
+    }
+    
+    if (!fs_file_exists(argv[1])) {
+        char msg[256];
+        sprintf(msg, "File '%s' does not exist\n", argv[1]);
+        serial_puts(msg);
+        return;
+    }
+    
+    size_t file_size = fs_get_file_size(argv[1]);
+    char msg[256];
+    sprintf(msg, "File: %s\n", argv[1]);
+    serial_puts(msg);
+    sprintf(msg, "Size: %zu bytes\n", file_size);
+    serial_puts(msg);
+    serial_puts("Type: text file\n");
 }

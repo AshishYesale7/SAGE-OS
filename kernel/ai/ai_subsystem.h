@@ -10,7 +10,7 @@
 #define AI_SUBSYSTEM_H
 
 #include "../types.h"
-#include "ai_hat/ai_hat.h"
+#include "../../drivers/ai_hat/ai_hat.h"
 
 // AI subsystem status codes
 typedef enum {

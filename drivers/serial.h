@@ -12,9 +12,10 @@
 #include <stdint.h>
 
 // Serial communication functions
-// Implementations are architecture-specific and defined in kernel.c
+// Implementations are architecture-specific and defined in serial.c
 void serial_init(void);
 void serial_putc(char c);
 void serial_puts(const char* str);
+const char* serial_get_uart_info(void);
 
 #endif // SERIAL_H

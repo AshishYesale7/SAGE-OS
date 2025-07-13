@@ -69,6 +69,7 @@
 //
 
 #include "utils.h"
+#include "types.h"
 
 // Convert unsigned integer to string with given base
 int utoa_base(unsigned int value, char* buffer, int base) {
@@ -104,4 +105,35 @@ int utoa_base(unsigned int value, char* buffer, int base) {
     buffer[len] = '\0';
     
     return len;
+}
+
+// Convert integer to string
+int my_itoa(int value, char* buffer, int base) {
+    if (value < 0) {
+        buffer[0] = '-';
+        return 1 + utoa_base(-value, buffer + 1, base);
+    }
+    return utoa_base(value, buffer, base);
+}
+
+// String length
+size_t my_strlen(const char* str) {
+    size_t len = 0;
+    while (str[len]) len++;
+    return len;
+}
+
+// String concatenation
+char* my_strcat(char* dest, const char* src) {
+    char* ptr = dest + my_strlen(dest);
+    while (*src) {
+        *ptr++ = *src++;
+    }
+    *ptr = '\0';
+    return dest;
+}
+
+// String concatenation (alias for my_strcat)
+char* strcat(char* dest, const char* src) {
+    return my_strcat(dest, src);
 }

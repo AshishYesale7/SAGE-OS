@@ -65,7 +65,7 @@ clean_build() {
 build_graphics_kernel() {
     print_info "Building i386 graphics kernel..."
     
-    # Use simple graphics kernel source (no conflicts)
+    # Use simple graphics kernel but enhance it with ASCII logo
     local kernel_source="kernel/kernel_graphics_simple.c"
     if [[ ! -f "$kernel_source" ]]; then
         print_error "Graphics kernel source not found: $kernel_source"
@@ -75,7 +75,7 @@ build_graphics_kernel() {
     # Compiler settings for i386
     local CC="gcc"
     local CFLAGS="-m32 -nostdlib -nostartfiles -ffreestanding -O2 -Wall -Wextra"
-    CFLAGS="$CFLAGS -I. -Ikernel -Idrivers -D__i386__ -fno-pic -fno-pie"
+    CFLAGS="$CFLAGS -I. -Ikernel -Idrivers -D__i386__ -DDISABLE_SHELL -fno-pic -fno-pie"
     
     # Check if we're on macOS and adjust compiler
     if [[ "$(uname)" == "Darwin" ]]; then
@@ -88,17 +88,17 @@ build_graphics_kernel() {
     print_info "Compiler: $CC"
     print_info "CFLAGS: $CFLAGS"
     
-    # Compile improved boot loader
-    print_info "Compiling improved boot loader..."
-    local boot_source="boot/boot_i386_improved.S"
+    # Compile simple boot loader (more reliable for basic testing)
+    print_info "Compiling simple boot loader..."
+    local boot_source="boot/boot_i386.S"
     if [[ ! -f "$boot_source" ]]; then
-        print_info "Using standard boot loader as fallback..."
-        boot_source="boot/boot_i386.S"
+        print_error "Boot loader source not found: $boot_source"
+        exit 1
     fi
     $CC $CFLAGS -c "$boot_source" -o "$BUILD_DIR/boot/boot_i386.o"
     
-    # Compile graphics kernel (self-contained, no external dependencies)
-    print_info "Compiling graphics kernel..."
+    # Compile simple graphics kernel (self-contained)
+    print_info "Compiling simple graphics kernel..."
     $CC $CFLAGS -c "$kernel_source" -o "$BUILD_DIR/kernel/kernel_graphics_simple.o"
     
     # Link everything
@@ -111,7 +111,7 @@ build_graphics_kernel() {
     fi
     local LDFLAGS="-T $linker_script -m elf_i386"
     
-    # Collect object files (just boot and kernel)
+    # Collect object files (simple build)
     local objects=()
     objects+=("$BUILD_DIR/boot/boot_i386.o")
     objects+=("$BUILD_DIR/kernel/kernel_graphics_simple.o")
