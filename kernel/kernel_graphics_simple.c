@@ -308,14 +308,31 @@ void display_welcome_message() {
     console_puts("System ready!\n\n");
 }
 
+// Very early debug function - write directly to COM1
+void early_debug(const char* msg) {
+    while (*msg) {
+        // Wait for transmit buffer to be empty
+        while ((inb(0x3F8 + 5) & 0x20) == 0);
+        // Send character
+        outb(0x3F8, *msg++);
+    }
+}
+
 // Kernel entry point
 void kernel_main() {
-    // Initialize serial port
+    // Very early debug - before any initialization
+    early_debug("SAGE OS: Kernel entry point reached\n");
+    
+    // Initialize serial port first
     serial_init();
+    
+    // Send early debug message to serial
+    serial_puts("SAGE OS: Serial initialized\n");
     
     // Initialize VGA
     vga_init();
     
+    // Now use console functions (both serial + VGA)
     console_puts("SAGE OS: Kernel starting (Graphics Mode)...\n");
     console_puts("SAGE OS: VGA and Serial initialized\n");
     

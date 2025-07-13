@@ -2,6 +2,8 @@
 
 #include "../drivers/vga.h"
 #include "../drivers/serial.h"
+#include "shell.h"
+#include "filesystem.h"
 
 #if defined(__x86_64__) || defined(__i386__)
 // I/O port functions for x86
@@ -328,13 +330,22 @@ void kernel_main() {
     serial_init();
     
     serial_puts("SAGE OS: Kernel starting...\n");
-    serial_puts("SAGE OS: Serial initialized\n");
+    serial_puts("SAGE OS: Serial initialized - ");
+    serial_puts(serial_get_uart_info());
+    serial_puts("\n");
     
     // Display ASCII art welcome message
     display_welcome_message();
     
-    // Start simple shell demonstration
-    simple_shell();
+#ifndef DISABLE_SHELL
+    // Initialize and start enhanced shell
+    shell_init();
+    shell_run();
+#else
+    // Simple message for builds without shell
+    serial_puts("\nSAGE OS: Shell disabled in this build\n");
+    serial_puts("SAGE OS: System ready - kernel running in minimal mode\n");
+#endif
     
     // Should never reach here
     while (1) {

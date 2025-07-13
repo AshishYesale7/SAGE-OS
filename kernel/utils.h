@@ -9,7 +9,13 @@
 #ifndef UTILS_H
 #define UTILS_H
 
+#include "types.h"
+
 // Function declarations
 int utoa_base(unsigned int value, char* buffer, int base);
+int my_itoa(int value, char* buffer, int base);
+size_t my_strlen(const char* str);
+char* my_strcat(char* dest, const char* src);
+char* strcat(char* dest, const char* src);
 
 #endif // UTILS_H

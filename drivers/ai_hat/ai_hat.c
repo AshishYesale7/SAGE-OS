@@ -6,10 +6,10 @@
  * This file is part of the SAGE OS Project.
  *
  * ───────────────────────────────────────────────────────────────────────────── */
-#include "ai_hat/ai_hat.h"
-#include "uart.h"
-#include "i2c.h"
-#include "spi.h"
+#include "ai_hat.h"
+#include "../uart.h"
+#include "../i2c.h"
+#include "../spi.h"
 #include "../../kernel/stdio.h"
 #include <stdbool.h>
 

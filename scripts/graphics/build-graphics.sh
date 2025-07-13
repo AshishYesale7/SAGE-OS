@@ -47,7 +47,7 @@ print_info "Building SAGE-OS Graphics Mode for $ARCH architecture (target: $TARG
 
 # Create temporary build directory
 BUILD_DIR="build/${ARCH}-graphics"
-OUTPUT_DIR="output/${ARCH}"
+OUTPUT_DIR="build-output/${ARCH}"
 mkdir -p "$BUILD_DIR" "$OUTPUT_DIR"
 
 # Get version

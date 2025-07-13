@@ -9,7 +9,7 @@
 #ifndef I2C_H
 #define I2C_H
 
-#include "types.h"
+#include "../kernel/types.h"
 
 // I2C status codes
 typedef enum {
