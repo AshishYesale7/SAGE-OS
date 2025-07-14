@@ -177,8 +177,10 @@ void shell_process_command(const char* command) {
     }
     
     // Command not found
-    uart_printf("Unknown command: %s\n", argv[0]);
-    uart_puts("Type 'help' for a list of commands\n");
+    char msg[256];
+    sprintf(msg, "Unknown command: %s\n", argv[0]);
+    serial_puts(msg);
+    serial_puts("Type 'help' for a list of commands\n");
 }
 
 // Run the shell (main loop)
@@ -188,7 +190,7 @@ void shell_run() {
     
     while (1) {
         // Display prompt
-        uart_puts(PROMPT);
+        serial_puts(PROMPT);
         
         // Reset command buffer
         memset(command, 0, MAX_COMMAND_LENGTH);
@@ -200,18 +202,18 @@ void shell_run() {
             
             if (c == '\r' || c == '\n') {
                 // End of command
-                uart_puts("\n");
+                serial_puts("\n");
                 break;
             } else if (c == 8 || c == 127) {
                 // Backspace
                 if (pos > 0) {
                     pos--;
-                    uart_puts("\b \b");  // Erase character
+                    serial_puts("\b \b");  // Erase character
                 }
             } else if (c >= ' ' && c <= '~' && pos < MAX_COMMAND_LENGTH - 1) {
                 // Printable character
                 command[pos++] = c;
-                uart_putc(c);  // Echo
+                serial_putc(c);  // Echo
             }
         }
         
@@ -261,33 +263,33 @@ static void cmd_clear(int argc, char* argv[]) {
 
 static void cmd_meminfo(int argc, char* argv[]) {
     // Display basic memory statistics
-    uart_puts("Memory Statistics:\n");
-    uart_puts("  Total RAM: 1024 MB\n");
-    uart_puts("  Available: 1000 MB\n");
-    uart_puts("  Used: 24 MB\n");
-    uart_puts("  Kernel: 16 MB\n");
-    uart_puts("  User: 8 MB\n");
+    serial_puts("Memory Statistics:\n");
+    serial_puts("  Total RAM: 1024 MB\n");
+    serial_puts("  Available: 1000 MB\n");
+    serial_puts("  Used: 24 MB\n");
+    serial_puts("  Kernel: 16 MB\n");
+    serial_puts("  User: 8 MB\n");
     
     // Add file system memory information
     uint32_t total_files, memory_used, memory_available;
     fs_get_memory_info(&total_files, &memory_used, &memory_available);
     
-    uart_puts("\nFile System Memory:\n");
+    serial_puts("\nFile System Memory:\n");
     char buffer[256];
     sprintf(buffer, "  Total Files: %u\n", total_files);
-    uart_puts(buffer);
+    serial_puts(buffer);
     sprintf(buffer, "  Memory Used: %u bytes\n", memory_used);
-    uart_puts(buffer);
+    serial_puts(buffer);
     sprintf(buffer, "  Memory Available: %u bytes\n", memory_available);
-    uart_puts(buffer);
+    serial_puts(buffer);
 }
 
 static void cmd_reboot(int argc, char* argv[]) {
-    uart_puts("Rebooting...\n");
+    serial_puts("Rebooting...\n");
     
     // For i386, we can use the keyboard controller to reboot
     // This is a common method for x86 systems
-    uart_puts("Sending reboot command to keyboard controller...\n");
+    serial_puts("Sending reboot command to keyboard controller...\n");
     
     // Wait for keyboard controller to be ready
     uint8_t temp;
@@ -299,7 +301,7 @@ static void cmd_reboot(int argc, char* argv[]) {
     *((volatile uint8_t*)0x64) = 0xFE;
     
     // If we get here, the reboot failed
-    uart_puts("Reboot failed. System halted.\n");
+    serial_puts("Reboot failed. System halted.\n");
     while (1) {
         // Halt
     }
@@ -319,12 +321,12 @@ static void cmd_version(int argc, char* argv[]) {
 
 // Exit command - shuts down QEMU
 static void cmd_exit(int argc, char* argv[]) {
-    uart_puts("Shutting down SAGE OS...\n");
-    uart_puts("Thank you for using SAGE OS!\n");
-    uart_puts("Designed by Ashish Yesale\n\n");
+    serial_puts("Shutting down SAGE OS...\n");
+    serial_puts("Thank you for using SAGE OS!\n");
+    serial_puts("Designed by Ashish Yesale\n\n");
 
     // Send QEMU monitor command to quit
-    uart_puts("Sending QEMU quit command...\n");
+    serial_puts("Sending QEMU quit command...\n");
 
     // For QEMU, we can trigger a shutdown by writing to specific ports
     // or by causing a triple fault. Let's use a clean shutdown approach.
@@ -340,7 +342,7 @@ static void cmd_exit(int argc, char* argv[]) {
     __asm__ __volatile__ ("outw %0, %1" : : "a"((uint16_t)0x00), "Nd"((uint16_t)0x8900));
 
     // If we get here, none of the methods worked
-    uart_puts("Shutdown failed. System halted.\n");
+    serial_puts("Shutdown failed. System halted.\n");
     while (1) {
         // Halt
     }
@@ -373,37 +375,64 @@ static void cmd_pwd(int argc, char* argv[]) {
 // Create directory (simulated)
 static void cmd_mkdir(int argc, char* argv[]) {
     if (argc < 2) {
-        uart_puts("Usage: mkdir <directory_name>\n");
+        serial_puts("Usage: mkdir <directory_name>\n");
         return;
     }
-    uart_printf("Created directory: %s\n", argv[1]);
+    // For now, just simulate directory creation since we have a simple file system
+    char msg[256];
+    sprintf(msg, "Directory '%s' created (simulated)\n", argv[1]);
+    serial_puts(msg);
 }
 
 // Remove directory (simulated)
 static void cmd_rmdir(int argc, char* argv[]) {
     if (argc < 2) {
-        uart_puts("Usage: rmdir <directory_name>\n");
+        serial_puts("Usage: rmdir <directory_name>\n");
         return;
     }
-    uart_printf("Removed directory: %s\n", argv[1]);
+    char msg[256];
+    sprintf(msg, "Directory '%s' removed (simulated)\n", argv[1]);
+    serial_puts(msg);
 }
 
-// Create empty file (simulated)
+// Create empty file
 static void cmd_touch(int argc, char* argv[]) {
     if (argc < 2) {
-        uart_puts("Usage: touch <filename>\n");
+        serial_puts("Usage: touch <filename>\n");
         return;
     }
-    uart_printf("Created file: %s\n", argv[1]);
+    
+    // Create empty file using filesystem
+    int result = fs_save(argv[1], "");
+    if (result == 0) {
+        char msg[256];
+        sprintf(msg, "File '%s' created\n", argv[1]);
+        serial_puts(msg);
+    } else {
+        char msg[256];
+        sprintf(msg, "Error creating file '%s' (code: %d)\n", argv[1], result);
+        serial_puts(msg);
+    }
 }
 
-// Remove file (simulated)
+// Remove file
 static void cmd_rm(int argc, char* argv[]) {
     if (argc < 2) {
-        uart_puts("Usage: rm <filename>\n");
+        serial_puts("Usage: rm <filename>\n");
         return;
     }
-    uart_printf("Removed file: %s\n", argv[1]);
+    
+    // Delete file using filesystem
+    int result = fs_delete_file(argv[1]);
+    if (result == 0) {
+        char msg[256];
+        sprintf(msg, "File '%s' deleted\n", argv[1]);
+        serial_puts(msg);
+    } else {
+        char msg[256];
+        sprintf(msg, "Error deleting file '%s' (code: %d)\n", argv[1], result);
+        serial_puts(msg);
+    }
 }
 
 // Display file contents (simulated)
@@ -429,7 +458,7 @@ static void cmd_cat(int argc, char* argv[]) {
 // Simple text editor (simulated)
 static void cmd_nano(int argc, char* argv[]) {
     if (argc < 2) {
-        uart_puts("Usage: nano <filename>\n");
+        serial_puts("Usage: nano <filename>\n");
         return;
     }
     
@@ -437,22 +466,26 @@ static void cmd_nano(int argc, char* argv[]) {
     int result = fs_cat(argv[1], buffer, sizeof(buffer));
     
     if (result < 0) {
-        uart_printf("Creating new file: %s\n", argv[1]);
+        char msg[256];
+        sprintf(msg, "Creating new file: %s\n", argv[1]);
+        serial_puts(msg);
     } else {
-        uart_printf("Editing file: %s\n", argv[1]);
-        uart_puts("Current content:\n");
-        uart_puts(buffer);
-        uart_puts("\n");
+        char msg[256];
+        sprintf(msg, "Editing file: %s\n", argv[1]);
+        serial_puts(msg);
+        serial_puts("Current content:\n");
+        serial_puts(buffer);
+        serial_puts("\n");
     }
     
-    uart_puts("Enter new content (end with a line containing only '.')\n");
+    serial_puts("Enter new content (end with a line containing only '.')\n");
     
     char content[4096] = "";
     char line[256];
     int pos = 0;
     
     while (1) {
-        uart_puts("> ");
+        serial_puts("> ");
         
         // Read a line
         int line_pos = 0;
@@ -460,18 +493,18 @@ static void cmd_nano(int argc, char* argv[]) {
             char c = uart_getc();
             
             if (c == '\r' || c == '\n') {
-                uart_puts("\n");
+                serial_puts("\n");
                 line[line_pos] = '\0';
                 break;
             } else if (c == 8 || c == 127) {
                 // Backspace
                 if (line_pos > 0) {
                     line_pos--;
-                    uart_puts("\b \b");
+                    serial_puts("\b \b");
                 }
             } else if (c >= ' ' && c <= '~' && line_pos < sizeof(line) - 1) {
                 line[line_pos++] = c;
-                uart_putc(c);
+                serial_putc(c);
             }
         }
         
@@ -488,7 +521,7 @@ static void cmd_nano(int argc, char* argv[]) {
             content[pos++] = '\n';
             content[pos] = '\0';
         } else {
-            uart_puts("Buffer full, saving current content\n");
+            serial_puts("Buffer full, saving current content\n");
             break;
         }
     }
@@ -496,25 +529,29 @@ static void cmd_nano(int argc, char* argv[]) {
     // Save the file
     result = fs_save(argv[1], content);
     if (result == 0) {
-        uart_printf("File '%s' saved successfully\n", argv[1]);
+        char msg[256];
+        sprintf(msg, "File '%s' saved successfully\n", argv[1]);
+        serial_puts(msg);
     } else {
-        uart_printf("Error saving file '%s'\n", argv[1]);
+        char msg[256];
+        sprintf(msg, "Error saving file '%s'\n", argv[1]);
+        serial_puts(msg);
     }
 }
 
 // Show system uptime (simulated)
 static void cmd_uptime(int argc, char* argv[]) {
-    uart_puts("System uptime: 0 days, 0 hours, 5 minutes\n");
+    serial_puts("System uptime: 0 days, 0 hours, 5 minutes\n");
 }
 
 // Show current user (simulated)
 static void cmd_whoami(int argc, char* argv[]) {
-    uart_puts("sage\n");
+    serial_puts("sage\n");
 }
 
 // Show system information (simulated)
 static void cmd_uname(int argc, char* argv[]) {
-    uart_puts("SAGE-OS 1.0.1 i386 #1 SMP PREEMPT\n");
+    serial_puts("SAGE-OS 1.0.1 i386 #1 SMP PREEMPT\n");
 }
 
 // Save text to file
@@ -612,7 +649,7 @@ static void cmd_fileinfo(int argc, char* argv[]) {
     char buffer[256];
     sprintf(buffer, "File: %s\n", argv[1]);
     serial_puts(buffer);
-    sprintf(buffer, "Size: %zu bytes\n", size);
+    sprintf(buffer, "Size: %u bytes\n", (unsigned int)size);
     serial_puts(buffer);
     
     // Read file content for preview

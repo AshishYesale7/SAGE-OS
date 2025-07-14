@@ -19,7 +19,7 @@ echo -e "${BLUE}Detected OS: $OS_TYPE${NC}"
 
 # Create build directory
 mkdir -p build/i386
-mkdir -p output/i386
+mkdir -p build-output
 
 # Set compiler based on OS
 if [[ "$OS_TYPE" == "Darwin" ]]; then
@@ -97,8 +97,8 @@ fi
 # Link everything
 echo -e "${BLUE}Linking...${NC}"
 if [[ "$OS_TYPE" == "Darwin" ]]; then
-    # macOS linking
-    if ! $CC -target i386-unknown-none -nostdlib -Wl,-T,linker_i386.ld -o build/i386/kernel.elf \
+    # macOS linking - use ld directly with proper flags
+    if ! ld -arch i386 -T linker_i386.ld -o build/i386/kernel.elf \
         build/i386/boot.o build/i386/kernel.o build/i386/shell.o build/i386/filesystem.o \
         build/i386/memory.o build/i386/stdio.o build/i386/uart.o build/i386/serial.o; then
         echo -e "${RED}Linking failed${NC}"
@@ -114,11 +114,16 @@ else
     fi
 fi
 
-# Copy to output
-cp build/i386/kernel.elf output/i386/sage-os-v1.0.1-i386-generic.elf
+# Get current timestamp for unique naming
+TIMESTAMP=$(date +"%Y%m%d-%H%M%S")
+VERSION=$(cat VERSION 2>/dev/null || echo "1.0.2")
+
+# Copy to build-output with new naming convention
+OUTPUT_NAME="sage-os-v${VERSION}-${TIMESTAMP}-i386-enhanced.elf"
+cp build/i386/kernel.elf build-output/${OUTPUT_NAME}
 
 echo -e "${GREEN}Build completed successfully!${NC}"
-echo "Kernel: output/i386/sage-os-v1.0.1-i386-generic.elf"
+echo "Kernel: build-output/${OUTPUT_NAME}"
 echo ""
 echo -e "${BLUE}To run in QEMU:${NC}"
-echo "qemu-system-i386 -kernel output/i386/sage-os-v1.0.1-i386-generic.elf -nographic"
+echo "qemu-system-i386 -kernel build-output/${OUTPUT_NAME} -nographic"

@@ -1,0 +1,32 @@
+help
+version
+pwd
+ls
+meminfo
+uptime
+whoami
+uname
+echo Hello World
+clear
+save test.txt Hello from SAGE OS
+cat test.txt
+append test.txt Additional content
+cat test.txt
+ls
+fileinfo test.txt
+touch newfile.txt
+ls
+rm newfile.txt
+ls
+mkdir testdir
+ls
+rmdir testdir
+ls
+nano test2.txt
+This is line 1
+This is line 2
+.
+cat test2.txt
+delete test.txt
+ls
+reboot
