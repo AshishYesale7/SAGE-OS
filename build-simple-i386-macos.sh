@@ -21,7 +21,7 @@ fi
 
 # Create build directories
 mkdir -p build/i386
-mkdir -p output/i386
+mkdir -p build-output
 
 # Check for required tools
 echo -e "${BLUE}Checking build tools...${NC}"
@@ -303,19 +303,26 @@ if [ "$LINK_SUCCESS" = false ]; then
     exit 1
 fi
 
-# Step 11: Copy to output
-echo -e "${BLUE}Step 11: Copying to output directory...${NC}"
-cp build/i386/kernel.elf output/i386/sage-os-v1.0.1-i386-macos.elf
+# Step 11: Copy to build-output with new naming
+echo -e "${BLUE}Step 11: Copying to build-output directory...${NC}"
+
+# Get current timestamp for unique naming
+TIMESTAMP=$(date +"%Y%m%d-%H%M%S")
+VERSION=$(cat VERSION 2>/dev/null || echo "1.0.2")
+
+# Copy to build-output with new naming convention
+OUTPUT_NAME="sage-os-v${VERSION}-${TIMESTAMP}-i386-macos.elf"
+cp build/i386/kernel.elf build-output/${OUTPUT_NAME}
 
 echo -e "${GREEN}========================================${NC}"
 echo -e "${GREEN}Build completed successfully!${NC}"
 echo -e "${GREEN}========================================${NC}"
 echo ""
-echo -e "${BLUE}Output file:${NC} output/i386/sage-os-v1.0.1-i386-macos.elf"
-echo -e "${BLUE}File size:${NC} $(ls -lh output/i386/sage-os-v1.0.1-i386-macos.elf | awk '{print $5}')"
+echo -e "${BLUE}Output file:${NC} build-output/${OUTPUT_NAME}"
+echo -e "${BLUE}File size:${NC} $(ls -lh build-output/${OUTPUT_NAME} | awk '{print $5}')"
 echo ""
 echo -e "${BLUE}To test with QEMU (if available):${NC}"
-echo "qemu-system-i386 -kernel output/i386/sage-os-v1.0.1-i386-macos.elf -nographic"
+echo "qemu-system-i386 -kernel build-output/${OUTPUT_NAME} -nographic"
 echo ""
 echo -e "${BLUE}To install QEMU on macOS:${NC}"
 echo "brew install qemu"
