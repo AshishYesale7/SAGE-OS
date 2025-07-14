@@ -6,36 +6,35 @@
 # This file is part of the SAGE OS Project.
 # ─────────────────────────────────────────────────────────────────────────────
 
-# Cross-platform i386 boot assembly
-# Compatible with both Linux GAS and macOS clang
+# macOS-compatible i386 boot assembly
+# This version uses macOS-specific assembly syntax and sections
 
-# Use AT&T syntax (default for GAS)
-.att_syntax prefix
+.intel_syntax noprefix
 
-# Multiboot header section
-.section .multiboot
+# Text section for code
+.section __TEXT,__text
+.globl _start
+
+# Multiboot header - must be at the beginning
 .align 4
 multiboot_header:
     .long 0x1BADB002          # magic number
     .long 0x00000000          # flags
     .long -(0x1BADB002 + 0x00000000)  # checksum
 
-# Text section for code
-.section .text
-.global _start
-
+# Entry point
 _start:
     # Disable interrupts
     cli
     
     # Set up stack pointer
-    movl $stack_top, %esp
+    mov esp, offset stack_top
     
     # Clear direction flag for string operations
     cld
     
     # Call the kernel main function
-    call kernel_main
+    call _kernel_main
     
     # If kernel_main returns, halt the system
 halt_loop:
@@ -43,8 +42,8 @@ halt_loop:
     jmp halt_loop
 
 # BSS section for uninitialized data
-.section .bss
+.section __DATA,__bss
 .align 16
 stack_bottom:
-    .skip 16384  # 16KB stack space
+    .space 16384  # 16KB stack space
 stack_top:

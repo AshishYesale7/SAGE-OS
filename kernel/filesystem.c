@@ -138,26 +138,71 @@ int fs_list_files(char* buffer, size_t buffer_size) {
     
     sprintf(temp, "Files in %s:\n", fs.current_directory);
     strcat(buffer, temp);
-    strcat(buffer, "Name                Size    Created   Modified\n");
-    strcat(buffer, "--------------------------------------------\n");
+    strcat(buffer, "+--------------------+----------+---------+---------+\n");
+    strcat(buffer, "| Name               | Size     | Created | Modified|\n");
+    strcat(buffer, "+--------------------+----------+---------+---------+\n");
     
     int file_count = 0;
     for (int i = 0; i < MAX_FILES; i++) {
         if (fs.files[i].is_used) {
-            sprintf(temp, "%s  %zu  %u  %u\n", 
-                   fs.files[i].name, 
-                   fs.files[i].size,
-                   fs.files[i].created_time,
-                   fs.files[i].modified_time);
+            // Format filename with proper padding
+            char padded_name[21];
+            int name_len = strlen(fs.files[i].name);
+            if (name_len > 19) {
+                strncpy(padded_name, fs.files[i].name, 16);
+                strcpy(padded_name + 16, "...");
+                padded_name[19] = '\0';
+            } else {
+                strcpy(padded_name, fs.files[i].name);
+            }
+            
+            // Pad name to 19 characters
+            while (strlen(padded_name) < 19) {
+                strcat(padded_name, " ");
+            }
+            
+            // Format size with padding
+            char size_str[10];
+            sprintf(size_str, "%u", (unsigned int)fs.files[i].size);
+            while (strlen(size_str) < 8) {
+                char temp_size[10];
+                strcpy(temp_size, " ");
+                strcat(temp_size, size_str);
+                strcpy(size_str, temp_size);
+            }
+            
+            // Format created time with padding
+            char created_str[9];
+            sprintf(created_str, "%u", fs.files[i].created_time);
+            while (strlen(created_str) < 7) {
+                char temp_created[9];
+                strcpy(temp_created, " ");
+                strcat(temp_created, created_str);
+                strcpy(created_str, temp_created);
+            }
+            
+            // Format modified time with padding
+            char modified_str[9];
+            sprintf(modified_str, "%u", fs.files[i].modified_time);
+            while (strlen(modified_str) < 7) {
+                char temp_modified[9];
+                strcpy(temp_modified, " ");
+                strcat(temp_modified, modified_str);
+                strcpy(modified_str, temp_modified);
+            }
+            
+            sprintf(temp, "| %s| %s | %s | %s |\n", 
+                   padded_name, size_str, created_str, modified_str);
             strcat(buffer, temp);
             file_count++;
         }
     }
     
     if (file_count == 0) {
-        strcat(buffer, "(no files)\n");
+        strcat(buffer, "| (no files)         |          |         |         |\n");
     }
     
+    strcat(buffer, "+--------------------+----------+---------+---------+\n");
     sprintf(temp, "\nTotal: %d files, %u bytes used\n", file_count, fs.total_memory_used);
     strcat(buffer, temp);
     
