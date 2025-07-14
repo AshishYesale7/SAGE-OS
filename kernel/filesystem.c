@@ -144,7 +144,7 @@ int fs_list_files(char* buffer, size_t buffer_size) {
     int file_count = 0;
     for (int i = 0; i < MAX_FILES; i++) {
         if (fs.files[i].is_used) {
-            sprintf(temp, "%-18s  %-6zu  %-8u  %-8u\n", 
+            sprintf(temp, "%s  %zu  %u  %u\n", 
                    fs.files[i].name, 
                    fs.files[i].size,
                    fs.files[i].created_time,
