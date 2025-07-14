@@ -301,7 +301,7 @@ static void cmd_exit(int argc, char* argv[]) {
         *qemu_exit = 0x20026;  // QEMU virt machine exit code
     #else
         // x86 QEMU exit
-        __asm__ volatile("outw %0, %1" : : "a"(0x2000), "Nd"(0x604));
+        __asm__ volatile("outw %0, %1" : : "a"((uint16_t)0x2000), "Nd"((uint16_t)0x604));
     #endif
     
     // If QEMU exit doesn't work, just halt

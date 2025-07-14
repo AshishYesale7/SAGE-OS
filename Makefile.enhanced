@@ -1,0 +1,178 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# SAGE OS — Enhanced Build System Makefile
+# Copyright (c) 2025 Ashish Vasant Yesale (ashishyesale007@gmail.com)
+# SPDX-License-Identifier: BSD-3-Clause OR Proprietary
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Enhanced build configuration
+ENHANCED_VERSION := 1.0.1-enhanced
+BUILD_OUTPUT_DIR := build-output
+ENHANCED_BUILD_DIR := build/enhanced
+
+# Architecture-specific settings
+ARCH ?= i386
+
+# Enhanced compiler flags
+ENHANCED_CFLAGS := -nostdlib -nostartfiles -ffreestanding -O2 -Wall -Wextra -I. -Ikernel -Idrivers
+ENHANCED_LDFLAGS :=
+
+# Architecture-specific flags
+ifeq ($(ARCH),i386)
+    CC := gcc
+    LD := ld
+    ENHANCED_CFLAGS += -m32 -D__i386__ -fno-pic -fno-pie
+    ENHANCED_LDFLAGS += -m elf_i386 --nostdlib
+    LINKER_SCRIPT := linker_i386.ld
+    BOOT_OBJ := $(ENHANCED_BUILD_DIR)/boot/boot_i386.o
+    KERNEL_TARGET := sage-os-enhanced-$(ENHANCED_VERSION)-i386-graphics.elf
+endif
+
+ifeq ($(ARCH),x86_64)
+    CC := gcc
+    LD := ld
+    ENHANCED_CFLAGS += -m64 -D__x86_64__ -mcmodel=kernel -fno-pic -fno-pie
+    ENHANCED_LDFLAGS += -m elf_x86_64 --nostdlib
+    LINKER_SCRIPT := linker_x86_64.ld
+    BOOT_OBJ := $(ENHANCED_BUILD_DIR)/boot/boot_x86_64.o
+    KERNEL_TARGET := sage-os-enhanced-$(ENHANCED_VERSION)-x86_64-graphics.elf
+endif
+
+# Enhanced source files
+ENHANCED_KERNEL_SOURCES := \
+    kernel/simple_enhanced_kernel.c \
+    kernel/simple_shell.c \
+    kernel/filesystem.c \
+    kernel/memory.c \
+    kernel/utils.c
+
+ENHANCED_DRIVER_SOURCES := \
+    drivers/vga.c \
+    drivers/serial.c \
+    drivers/uart.c
+
+# Object files
+ENHANCED_KERNEL_OBJS := $(ENHANCED_KERNEL_SOURCES:%.c=$(ENHANCED_BUILD_DIR)/%.o)
+ENHANCED_DRIVER_OBJS := $(ENHANCED_DRIVER_SOURCES:%.c=$(ENHANCED_BUILD_DIR)/%.o)
+ENHANCED_ALL_OBJS := $(BOOT_OBJ) $(ENHANCED_KERNEL_OBJS) $(ENHANCED_DRIVER_OBJS)
+
+# Create directories
+$(shell mkdir -p $(ENHANCED_BUILD_DIR)/boot)
+$(shell mkdir -p $(ENHANCED_BUILD_DIR)/kernel)
+$(shell mkdir -p $(ENHANCED_BUILD_DIR)/drivers)
+$(shell mkdir -p $(BUILD_OUTPUT_DIR))
+
+# Default target
+.PHONY: enhanced
+enhanced: $(BUILD_OUTPUT_DIR)/$(KERNEL_TARGET)
+
+# Enhanced kernel build
+$(BUILD_OUTPUT_DIR)/$(KERNEL_TARGET): $(ENHANCED_ALL_OBJS) $(LINKER_SCRIPT)
+	@echo "🔗 Linking enhanced SAGE OS kernel for $(ARCH)..."
+	$(LD) $(ENHANCED_LDFLAGS) -T $(LINKER_SCRIPT) -o $@ $(ENHANCED_ALL_OBJS)
+	@echo "✅ Enhanced SAGE OS kernel built successfully: $@"
+	@echo "📊 Enhanced kernel size: $$(du -h $@ | cut -f1)"
+
+# Boot object
+$(ENHANCED_BUILD_DIR)/boot/boot_%.o: boot/boot_%.S
+	@echo "🔧 Assembling enhanced boot code: $<"
+	$(CC) $(ENHANCED_CFLAGS) -c $< -o $@
+
+# Kernel objects
+$(ENHANCED_BUILD_DIR)/kernel/%.o: kernel/%.c
+	@echo "🔧 Compiling enhanced kernel: $<"
+	$(CC) $(ENHANCED_CFLAGS) -c $< -o $@
+
+# Driver objects
+$(ENHANCED_BUILD_DIR)/drivers/%.o: drivers/%.c
+	@echo "🔧 Compiling enhanced driver: $<"
+	$(CC) $(ENHANCED_CFLAGS) -c $< -o $@
+
+# Enhanced test target
+.PHONY: test-enhanced
+test-enhanced: $(BUILD_OUTPUT_DIR)/$(KERNEL_TARGET)
+	@echo "🚀 Testing enhanced SAGE OS with QEMU..."
+	qemu-system-i386 \
+		-kernel $(BUILD_OUTPUT_DIR)/$(KERNEL_TARGET) \
+		-m 128M \
+		-nographic \
+		-no-reboot
+
+# Enhanced test with graphics
+.PHONY: test-enhanced-graphics
+test-enhanced-graphics: $(BUILD_OUTPUT_DIR)/$(KERNEL_TARGET)
+	@echo "🚀 Testing enhanced SAGE OS with graphics..."
+	qemu-system-i386 \
+		-kernel $(BUILD_OUTPUT_DIR)/$(KERNEL_TARGET) \
+		-m 128M \
+		-vga std \
+		-no-reboot
+
+# Enhanced interactive test
+.PHONY: test-enhanced-interactive
+test-enhanced-interactive: $(BUILD_OUTPUT_DIR)/$(KERNEL_TARGET)
+	@echo "🚀 Starting enhanced SAGE OS interactive session..."
+	@echo "💡 Use Ctrl+A then X to exit QEMU"
+	qemu-system-i386 \
+		-kernel $(BUILD_OUTPUT_DIR)/$(KERNEL_TARGET) \
+		-m 128M \
+		-nographic \
+		-no-reboot \
+		-monitor none
+
+# Clean enhanced build
+.PHONY: clean-enhanced
+clean-enhanced:
+	@echo "🧹 Cleaning enhanced build files..."
+	rm -rf $(ENHANCED_BUILD_DIR)
+	rm -f $(BUILD_OUTPUT_DIR)/sage-os-enhanced-*
+
+# Enhanced build info
+.PHONY: info-enhanced
+info-enhanced:
+	@echo "📋 Enhanced SAGE OS Build Information"
+	@echo "===================================="
+	@echo "Version: $(ENHANCED_VERSION)"
+	@echo "Architecture: $(ARCH)"
+	@echo "Target: $(KERNEL_TARGET)"
+	@echo "Build Directory: $(ENHANCED_BUILD_DIR)"
+	@echo "Output Directory: $(BUILD_OUTPUT_DIR)"
+	@echo ""
+	@echo "Enhanced Features:"
+	@echo "- Advanced file management with persistent storage"
+	@echo "- Enhanced VGA graphics with colors and boxes"
+	@echo "- Improved shell with history and advanced commands"
+	@echo "- Better keyboard input handling"
+	@echo "- File operations: save, cat, append, cp, mv, rm, find, grep, wc"
+	@echo "- System commands: help, clear, version, meminfo, history"
+
+# Enhanced help
+.PHONY: help-enhanced
+help-enhanced:
+	@echo "🚀 SAGE OS Enhanced Build System"
+	@echo "================================"
+	@echo ""
+	@echo "Targets:"
+	@echo "  enhanced                 - Build enhanced SAGE OS kernel"
+	@echo "  test-enhanced           - Test with QEMU (no graphics)"
+	@echo "  test-enhanced-graphics  - Test with QEMU (with graphics)"
+	@echo "  test-enhanced-interactive - Interactive test session"
+	@echo "  clean-enhanced          - Clean enhanced build files"
+	@echo "  info-enhanced           - Show build information"
+	@echo "  help-enhanced           - Show this help"
+	@echo ""
+	@echo "Variables:"
+	@echo "  ARCH=i386|x86_64        - Target architecture (default: i386)"
+	@echo ""
+	@echo "Examples:"
+	@echo "  make enhanced                    - Build for i386"
+	@echo "  make enhanced ARCH=x86_64       - Build for x86_64"
+	@echo "  make test-enhanced-interactive   - Start interactive session"
+
+# All enhanced architectures
+.PHONY: enhanced-all
+enhanced-all:
+	@echo "🏗️  Building enhanced SAGE OS for all architectures..."
+	$(MAKE) -f Makefile.enhanced enhanced ARCH=i386
+	$(MAKE) -f Makefile.enhanced enhanced ARCH=x86_64
+	@echo "✅ All enhanced architectures built successfully!"
+	@ls -la $(BUILD_OUTPUT_DIR)/sage-os-enhanced-*

@@ -137,3 +137,99 @@ char* my_strcat(char* dest, const char* src) {
 char* strcat(char* dest, const char* src) {
     return my_strcat(dest, src);
 }
+
+// String length (alias for my_strlen)
+size_t strlen(const char* str) {
+    return my_strlen(str);
+}
+
+// String comparison
+int strcmp(const char* str1, const char* str2) {
+    while (*str1 && (*str1 == *str2)) {
+        str1++;
+        str2++;
+    }
+    return *(unsigned char*)str1 - *(unsigned char*)str2;
+}
+
+// String comparison with length limit
+int strncmp(const char* str1, const char* str2, size_t n) {
+    while (n > 0 && *str1 && (*str1 == *str2)) {
+        str1++;
+        str2++;
+        n--;
+    }
+    if (n == 0) return 0;
+    return *(unsigned char*)str1 - *(unsigned char*)str2;
+}
+
+// String copy
+char* strcpy(char* dest, const char* src) {
+    char* ptr = dest;
+    while (*src) {
+        *ptr++ = *src++;
+    }
+    *ptr = '\0';
+    return dest;
+}
+
+// String copy with length limit
+char* strncpy(char* dest, const char* src, size_t n) {
+    size_t i;
+    for (i = 0; i < n && src[i] != '\0'; i++) {
+        dest[i] = src[i];
+    }
+    for (; i < n; i++) {
+        dest[i] = '\0';
+    }
+    return dest;
+}
+
+// Simple sprintf implementation
+int sprintf(char* buffer, const char* format, ...) {
+    // Very basic sprintf - only handles %d, %s, %c
+    const char* p = format;
+    char* buf = buffer;
+    int value;
+    const char* str;
+    char ch;
+    
+    // This is a simplified implementation
+    // In a real OS, you'd use va_list properly
+    void** args = (void**)(&format + 1);
+    int arg_index = 0;
+    
+    while (*p) {
+        if (*p == '%' && *(p + 1)) {
+            p++;
+            switch (*p) {
+                case 'd':
+                    value = (int)(long)args[arg_index++];
+                    buf += my_itoa(value, buf, 10);
+                    break;
+                case 's':
+                    str = (const char*)args[arg_index++];
+                    while (*str) {
+                        *buf++ = *str++;
+                    }
+                    break;
+                case 'c':
+                    ch = (char)(long)args[arg_index++];
+                    *buf++ = ch;
+                    break;
+                case '%':
+                    *buf++ = '%';
+                    break;
+                default:
+                    *buf++ = '%';
+                    *buf++ = *p;
+                    break;
+            }
+        } else {
+            *buf++ = *p;
+        }
+        p++;
+    }
+    *buf = '\0';
+    return buf - buffer;
+}
