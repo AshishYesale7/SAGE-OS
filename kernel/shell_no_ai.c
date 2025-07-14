@@ -324,14 +324,13 @@ static void cmd_exit(int argc, char* argv[]) {
     // or by causing a triple fault. Let's use a clean shutdown approach.
 
     // Method 1: ACPI shutdown (works on x86)
-    // Using inline assembly instead of outw function
-    __asm__ __volatile__ ("outw %0, %1" : : "a"((uint16_t)0x2000), "Nd"((uint16_t)0xB004));
+    outw(0xB004, 0x2000);
 
     // Method 2: QEMU debug exit (if enabled)
-    __asm__ __volatile__ ("outw %0, %1" : : "a"((uint16_t)0x31), "Nd"((uint16_t)0x501));
+    outw(0x501, 0x31);
 
     // Method 3: Bochs/QEMU shutdown port
-    __asm__ __volatile__ ("outw %0, %1" : : "a"((uint16_t)0x00), "Nd"((uint16_t)0x8900));
+    outw(0x8900, 0x00);
 
     // If we get here, none of the methods worked
     uart_puts("Shutdown failed. System halted.\n");
