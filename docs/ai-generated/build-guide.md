@@ -1,6 +1,6 @@
 # 🔨 SAGE OS Build Guide
 
-**Generated**: 2025-07-14T20:13:17.171201
+**Generated**: 2025-08-04T20:18:31.628526
 
 ## Prerequisites
 
