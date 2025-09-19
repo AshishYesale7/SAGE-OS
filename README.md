@@ -75,7 +75,7 @@
 # SAGE OS 🌱🧠
 
 [![Documentation](https://img.shields.io/badge/docs-auto--generated-blue?style=for-the-badge&logo=github)](//github.com/AshishYesale7.github.io/SAGE-OS/) [![AI-Enhanced](https://img.shields.io/badge/AI-enhanced-green?style=for-the-badge&logo=openai)](https://github.com/marketplace/models/)
-
+[![wakatime](https://wakatime.com/badge/github/AshishYesale7/SAGE-OS.svg)](https://wakatime.com/badge/github/AshishYesale7/SAGE-OS)
 
 <img src="https://github.com/user-attachments/assets/e9f364ed-df0e-4f65-8557-c6c783848907" width="400" height="400" />
 
