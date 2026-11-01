@@ -1,5 +1,8 @@
 
 # SAGE OS 🌱🧠
+
+<img src="https://github.com/user-attachments/assets/e9f364ed-df0e-4f65-8557-c6c783848907" width="400" height="400" />
+
 **Self-Aware General Environment**  
 An experimental, bare-metal operating system designed from scratch to learn, adapt, and evolve — starting on Raspberry Pi.
 
